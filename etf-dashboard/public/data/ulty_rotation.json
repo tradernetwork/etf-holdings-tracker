@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-09-04",
+  "asOf": "2026-09-07",
   "holdings": 27,
   "dates": [
-    "2026-06-19",
     "2026-06-26",
     "2026-07-03",
     "2026-07-10",
@@ -16,7 +15,8 @@
     "2026-08-14",
     "2026-08-21",
     "2026-08-28",
-    "2026-09-04"
+    "2026-09-04",
+    "2026-09-07"
   ],
   "themes": [
     "Technology",
@@ -30,20 +30,6 @@
     "Healthcare"
   ],
   "timeline": [
-    {
-      "date": "2026-06-19",
-      "weights": {
-        "Uncategorized": 3.004909800341772,
-        "Communications": 6.541636033284824,
-        "Crypto": 7.236735544904935,
-        "Materials": 7.435447770900504,
-        "Industrials": 12.460226410497011,
-        "Financials": 5.302484425855618,
-        "Technology": 48.18041598753011,
-        "Consumer": 7.560524120629038,
-        "Healthcare": 2.1470617542309562
-      }
-    },
     {
       "date": "2026-06-26",
       "weights": {
@@ -197,23 +183,35 @@
         "Consumer": 5.359156675002779,
         "Financials": 4.080414312640607
       }
+    },
+    {
+      "date": "2026-09-07",
+      "weights": {
+        "Technology": 40.200629038318816,
+        "Materials": 10.362719558856753,
+        "Financials": 3.9718458041342983,
+        "Communications": 7.252215762692554,
+        "Industrials": 11.071309840369876,
+        "Crypto": 4.146141608979178,
+        "Healthcare": 3.4733455846874413,
+        "Uncategorized": 13.714065688022117,
+        "Consumer": 5.29409229081313
+      }
     }
   ],
   "currentThemes": {
-    "Technology": 39.3,
-    "Uncategorized": 13.8,
-    "Industrials": 11.0,
-    "Materials": 10.6,
-    "Communications": 7.4,
-    "Consumer": 5.4,
-    "Crypto": 4.2,
-    "Financials": 4.1,
-    "Healthcare": 3.4
+    "Technology": 40.2,
+    "Uncategorized": 13.7,
+    "Industrials": 11.1,
+    "Materials": 10.4,
+    "Communications": 7.3,
+    "Consumer": 5.3,
+    "Crypto": 4.1,
+    "Financials": 4.0,
+    "Healthcare": 3.5
   },
   "churnSincePrior": {
-    "added": [
-      "MPC"
-    ],
+    "added": [],
     "dropped": [],
     "held": [
       "ADI",
@@ -232,6 +230,7 @@
       "LITE",
       "LRCX",
       "MELI",
+      "MPC",
       "MSTR",
       "NVDA",
       "PLTR",
@@ -243,7 +242,7 @@
       "SPCX",
       "TMDX"
     ],
-    "rate": 0.04
+    "rate": 0.0
   },
   "unmapped": [
     "BABA",

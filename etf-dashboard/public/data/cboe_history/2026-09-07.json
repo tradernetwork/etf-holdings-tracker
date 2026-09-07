@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-07T17:44:38.177083+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5322,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "CIB": "GRUPO CIBEST SA SPON ADS",
+        "CTSO": "CYTOSORBENTS CORP COM NEW",
+        "LPSN": "LIVEPERSON INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "BILI": "BILIBILI INC SPONS ADS REP Z",
+        "MGM": "MGM RESORTS INTERNATIONAL COM"
+      }
+    }
+  },
+  "hasChanges": true
+}
