@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-08T16:35:39.586508+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5324,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "CIB": "GRUPO CIBEST SA SPON ADS",
+        "CTSO": "CYTOSORBENTS CORP COMMON STOCK"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

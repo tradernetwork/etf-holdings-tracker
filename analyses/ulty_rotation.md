@@ -1,6 +1,6 @@
 # ULTY — Sector Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-09-07** · 27 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-09-08** · 27 holdings · last 12 weekly samples._
 
 > ⚠️ **Uncategorized tickers** (add to the map in the tracker): BABA, FIGR, MPC, SPCX
 
@@ -20,7 +20,7 @@ _Auto-generated from daily holdings. As of **2026-09-07** · 27 holdings · last
 
 ## Sector-weight drift (weekly)
 
-| Sector | 06-26 | 07-03 | 07-10 | 07-16 | 07-24 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-07 |
+| Sector | 06-26 | 07-03 | 07-10 | 07-16 | 07-24 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-08 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
 | Technology | 49 | 47 | 47 | 46 | 45 | 41 | 45 | 44 | 41 | 43 | 39 | 40 |
 | Uncategorized | 3 | 3 | 7 | 7 | 7 | 10 | 10 | 11 | 12 | 12 | 14 | 14 |
