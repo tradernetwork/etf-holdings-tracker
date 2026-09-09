@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-09T16:32:21.876607+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5332,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ADIG": "ADI GLOBAL DISTR INC COM SHS",
+        "BLOX": "TIDAL TRUST II NICHOLAS CRYPTO",
+        "FLOC": "FLOWCO HLDGS INC COM CL A",
+        "REF": "REFORMATION INC COM",
+        "SBC": "SBC MED GROUP HLDGS INC COM",
+        "VRCA": "VERRICA PHARMACEUTICALS INC COM SHS",
+        "WLFC": "WILLIS LEASE FIN CORP COM",
+        "WQTM": "WisdomTree Quantum Computing Fund"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
