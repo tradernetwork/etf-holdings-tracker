@@ -2,8 +2,8 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-09-09",
-  "holdings": 17,
+  "asOf": "2026-09-10",
+  "holdings": 16,
   "dates": [
     "2026-06-26",
     "2026-07-03",
@@ -16,7 +16,7 @@
     "2026-08-21",
     "2026-08-28",
     "2026-09-04",
-    "2026-09-09"
+    "2026-09-10"
   ],
   "themes": [
     "Uncategorized",
@@ -24,14 +24,14 @@
     "Semis/photonics",
     "Bitcoin miners",
     "Precious metals",
-    "Quantum",
-    "Space",
-    "Rare earth/materials",
     "Nuclear/uranium",
-    "Other",
     "Drones/defense",
+    "Space",
+    "Other",
     "Fintech",
+    "Quantum",
     "Cloud/AI",
+    "Rare earth/materials",
     "Clean energy",
     "Healthcare/biotech"
   ],
@@ -160,30 +160,30 @@
       }
     },
     {
-      "date": "2026-09-09",
+      "date": "2026-09-10",
       "weights": {
-        "Semis/photonics": 16.02499001800284,
-        "Bitcoin miners": 10.312431988775003,
-        "Uncategorized": 33.80775468782719,
-        "Crypto financials": 19.265189025435834,
-        "Precious metals": 4.752814187142315
+        "Semis/photonics": 10.63743785334562,
+        "Bitcoin miners": 10.379635551421524,
+        "Uncategorized": 34.268181509524005,
+        "Precious metals": 4.967624221108618,
+        "Crypto financials": 19.333330502901024
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 33.8,
+    "Uncategorized": 34.3,
     "Crypto financials": 19.3,
-    "Semis/photonics": 16.0,
-    "Bitcoin miners": 10.3,
-    "Precious metals": 4.8,
-    "Quantum": 0.0,
-    "Space": 0.0,
-    "Rare earth/materials": 0.0,
+    "Semis/photonics": 10.6,
+    "Bitcoin miners": 10.4,
+    "Precious metals": 5.0,
     "Nuclear/uranium": 0.0,
-    "Other": 0.0,
     "Drones/defense": 0.0,
+    "Space": 0.0,
+    "Other": 0.0,
     "Fintech": 0.0,
+    "Quantum": 0.0,
     "Cloud/AI": 0.0,
+    "Rare earth/materials": 0.0,
     "Clean energy": 0.0,
     "Healthcare/biotech": 0.0
   },
@@ -191,7 +191,6 @@
     "added": [
       "AAOI",
       "ASST.UQ",
-      "AXTI",
       "BMNR",
       "CBRS",
       "CDE",
@@ -219,7 +218,7 @@
       "SMCI",
       "TEM"
     ],
-    "rate": 0.76
+    "rate": 0.75
   },
   "unmapped": [
     "CBRS",
