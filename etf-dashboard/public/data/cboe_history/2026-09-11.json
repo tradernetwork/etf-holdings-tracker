@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-11T16:25:16.051965+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5335,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "EFXT": "ENERFLEX LTD COM",
+        "SKHL": "DIREXION SHARES ETF TRUST DAILY SK HYNIX",
+        "XTND": "XTEND AI ROBOTICS INC COM"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

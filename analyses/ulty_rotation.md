@@ -1,6 +1,6 @@
 # ULTY — Sector Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-09-10** · 27 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-09-11** · 27 holdings · last 12 weekly samples._
 
 > ⚠️ **Uncategorized tickers** (add to the map in the tracker): BABA, FIGR, MPC, SPCX
 
@@ -8,21 +8,21 @@ _Auto-generated from daily holdings. As of **2026-09-10** · 27 holdings · last
 
 | Sector | Weight |
 |------|-------:|
-| Technology | 41.6% |
-| Uncategorized | 14.1% |
+| Technology | 40.7% |
+| Uncategorized | 14.0% |
 | Industrials | 10.0% |
-| Materials | 8.8% |
-| Communications | 7.1% |
-| Consumer | 5.1% |
-| Crypto | 3.9% |
+| Materials | 8.5% |
+| Communications | 7.4% |
+| Consumer | 5.2% |
+| Crypto | 3.8% |
 | Financials | 3.8% |
 | Healthcare | 3.4% |
 
 ## Sector-weight drift (weekly)
 
-| Sector | 06-26 | 07-03 | 07-10 | 07-16 | 07-24 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-10 |
+| Sector | 06-26 | 07-03 | 07-10 | 07-16 | 07-24 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-| Technology | 49 | 47 | 47 | 46 | 45 | 41 | 45 | 44 | 41 | 43 | 39 | 42 |
+| Technology | 49 | 47 | 47 | 46 | 45 | 41 | 45 | 44 | 41 | 43 | 39 | 41 |
 | Uncategorized | 3 | 3 | 7 | 7 | 7 | 10 | 10 | 11 | 12 | 12 | 14 | 14 |
 | Industrials | 13 | 12 | 12 | 12 | 13 | 14 | 12 | 12 | 11 | 11 | 11 | 10 |
 | Materials | 7 | 7 | 7 | 7 | 8 | 9 | 9 | 9 | 10 | 11 | 11 | 9 |
