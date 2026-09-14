@@ -1,80 +1,126 @@
 """
 TickerTrace auth + user management.
 
-SQLite database for users, API keys, and (legacy) subscription tracking.
-Firebase/Stripe were removed May 2026; the schema retains stripe_customer_id /
-stripe_subscription_id columns so existing rows don't break.
+Postgres (Supabase, `tickertrace` schema) for users, API keys, and (legacy)
+subscription tracking. Firebase/Stripe were removed May 2026; the schema
+retains stripe_customer_id / stripe_subscription_id columns so existing rows
+don't break.
 
-Connection strategy (P0 #3 in REVIEW.md):
-    A single SQLite connection is held in thread-local storage. SQLite WAL
-    handles per-thread concurrency, and reusing the connection eliminates the
-    open/close overhead that previously hit every helper.
+Migrated off SQLite for the Railway move (Sep 2026): the SQLite file lived on
+the Vultr box's local disk, which doesn't survive a Railway deploy. Postgres
+lives in a Supabase project that ALSO hosts an unrelated product's live
+billing data in its `public` schema — every table here is created in, and
+every query below explicitly qualifies, the dedicated `tickertrace` schema
+so there is never any ambiguity (or accidental search-path bleed) about
+which schema a statement touches.
+
+Connection strategy:
+    A small `psycopg_pool.ConnectionPool` (2-10 connections — this app has
+    ~8 users and light traffic) replaces the old thread-local SQLite
+    connection. The pool itself is created lazily on first use (mirrors the
+    old lazy-open-on-first-use thread-local connection) rather than at
+    import time. `tx()` is a transactional context manager: commits on
+    success, rolls back on exception — same contract the old thread-local
+    `tx()` had, just backed by a pooled Postgres connection instead of a
+    thread-local SQLite one. `close_all_connections()` closes the pool and
+    is called from FastAPI's lifespan shutdown (api/server.py).
 """
 
 import os
 import secrets
-import sqlite3
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Iterator
 
 import bcrypt
+import psycopg
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
-DB_DIR = os.path.join(os.path.dirname(__file__), 'data')
-os.makedirs(DB_DIR, exist_ok=True)
-DB_PATH = os.path.join(DB_DIR, 'tickertrace.db')
-
-# ─── Thread-local connection pool ────────────────────────────────
-_tls = threading.local()
-_tls_registry: list[sqlite3.Connection] = []
-_tls_registry_lock = threading.Lock()
+# ─── Connection pool ──────────────────────────────────────────────
+_pool: Optional[ConnectionPool] = None
+_pool_lock = threading.Lock()
 
 
-def _get_db() -> sqlite3.Connection:
-    """Return a per-thread connection, opening it lazily on first use."""
-    conn = getattr(_tls, "conn", None)
-    if conn is None:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        _tls.conn = conn
-        with _tls_registry_lock:
-            _tls_registry.append(conn)
-    return conn
+def _get_pool() -> ConnectionPool:
+    """Return the process-wide connection pool, opening it lazily on first
+    use (not at import time — there may be no DATABASE_URL yet, e.g. during
+    a `python -c "import ast; ..."` style syntax check)."""
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                dsn = os.environ.get("DATABASE_URL")
+                if not dsn:
+                    raise RuntimeError(
+                        "DATABASE_URL environment variable is required "
+                        "(Postgres connection string for the tickertrace schema)"
+                    )
+                _pool = ConnectionPool(
+                    conninfo=dsn,
+                    min_size=2,
+                    max_size=10,
+                    kwargs={"row_factory": dict_row},
+                    open=True,
+                )
+    return _pool
 
 
 @contextmanager
-def tx() -> Iterator[sqlite3.Connection]:
+def tx() -> Iterator[psycopg.Connection]:
     """Transactional context manager. Commits on success, rolls back on error."""
-    conn = _get_db()
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
+    with _get_pool().connection() as conn:
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
 
 
 def close_all_connections() -> None:
-    """Close every thread-local connection. Called from FastAPI lifespan shutdown."""
-    with _tls_registry_lock:
-        for conn in _tls_registry:
-            try:
-                conn.close()
-            except sqlite3.Error:
-                pass
-        _tls_registry.clear()
+    """Close the pool. Called from FastAPI lifespan shutdown."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+
+def _fetchone(sql: str, params: tuple = ()) -> Optional[dict]:
+    with _get_pool().connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def _fetchall(sql: str, params: tuple = ()) -> list[dict]:
+    with _get_pool().connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            return [dict(r) for r in cur.fetchall()]
 
 
 # ─── Schema bootstrap (called once from FastAPI lifespan) ────────
 def init_db() -> None:
-    """Create tables if they don't exist. Idempotent."""
+    """Verify/create the `tickertrace` schema. Idempotent.
+
+    The tables below already exist in production — they were created ahead
+    of time via the migration DDL (BIGINT GENERATED ALWAYS AS IDENTITY,
+    TIMESTAMPTZ columns, indexes). This function is NOT the source of truth
+    for that schema; it re-issues the same DDL guarded by
+    `CREATE SCHEMA IF NOT EXISTS` / `CREATE TABLE IF NOT EXISTS` purely for
+    defense-in-depth (e.g. a fresh preview/staging Postgres instance that
+    hasn't had the migration applied yet), so it's safe to call on every
+    startup and a no-op against the real production database. Every
+    statement is schema-qualified — see the module docstring for why.
+    """
     with tx() as conn:
-        conn.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conn.execute("CREATE SCHEMA IF NOT EXISTS tickertrace")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tickertrace.users (
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
                 api_key TEXT UNIQUE NOT NULL,
                 password_hash TEXT,
@@ -82,46 +128,36 @@ def init_db() -> None:
                 stripe_customer_id TEXT,
                 stripe_subscription_id TEXT,
                 source TEXT DEFAULT '',
-                created_at TEXT NOT NULL,
-                last_api_call TEXT,
-                promo_expiry TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS api_usage (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TIMESTAMPTZ NOT NULL,
+                last_api_call TIMESTAMPTZ,
+                promo_expiry TIMESTAMPTZ
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tickertrace.api_usage (
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 api_key TEXT NOT NULL,
                 endpoint TEXT NOT NULL,
-                timestamp TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS promo_codes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMPTZ NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tickertrace.promo_codes (
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 code TEXT UNIQUE NOT NULL,
                 tier TEXT NOT NULL DEFAULT 'pro',
                 duration_days INTEGER DEFAULT 30,
                 max_uses INTEGER DEFAULT 1,
                 uses INTEGER DEFAULT 0,
-                active INTEGER DEFAULT 1,
-                created_at TEXT NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
-            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_users_stripe ON users(stripe_customer_id);
-            CREATE INDEX IF NOT EXISTS idx_usage_key ON api_usage(api_key);
-            CREATE INDEX IF NOT EXISTS idx_promo_code ON promo_codes(code);
+                active BOOLEAN DEFAULT true,
+                created_at TIMESTAMPTZ NOT NULL
+            )
         """)
-        # Backfill migrations for older DBs — narrowed catch: only swallow
-        # "duplicate column name" errors, re-raise anything else.
-        for column_sql in (
-            "ALTER TABLE users ADD COLUMN password_hash TEXT",
-            "ALTER TABLE users ADD COLUMN promo_expiry TEXT",
-        ):
-            try:
-                conn.execute(column_sql)
-            except sqlite3.OperationalError as e:
-                if "duplicate column name" not in str(e).lower():
-                    raise
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_api_key ON tickertrace.users(api_key)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON tickertrace.users(email)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_stripe ON tickertrace.users(stripe_customer_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_key ON tickertrace.api_usage(api_key)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_promo_code ON tickertrace.promo_codes(code)")
 
 
 # ─── Crypto helpers ──────────────────────────────────────────────
@@ -147,21 +183,23 @@ def create_user(
 ) -> dict:
     """Create a new user and return their record. Idempotent on email collision."""
     api_key = generate_api_key()
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
     pw_hash = hash_password(password) if password else None
 
     try:
         with tx() as conn:
             conn.execute(
-                "INSERT INTO users (email, api_key, password_hash, tier, source, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO tickertrace.users (email, api_key, password_hash, tier, source, created_at) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
                 (email, api_key, pw_hash, tier, source, now),
             )
-    except sqlite3.IntegrityError as e:
-        # Narrowed catch (review #8): re-raise unless it's the specific
-        # email-already-exists collision we expect.
+    except psycopg.errors.UniqueViolation as e:
+        # Narrowed catch (kept from the SQLite version's review #8):
+        # re-raise unless it's the specific email-already-exists collision
+        # we expect.
+        constraint = (getattr(e.diag, "constraint_name", None) or "").lower()
         msg = str(e).lower()
-        if "users.email" in msg or "unique constraint failed: users.email" in msg:
+        if "email" in constraint or "email" in msg:
             existing = get_user_by_email(email)
             if existing:
                 return existing
@@ -175,7 +213,7 @@ def set_password(email: str, password: str) -> bool:
     pw_hash = hash_password(password)
     with tx() as conn:
         cursor = conn.execute(
-            "UPDATE users SET password_hash = ? WHERE email = ?",
+            "UPDATE tickertrace.users SET password_hash = %s WHERE email = %s",
             (pw_hash, email),
         )
         return cursor.rowcount > 0
@@ -195,31 +233,24 @@ def authenticate(email: str, password: str) -> Optional[dict]:
 
 
 def get_user_by_key(api_key: str) -> Optional[dict]:
-    row = _get_db().execute(
-        "SELECT * FROM users WHERE api_key = ?", (api_key,)
-    ).fetchone()
-    return dict(row) if row else None
+    return _fetchone("SELECT * FROM tickertrace.users WHERE api_key = %s", (api_key,))
 
 
 def get_user_by_email(email: str) -> Optional[dict]:
-    row = _get_db().execute(
-        "SELECT * FROM users WHERE email = ?", (email,)
-    ).fetchone()
-    return dict(row) if row else None
+    return _fetchone("SELECT * FROM tickertrace.users WHERE email = %s", (email,))
 
 
 def get_user_by_stripe_id(stripe_customer_id: str) -> Optional[dict]:
     """Legacy lookup — kept so old DB rows are still queryable."""
-    row = _get_db().execute(
-        "SELECT * FROM users WHERE stripe_customer_id = ?",
+    return _fetchone(
+        "SELECT * FROM tickertrace.users WHERE stripe_customer_id = %s",
         (stripe_customer_id,),
-    ).fetchone()
-    return dict(row) if row else None
+    )
 
 
 def upgrade_user(email: str, tier: str = "pro") -> None:
     with tx() as conn:
-        conn.execute("UPDATE users SET tier = ? WHERE email = ?", (tier, email))
+        conn.execute("UPDATE tickertrace.users SET tier = %s WHERE email = %s", (tier, email))
 
 
 def downgrade_user(email: str, tier: str = "free") -> None:
@@ -227,33 +258,30 @@ def downgrade_user(email: str, tier: str = "free") -> None:
 
 
 def log_api_call(api_key: str, endpoint: str) -> None:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
     with tx() as conn:
         conn.execute(
-            "INSERT INTO api_usage (api_key, endpoint, timestamp) VALUES (?, ?, ?)",
+            "INSERT INTO tickertrace.api_usage (api_key, endpoint, timestamp) VALUES (%s, %s, %s)",
             (api_key, endpoint, now),
         )
         conn.execute(
-            "UPDATE users SET last_api_call = ? WHERE api_key = ?",
+            "UPDATE tickertrace.users SET last_api_call = %s WHERE api_key = %s",
             (now, api_key),
         )
 
 
 def get_usage_count(api_key: str, hours: int = 24) -> int:
     """Count API calls in the last N hours."""
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-    row = _get_db().execute(
-        "SELECT COUNT(*) AS cnt FROM api_usage WHERE api_key = ? AND timestamp > ?",
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    row = _fetchone(
+        "SELECT COUNT(*) AS cnt FROM tickertrace.api_usage WHERE api_key = %s AND timestamp > %s",
         (api_key, cutoff),
-    ).fetchone()
+    )
     return row["cnt"] if row else 0
 
 
 def get_all_users() -> list[dict]:
-    rows = _get_db().execute(
-        "SELECT * FROM users ORDER BY created_at DESC"
-    ).fetchall()
-    return [dict(r) for r in rows]
+    return _fetchall("SELECT * FROM tickertrace.users ORDER BY created_at DESC")
 
 
 # ─── Rate limits per tier (24h windows) ──────────────────────────
@@ -284,9 +312,11 @@ def check_access(api_key: str, endpoint: str) -> tuple[bool, str]:
     if tier not in TIER_ACCESS:
         return False, f"Unrecognized account tier '{tier}'. Contact support."
 
-    # Auto-downgrade expired promo tiers
+    # Auto-downgrade expired promo tiers. promo_expiry comes back from
+    # Postgres as a tz-aware datetime (TIMESTAMPTZ), not the ISO text string
+    # the old SQLite version compared — compare datetimes directly.
     promo_expiry = user.get("promo_expiry")
-    if promo_expiry and promo_expiry < datetime.now(timezone.utc).isoformat():
+    if promo_expiry and promo_expiry < datetime.now(timezone.utc):
         downgrade_user(user["email"])
         tier = "free"
 

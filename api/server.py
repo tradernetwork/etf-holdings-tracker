@@ -552,10 +552,29 @@ class TrackBody(BaseModel):
 def track_visit(request: Request, body: TrackBody | None = None):
     """Record a pageview. Fire-and-forget from the browser; never returns
     visitor data. Visitor identity is hashed (sha256(ip + salt)) before
-    storage so we don't keep raw IPs."""
+    storage so we don't keep raw IPs.
+
+    IP source: X-Forwarded-For (first entry), NOT get_remote_address(request)
+    (== request.client.host). Behind Apache's ProxyPass on the old Vultr box,
+    request.client.host was ALWAYS 127.0.0.1 — the proxy's own loopback hop —
+    so every visitor, bot or human, collapsed into the exact same
+    visitor_hash for the entire life of this feature; "live now" / "today" /
+    "week" only ever measured "is anyone hitting the site at all", never real
+    uniques. Railway has no Apache in front of it: Railway's edge terminates
+    TLS and sets X-Forwarded-For itself, so the header is trustworthy here.
+    (This would NOT be safe behind an arbitrary untrusted proxy — a client
+    could forge the header — but this endpoint is already unauthenticated
+    best-effort telemetry, not a security control.)
+    """
     try:
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = (
+            forwarded_for.split(",")[0].strip()
+            if forwarded_for
+            else get_remote_address(request)
+        )
         visits.record(
-            ip=get_remote_address(request),
+            ip=client_ip,
             path=(body.path if body else "") or request.headers.get("referer", "")[:120],
         )
     except Exception as e:  # never fail the request — it's telemetry

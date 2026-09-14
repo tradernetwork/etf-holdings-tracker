@@ -4,8 +4,16 @@ Lightweight public visit tracker.
 POST /api/v1/visits/track   — fired on every page load by the browser
 GET  /api/v1/visits/live    — returns the current counts for the footer pill
 
-Storage: tiny SQLite DB at api/data/visits.db (the docker-compose mount
-already covers that path). Two tables:
+Storage: Postgres (Supabase, `tickertrace` schema) — tickertrace.visit_events
+/ tickertrace.visit_meta. Migrated off the old per-file SQLite DB for the
+Railway move (Sep 2026): local disk on Vultr doesn't survive a Railway
+deploy. This module keeps its own small connection pool, separate from
+api/auth.py's — it was already a fully self-contained module with no
+dependency on auth.py, and pageview writes are a different (higher-volume,
+lower-value-per-row) access pattern than the auth tables, so there's no
+reason to couple the two. Every query is schema-qualified with
+`tickertrace.` — see api/auth.py's module docstring for why (this Postgres
+instance also hosts an unrelated product's live billing tables in `public`).
 
   visit_events  — one row per pageview, ~30-day retention
   visit_meta    — key/value: lifetime_visits counter, last_prune_ts
@@ -16,19 +24,31 @@ events table (+ the lifetime counter for all-time, which survives pruning).
 
 Visitor identity is sha256(ip + server_salt)[:16]. The IP itself is never
 persisted — only the hash — so the table is GDPR-friendly out of the box.
+
+NOTE on where `ip` comes from: record() trusts whatever the caller passes
+in. See api/server.py's track_visit() handler for a real bug this migration
+fixes — behind Apache's ProxyPass on the old Vultr box, the caller was
+passing get_remote_address(request) (== request.client.host), which is
+ALWAYS 127.0.0.1 behind that proxy. Every visitor — bot or human — has
+collapsed into the exact same visitor_hash for the entire life of this
+feature, silently. Railway has no Apache in front (Railway's edge terminates
+TLS and sets X-Forwarded-For itself), so the fix belongs at that call site,
+not in this module.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
-import sqlite3
 import threading
 import time
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Iterator, Optional
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'visits.db')
+import psycopg
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
+
 # Salt randomizes the IP hash; rotating it would shuffle "live now"
 # cardinality but doesn't matter for correctness. A stable env-provided
 # salt prevents trivial reverse-lookup if the DB were ever leaked.
@@ -37,54 +57,103 @@ LIVE_WINDOW_SEC = 5 * 60
 PRUNE_AFTER_DAYS = 30
 PRUNE_EVERY_SEC = 6 * 3600  # at most every 6h on the request path
 
-_init_lock = threading.Lock()
-_initialized = False
+_pool: Optional[ConnectionPool] = None
+_pool_lock = threading.Lock()
+_schema_ready = False
+_schema_lock = threading.Lock()
+
+
+def _get_pool() -> ConnectionPool:
+    """Lazily create the pool on first use (mirrors auth.py) — not at import
+    time, since DATABASE_URL may not be set yet (e.g. static syntax checks)."""
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                dsn = os.environ.get("DATABASE_URL")
+                if not dsn:
+                    raise RuntimeError(
+                        "DATABASE_URL environment variable is required "
+                        "(Postgres connection string for the tickertrace schema)"
+                    )
+                _pool = ConnectionPool(
+                    conninfo=dsn,
+                    min_size=1,
+                    max_size=5,
+                    kwargs={"row_factory": dict_row},
+                    open=True,
+                )
+    return _pool
+
+
+def close_pool() -> None:
+    """Close this module's pool. Provided for symmetry with
+    auth.close_all_connections(); not currently wired into FastAPI lifespan
+    (only auth's pool is closed there today)."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
 
 
 @contextmanager
-def _conn() -> Iterator[sqlite3.Connection]:
-    """Per-call connection. SQLite + WAL is plenty for this volume."""
-    global _initialized
-    if not _initialized:
-        with _init_lock:
-            if not _initialized:
+def _conn() -> Iterator[psycopg.Connection]:
+    """Per-call pooled connection. Commits on success, rolls back on error
+    (same contract as auth.py's tx())."""
+    global _schema_ready
+    if not _schema_ready:
+        with _schema_lock:
+            if not _schema_ready:
                 _ensure_schema()
-                _initialized = True
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    c = sqlite3.connect(DB_PATH, timeout=5.0)
-    c.execute('PRAGMA journal_mode=WAL')
-    c.execute('PRAGMA synchronous=NORMAL')
-    try:
-        yield c
-        c.commit()
-    finally:
-        c.close()
+                _schema_ready = True
+    with _get_pool().connection() as conn:
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
 
 
 def _ensure_schema() -> None:
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    c = sqlite3.connect(DB_PATH, timeout=5.0)
-    try:
-        c.executescript("""
-            CREATE TABLE IF NOT EXISTS visit_events (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                ts            INTEGER NOT NULL,
-                visitor_hash  TEXT    NOT NULL,
+    """Defense-in-depth only, mirrors api/auth.py's init_db(): the
+    tickertrace.visit_events / visit_meta tables already exist via the
+    migration DDL. IF NOT EXISTS / ON CONFLICT DO NOTHING make this safe to
+    run every time without being the schema's source of truth."""
+    with _get_pool().connection() as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS tickertrace")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tickertrace.visit_events (
+                id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                ts            BIGINT NOT NULL,
+                visitor_hash  TEXT   NOT NULL,
                 path          TEXT
-            );
-            CREATE INDEX IF NOT EXISTS idx_visits_ts ON visit_events(ts);
-            CREATE INDEX IF NOT EXISTS idx_visits_visitor_ts ON visit_events(visitor_hash, ts);
-
-            CREATE TABLE IF NOT EXISTS visit_meta (
-                key   TEXT PRIMARY KEY,
-                value INTEGER NOT NULL
-            );
-            INSERT OR IGNORE INTO visit_meta (key, value) VALUES ('lifetime_visits', 0);
-            INSERT OR IGNORE INTO visit_meta (key, value) VALUES ('last_prune_ts', 0);
+            )
         """)
-        c.commit()
-    finally:
-        c.close()
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_visits_ts ON tickertrace.visit_events(ts)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_visits_visitor_ts "
+            "ON tickertrace.visit_events(visitor_hash, ts)"
+        )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tickertrace.visit_meta (
+                key   TEXT PRIMARY KEY,
+                value BIGINT NOT NULL
+            )
+        """)
+        conn.execute(
+            "INSERT INTO tickertrace.visit_meta (key, value) VALUES (%s, 0) "
+            "ON CONFLICT DO NOTHING",
+            ('lifetime_visits',),
+        )
+        conn.execute(
+            "INSERT INTO tickertrace.visit_meta (key, value) VALUES (%s, 0) "
+            "ON CONFLICT DO NOTHING",
+            ('last_prune_ts',),
+        )
+        conn.commit()
 
 
 def _visitor_hash(ip: str) -> str:
@@ -100,24 +169,24 @@ def record(ip: str, path: str = '') -> None:
     path = (path or '')[:120]  # cap path length to avoid runaway storage
     with _conn() as c:
         c.execute(
-            'INSERT INTO visit_events (ts, visitor_hash, path) VALUES (?, ?, ?)',
+            'INSERT INTO tickertrace.visit_events (ts, visitor_hash, path) VALUES (%s, %s, %s)',
             (now, vh, path),
         )
         c.execute(
-            'UPDATE visit_meta SET value = value + 1 WHERE key = ?',
+            'UPDATE tickertrace.visit_meta SET value = value + 1 WHERE key = %s',
             ('lifetime_visits',),
         )
         # Cheap, infrequent retention prune.
         row = c.execute(
-            'SELECT value FROM visit_meta WHERE key = ?',
+            'SELECT value FROM tickertrace.visit_meta WHERE key = %s',
             ('last_prune_ts',),
         ).fetchone()
-        last_prune = row[0] if row else 0
+        last_prune = row['value'] if row else 0
         if now - last_prune > PRUNE_EVERY_SEC:
             cutoff = now - PRUNE_AFTER_DAYS * 86400
-            c.execute('DELETE FROM visit_events WHERE ts < ?', (cutoff,))
+            c.execute('DELETE FROM tickertrace.visit_events WHERE ts < %s', (cutoff,))
             c.execute(
-                'UPDATE visit_meta SET value = ? WHERE key = ?',
+                'UPDATE tickertrace.visit_meta SET value = %s WHERE key = %s',
                 (now, 'last_prune_ts'),
             )
 
@@ -132,25 +201,25 @@ def live_counts() -> dict:
     live_floor = now - LIVE_WINDOW_SEC
     with _conn() as c:
         live_row = c.execute(
-            'SELECT COUNT(DISTINCT visitor_hash) FROM visit_events WHERE ts > ?',
+            'SELECT COUNT(DISTINCT visitor_hash) AS n FROM tickertrace.visit_events WHERE ts > %s',
             (live_floor,),
         ).fetchone()
         today_row = c.execute(
-            'SELECT COUNT(*) FROM visit_events WHERE ts >= ?',
+            'SELECT COUNT(*) AS n FROM tickertrace.visit_events WHERE ts >= %s',
             (midnight_utc,),
         ).fetchone()
         week_row = c.execute(
-            'SELECT COUNT(*) FROM visit_events WHERE ts >= ?',
+            'SELECT COUNT(*) AS n FROM tickertrace.visit_events WHERE ts >= %s',
             (week_ago,),
         ).fetchone()
         lifetime_row = c.execute(
-            'SELECT value FROM visit_meta WHERE key = ?',
+            'SELECT value FROM tickertrace.visit_meta WHERE key = %s',
             ('lifetime_visits',),
         ).fetchone()
     return {
-        'now': int(live_row[0] or 0),
-        'today': int(today_row[0] or 0),
-        'week': int(week_row[0] or 0),
-        'allTime': int(lifetime_row[0] or 0) if lifetime_row else 0,
+        'now': int(live_row['n'] or 0) if live_row else 0,
+        'today': int(today_row['n'] or 0) if today_row else 0,
+        'week': int(week_row['n'] or 0) if week_row else 0,
+        'allTime': int(lifetime_row['value'] or 0) if lifetime_row else 0,
         'asOf': now,
     }

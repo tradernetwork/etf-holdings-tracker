@@ -15,9 +15,11 @@ COPY effectiveness.py effectiveness.py
 # Copy CBOE scanner (used by api.server for /api/v1/options-listings)
 COPY cboe_scanner.py cboe_scanner.py
 
-# Copy data directory (mounted as volume in production)
-# In production, mount the real data dir to /app/etf-dashboard/public/data
-RUN mkdir -p etf-dashboard/public/data/history
+# Copy data directory. On the old Vultr box this dir was a bind-mounted
+# volume (holdings CSVs written by the scraper on the host); Railway has no
+# equivalent persistent host mount, so the data the API reads at runtime
+# must be baked into the image at build time instead.
+COPY etf-dashboard/public/data/ etf-dashboard/public/data/
 
 # Expose port
 # Commit this image was built from, surfaced on /health so deployment drift
