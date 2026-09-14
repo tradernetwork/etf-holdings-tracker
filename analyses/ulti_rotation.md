@@ -23,15 +23,15 @@ _Auto-generated from daily holdings. As of **2026-09-14** · 20 holdings · last
 | Bitcoin miners | 13 | · | 10 | 6 | 10 | 13 | · | 19 | · | · | 10 | 20 |
 | Crypto financials | · | · | 5 | 10 | 5 | · | 5 | · | · | · | 20 | 20 |
 | Clean energy | 16 | 9 | · | · | · | · | · | · | · | 5 | · | 10 |
-| Rare earth/materials | · | · | · | · | · | · | 5 | 4 | 10 | 5 | · | · |
-| Space | 5 | 9 | · | · | · | · | 5 | 9 | 9 | · | · | · |
 | Fintech | · | · | 5 | · | · | · | · | · | · | 5 | · | · |
-| Other | · | · | · | · | 5 | 5 | 5 | · | · | · | · | · |
-| Quantum | · | · | · | · | · | · | · | 9 | · | · | · | · |
+| Healthcare/biotech | 5 | 5 | · | 5 | · | · | 4 | · | 5 | · | · | · |
 | Cloud/AI | 5 | 5 | · | 5 | · | · | · | · | 10 | 10 | · | · |
 | Nuclear/uranium | · | · | · | · | 5 | · | 5 | · | 5 | · | · | · |
-| Healthcare/biotech | 5 | 5 | · | 5 | · | · | 4 | · | 5 | · | · | · |
+| Rare earth/materials | · | · | · | · | · | · | 5 | 4 | 10 | 5 | · | · |
+| Other | · | · | · | · | 5 | 5 | 5 | · | · | · | · | · |
+| Space | 5 | 9 | · | · | · | · | 5 | 9 | 9 | · | · | · |
 | Precious metals | · | · | · | · | · | · | · | · | · | · | 5 | · |
+| Quantum | · | · | · | · | · | · | · | 9 | · | · | · | · |
 
 ## Roster churn (latest week vs prior sample)
 

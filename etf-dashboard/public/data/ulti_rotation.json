@@ -24,15 +24,15 @@
     "Bitcoin miners",
     "Crypto financials",
     "Clean energy",
-    "Rare earth/materials",
-    "Space",
     "Fintech",
-    "Other",
-    "Quantum",
+    "Healthcare/biotech",
     "Cloud/AI",
     "Nuclear/uranium",
-    "Healthcare/biotech",
-    "Precious metals"
+    "Rare earth/materials",
+    "Other",
+    "Space",
+    "Precious metals",
+    "Quantum"
   ],
   "timeline": [
     {
@@ -170,15 +170,15 @@
     "Bitcoin miners": 19.7,
     "Crypto financials": 19.7,
     "Clean energy": 9.9,
-    "Rare earth/materials": 0.0,
-    "Space": 0.0,
     "Fintech": 0.0,
-    "Other": 0.0,
-    "Quantum": 0.0,
+    "Healthcare/biotech": 0.0,
     "Cloud/AI": 0.0,
     "Nuclear/uranium": 0.0,
-    "Healthcare/biotech": 0.0,
-    "Precious metals": 0.0
+    "Rare earth/materials": 0.0,
+    "Other": 0.0,
+    "Space": 0.0,
+    "Precious metals": 0.0,
+    "Quantum": 0.0
   },
   "churnSincePrior": {
     "added": [
