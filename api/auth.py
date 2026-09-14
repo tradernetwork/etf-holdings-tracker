@@ -111,60 +111,30 @@ def _fetchall(sql: str, params: tuple = ()) -> list[dict]:
 
 # ─── Schema bootstrap (called once from FastAPI lifespan) ────────
 def init_db() -> None:
-    """Verify/create the `tickertrace` schema. Idempotent.
+    """Verify the `tickertrace` schema is reachable. Idempotent.
 
-    The tables below already exist in production — they were created ahead
-    of time via the migration DDL (BIGINT GENERATED ALWAYS AS IDENTITY,
-    TIMESTAMPTZ columns, indexes). This function is NOT the source of truth
-    for that schema; it re-issues the same DDL guarded by
-    `CREATE SCHEMA IF NOT EXISTS` / `CREATE TABLE IF NOT EXISTS` purely for
-    defense-in-depth (e.g. a fresh preview/staging Postgres instance that
-    hasn't had the migration applied yet), so it's safe to call on every
-    startup and a no-op against the real production database. Every
-    statement is schema-qualified — see the module docstring for why.
+    The tables already exist in production, created ahead of time via the
+    migration DDL (BIGINT GENERATED ALWAYS AS IDENTITY, TIMESTAMPTZ columns,
+    indexes) under an admin role. This function does NOT attempt to
+    (re-)create them: the app connects as `tickertrace_app`, a role scoped
+    to USAGE + SELECT/INSERT/UPDATE/DELETE on this schema's existing objects
+    only — deliberately with no CREATE privilege on the database, since this
+    Postgres instance also hosts an unrelated product's live billing data in
+    `public` and the whole point of a scoped role is that it can't touch (or
+    create) anything outside what it's been granted. A `CREATE TABLE IF NOT
+    EXISTS` here would just fail with `permission denied for database
+    postgres` on every startup (confirmed live) — this checks connectivity
+    and that the expected tables are actually visible instead.
     """
     with tx() as conn:
-        conn.execute("CREATE SCHEMA IF NOT EXISTS tickertrace")
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS tickertrace.users (
-                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                email TEXT UNIQUE NOT NULL,
-                api_key TEXT UNIQUE NOT NULL,
-                password_hash TEXT,
-                tier TEXT NOT NULL DEFAULT 'free',
-                stripe_customer_id TEXT,
-                stripe_subscription_id TEXT,
-                source TEXT DEFAULT '',
-                created_at TIMESTAMPTZ NOT NULL,
-                last_api_call TIMESTAMPTZ,
-                promo_expiry TIMESTAMPTZ
+        row = conn.execute(
+            "SELECT to_regclass('tickertrace.users') IS NOT NULL AS ok"
+        ).fetchone()
+        if not row["ok"]:
+            raise RuntimeError(
+                "tickertrace.users not found — has the schema migration been "
+                "applied to this database?"
             )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS tickertrace.api_usage (
-                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                api_key TEXT NOT NULL,
-                endpoint TEXT NOT NULL,
-                timestamp TIMESTAMPTZ NOT NULL
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS tickertrace.promo_codes (
-                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                code TEXT UNIQUE NOT NULL,
-                tier TEXT NOT NULL DEFAULT 'pro',
-                duration_days INTEGER DEFAULT 30,
-                max_uses INTEGER DEFAULT 1,
-                uses INTEGER DEFAULT 0,
-                active BOOLEAN DEFAULT true,
-                created_at TIMESTAMPTZ NOT NULL
-            )
-        """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_api_key ON tickertrace.users(api_key)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON tickertrace.users(email)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_stripe ON tickertrace.users(stripe_customer_id)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_key ON tickertrace.api_usage(api_key)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_promo_code ON tickertrace.promo_codes(code)")
 
 
 # ─── Crypto helpers ──────────────────────────────────────────────
