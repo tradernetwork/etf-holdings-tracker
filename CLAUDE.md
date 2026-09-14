@@ -156,7 +156,7 @@ option-income fund work.
 
 ## Covered Funds
 
-89 funds across 12 providers (September 2026). The authoritative list is `FUNDS` in
+96 funds across 13 providers (September 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes.
 
@@ -171,6 +171,9 @@ the README table whenever `FUNDS` changes.
 - **Roundhill**: MSTW, NVDW, COIW, TSLW, HOOW, PLTW, QDTE, XDTE, RDTE, YBTC
 - **Capital Group**: CGDV, CGGR, CGGO, CGUS, CGXU (discretionary multi-manager
   active equity; daily holdings via an XLSX endpoint — needs `openpyxl`)
+- **First Trust**: FTLS, WCME, WCMG, WCMI, CRPT, MMSC, EMLP (actively managed —
+  long/short equity, multi-manager small cap, sub-advised international
+  equity, energy infrastructure, crypto-adjacent equity)
 - **Kurv**: KYLD, KQQQ (options-based income)
 - **YieldMax**: ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX,
   AMDY, AMZY, GOOY, GDXY (options income). CHPY is a real stock-picking

@@ -162,6 +162,20 @@ FUNDS = [
     {'ticker': 'CGGO', 'type': 'capitalgroup'},  # Global Growth Equity
     {'ticker': 'CGUS', 'type': 'capitalgroup'},  # Core Equity
     {'ticker': 'CGXU', 'type': 'capitalgroup'},  # International Focus Equity
+
+    # First Trust — actively managed (long/short equity, multi-manager small
+    # cap, sub-advised international equity, energy infrastructure,
+    # crypto-adjacent equity). Holdings page renders server-side; see
+    # get_holdings_firsttrust. CIBR (passive, quarterly-rebalanced) and NTRL
+    # (swap-based market-neutral, short exposure not cleanly attributable)
+    # were deliberately excluded from this pass.
+    {'ticker': 'FTLS', 'type': 'firsttrust'},  # Long/Short Equity
+    {'ticker': 'WCME', 'type': 'firsttrust'},  # WCM/BNY International Equity
+    {'ticker': 'WCMG', 'type': 'firsttrust'},  # WCM/BNY Global Equity
+    {'ticker': 'WCMI', 'type': 'firsttrust'},  # WCM/BNY International Small Cap
+    {'ticker': 'CRPT', 'type': 'firsttrust'},  # SkyBridge Crypto Industry & Digital Economy
+    {'ticker': 'MMSC', 'type': 'firsttrust'},  # Multi Manager Small Cap
+    {'ticker': 'EMLP', 'type': 'firsttrust'},  # North American Energy Infrastructure
 ]
 
 AVANTIS_BASE_URL_TEMPLATE = "https://www.avantisinvestors.com/avantis-investments/total-holdings/{id}/?type=etf"
@@ -680,6 +694,115 @@ def get_holdings_sprott(fund_config):
     return df
 
 
+def get_holdings_firsttrust(fund_config):
+    """Scrape holdings from a First Trust ETF's holdings page.
+
+    ftportfolios.com renders the full holdings grid server-side in the initial
+    HTML as <table class="fundSilverGrid"> — despite an "Export to Excel" link
+    that triggers an ASP.NET __doPostBack, no postback simulation is needed.
+    Column header text varies slightly by fund (FTLS says "Market Value /
+    Notional Value" instead of plain "Market Value") so columns are matched
+    by position, not exact header text — EXCEPT the column count itself
+    varies too: MMSC's table has no Classification/Sector column at all
+    (6 columns: Name, Identifier, CUSIP, Shares, Market Value, Weighting),
+    while every other fund confirmed here has 7 (Classification inserted
+    before Shares). The header row's cell count is read per-page to pick the
+    right layout instead of assuming a fixed 7 columns.
+
+    Two First Trust-specific quirks are normalized here, before returning,
+    so clean_data() (which only strips $/,/% and doesn't understand
+    accounting-parens negatives) sees plain values:
+      - Short positions (confirmed on FTLS, the long/short fund) use TWO
+        different negative formats in the same row: Share Quantity has a
+        leading minus ("-91,855") while Market Value uses accounting parens
+        ("($626,451.10)"). The parens form is converted to a plain negative
+        sign here — left alone, clean_data()'s to_numeric(errors='coerce')
+        would silently turn it into 0 instead of a negative number.
+      - Cash rows (Identifier like "$USD"/"$CAD") and futures/derivative rows
+        (blank CUSIP, non-cash) are dropped — same convention as other
+        providers' non-equity row filtering elsewhere in this pipeline.
+    """
+    ticker = fund_config['ticker']
+    url = f"https://www.ftportfolios.com/Retail/Etf/EtfHoldings.aspx?Ticker={ticker}"
+    log(f"Fetching First Trust holdings page for {ticker} from {url}...")
+    headers = {'User-Agent': USER_AGENT}
+    try:
+        response = _http_get(url, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        log(f"Error fetching First Trust page for {ticker} (after retries): {e}")
+        return None
+
+    try:
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        table = soup.find('table', class_='fundSilverGrid')
+        if table is None:
+            log(f"Could not find holdings table for {ticker} on First Trust page")
+            return None
+
+        rows = table.find_all('tr')
+        if len(rows) < 2:
+            log(f"First Trust holdings table for {ticker} has no data rows")
+            return None
+
+        # Determine layout from the header row's column count. Most funds
+        # have 7 columns (Classification present); MMSC has 6 (no
+        # Classification/Sector column at all).
+        header_cell_count = len(rows[0].find_all('td'))
+        has_classification = header_cell_count >= 7
+        min_cols = 7 if has_classification else 6
+        if header_cell_count not in (6, 7):
+            log(f"Unexpected First Trust column count ({header_cell_count}) for {ticker}; "
+                f"expected 6 or 7 — attempting best-effort parse anyway")
+
+        records = []
+        for tr in rows[1:]:  # skip header row
+            cells = [td.get_text(strip=True) for td in tr.find_all('td')]
+            if len(cells) < min_cols:
+                continue
+            if has_classification:
+                name, identifier, cusip, classification, shares, market_value, weight = cells[:7]
+            else:
+                name, identifier, cusip, shares, market_value, weight = cells[:6]
+                classification = ''
+
+            # Cash rows: Identifier is "$USD"/"$CAD" — drop.
+            if identifier.startswith('$'):
+                continue
+            # Futures/derivative rows: blank CUSIP and not a cash row — drop.
+            if not cusip.strip():
+                continue
+
+            # "($X)" accounting-parens negative -> plain "-X" so clean_data()'s
+            # numeric cleanup (strip $/,/%, then to_numeric) reads it correctly
+            # instead of coercing it to 0.
+            market_value = market_value.strip()
+            if market_value.startswith('(') and market_value.endswith(')'):
+                market_value = '-' + market_value[1:-1]
+
+            records.append({
+                'Name': name,
+                'Ticker': identifier,
+                'CUSIP': cusip,
+                'Sector': classification,
+                'Share Quantity': shares,
+                'Market Value': market_value,
+                'Weight': weight,
+            })
+
+        if not records:
+            log(f"No holdings rows extracted for {ticker} after filtering cash/futures")
+            return None
+
+        df = pd.DataFrame(records)
+        log(f"First Trust page returned {len(df)} holdings for {ticker}")
+        return df
+    except Exception as e:
+        log(f"Error parsing First Trust page for {ticker}: {e}")
+        return None
+
+
 def _firestore_unwrap(value):
     """Convert a Firestore REST 'typed value' into a plain Python scalar/container.
 
@@ -1046,6 +1169,8 @@ def main():
                 df = get_holdings_amplify(fund)
             elif fund['type'] == 'capitalgroup':
                 df = get_holdings_capitalgroup(fund)
+            elif fund['type'] == 'firsttrust':
+                df = get_holdings_firsttrust(fund)
             else:
                 df = get_holdings_csv(fund)
         except Exception as e:

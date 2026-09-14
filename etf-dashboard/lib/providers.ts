@@ -46,10 +46,13 @@ export const FUND_PROVIDERS: Record<string, string> = {
     // Capital Group — actively managed, multi-manager active-equity ETFs
     CGDV: 'Capital Group', CGGR: 'Capital Group', CGGO: 'Capital Group',
     CGUS: 'Capital Group', CGXU: 'Capital Group',
+    // First Trust — actively managed equity (long/short, market-neutral-adjacent, multi-manager, sub-advised international)
+    FTLS: 'First Trust', WCME: 'First Trust', WCMG: 'First Trust',
+    WCMI: 'First Trust', CRPT: 'First Trust', MMSC: 'First Trust', EMLP: 'First Trust',
 };
 
 export const PROVIDER_ORDER = [
-    'Avantis', 'ARK Invest', 'Capital Group', 'Corgi Funds', 'Sprott', 'Amplify', 'Kurv',
+    'Avantis', 'ARK Invest', 'Capital Group', 'Corgi Funds', 'Sprott', 'First Trust', 'Amplify', 'Kurv',
     'YieldMax', 'REX Shares', 'Roundhill', 'Tidal / NicholasX', 'Tidal / NestYield',
 ];
 
@@ -92,6 +95,8 @@ export const FUND_AUM: Record<string, number> = {
     CNBS: 0.05, GAMR: 0.05, DIVO: 4.0, QDVO: 0.7, IDVO: 0.5, YYY: 0.4,
     // Capital Group (approximate, non-authoritative)
     CGDV: 39.0, CGGR: 25.0, CGGO: 12.0, CGUS: 12.0, CGXU: 6.8,
+    // First Trust (approximate, non-authoritative — real AUM auto-derives from holdings once scraped)
+    FTLS: 3.0, WCME: 0.1, WCMG: 0.2, WCMI: 0.3, CRPT: 0.05, MMSC: 0.1, EMLP: 1.9,
 };
 
 export function getProvider(fund: string): string {
