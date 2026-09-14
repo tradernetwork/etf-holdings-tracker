@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-14T18:05:27.401027+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5333,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "ATAI": "ATAIBECKLEY INC COM SHS",
+        "TEVA": "TEVA PHARMACEUTICAL INDS LTD SPONSORED ADS"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
