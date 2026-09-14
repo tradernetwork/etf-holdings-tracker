@@ -61,7 +61,14 @@ def _get_pool() -> ConnectionPool:
                     conninfo=dsn,
                     min_size=2,
                     max_size=10,
-                    kwargs={"row_factory": dict_row},
+                    # prepare_threshold=None disables psycopg's client-side
+                    # statement autoprepare. DATABASE_URL points at Supabase's
+                    # Supavisor pooler in transaction mode, which does not
+                    # support server-side prepared statements (a statement
+                    # prepared on one pooled backend connection may not exist
+                    # on whichever backend a later query gets routed to) —
+                    # see https://github.com/orgs/supabase/discussions/28239.
+                    kwargs={"row_factory": dict_row, "prepare_threshold": None},
                     open=True,
                 )
     return _pool

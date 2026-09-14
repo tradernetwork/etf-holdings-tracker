@@ -80,7 +80,10 @@ def _get_pool() -> ConnectionPool:
                     conninfo=dsn,
                     min_size=1,
                     max_size=5,
-                    kwargs={"row_factory": dict_row},
+                    # See api/auth.py's _get_pool() for why: Supavisor
+                    # transaction-mode pooling doesn't support server-side
+                    # prepared statements.
+                    kwargs={"row_factory": dict_row, "prepare_threshold": None},
                     open=True,
                 )
     return _pool
