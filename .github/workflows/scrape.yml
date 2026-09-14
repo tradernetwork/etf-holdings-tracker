@@ -125,48 +125,10 @@ jobs:
           echo "::error::Failed to push holdings after 5 attempts."
           exit 1
 
-      # Push the freshly-committed CSVs onto the live API box.
-      #
-      # WHY THIS EXISTS: the Vultr container reads history CSVs from its *own*
-      # working tree, which only advanced on a manual `git pull` during a hand
-      # deploy. Between deploys the bot kept committing fresh data to the repo
-      # while production stayed frozen — the site's "DATA UPDATED" pill silently
-      # read ~a week stale even though every scrape was green. This closes that
-      # gap: every successful scrape now syncs the box.
-      #
-      # `git reset --hard origin/main` is deliberate over `git pull` — the VPS
-      # tree is routinely dirty (leftover scraper/DB output) and a plain pull
-      # aborts with "local changes would be overwritten." reset --hard matches
-      # remote exactly and never touches gitignored files (the SQLite DB under
-      # api/data/ is untracked, so it survives). The API re-reads CSVs per
-      # request (no in-memory cache), so volume-mounted data refreshes without a
-      # rebuild; `docker compose up -d` just ensures the container is running.
-      #
-      # The closing health check doubles as a freeze alarm: if the box is
-      # unreachable or the API is down, this step fails loudly instead of
-      # letting production drift stale unnoticed. Skips cleanly when the deploy
-      # secret isn't configured (forks / PRs).
-      - name: Deploy fresh data to Vultr
-        if: success()
-        env:
-          VULTR_SSH_KEY: ${{ secrets.VULTR_SSH_KEY }}
-          VULTR_HOST: ${{ secrets.VULTR_HOST }}
-          VULTR_USER: ${{ secrets.VULTR_USER }}
-          VULTR_PATH: ${{ secrets.VULTR_PATH }}
-          VULTR_SSH_PORT: ${{ secrets.VULTR_SSH_PORT }}
-        run: |
-          set -euo pipefail
-          if [ -z "${VULTR_SSH_KEY:-}" ]; then
-            echo "VULTR_SSH_KEY not set — skipping Vultr deploy (data committed to repo only)."
-            exit 0
-          fi
-          PORT="${VULTR_SSH_PORT:-22}"
-          PATH_ON_BOX="${VULTR_PATH:-/home/mphinance/TickerTrace}"
-          mkdir -p ~/.ssh
-          printf '%s\n' "$VULTR_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$PORT" -H "$VULTR_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -p "$PORT" \
-            "${VULTR_USER}@${VULTR_HOST}" \
-            "set -e; cd '${PATH_ON_BOX}'; git fetch --quiet origin main; git reset --hard origin/main; docker compose up -d; sleep 3; curl -sf http://localhost:8100/health"
-          echo "✅ Vultr synced to origin/main and API healthy."
+      # No separate deploy step needed anymore (removed Sep 2026, Railway
+      # migration): the API now lives on Railway, connected directly to this
+      # repo's `main` branch, and Railway rebuilds + redeploys automatically on
+      # every push — including this job's own holdings commit above, since the
+      # Dockerfile bakes etf-dashboard/public/data/ into the image. That's what
+      # used to require the Vultr SSH step below; a push-triggered rebuild makes
+      # a separate "go tell the box" step redundant by construction.
