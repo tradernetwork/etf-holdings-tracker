@@ -119,44 +119,23 @@ def _conn() -> Iterator[psycopg.Connection]:
 
 
 def _ensure_schema() -> None:
-    """Defense-in-depth only, mirrors api/auth.py's init_db(): the
-    tickertrace.visit_events / visit_meta tables already exist via the
-    migration DDL. IF NOT EXISTS / ON CONFLICT DO NOTHING make this safe to
-    run every time without being the schema's source of truth."""
+    """Verify tickertrace.visit_events / visit_meta are reachable.
+
+    Does NOT attempt to create them. This module connects as `tickertrace_app`,
+    a role scoped to USAGE + CRUD on this schema's existing objects only, with
+    no CREATE privilege on the database (see api/auth.py's init_db() for the
+    full reasoning — same isolation, same restriction). A CREATE TABLE IF NOT
+    EXISTS here fails with `permission denied for database postgres` on every
+    call (confirmed live), so this checks existence instead."""
     with _get_pool().connection() as conn:
-        conn.execute("CREATE SCHEMA IF NOT EXISTS tickertrace")
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS tickertrace.visit_events (
-                id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                ts            BIGINT NOT NULL,
-                visitor_hash  TEXT   NOT NULL,
-                path          TEXT
+        row = conn.execute(
+            "SELECT to_regclass('tickertrace.visit_events') IS NOT NULL AS ok"
+        ).fetchone()
+        if not row["ok"]:
+            raise RuntimeError(
+                "tickertrace.visit_events not found — has the schema "
+                "migration been applied to this database?"
             )
-        """)
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_visits_ts ON tickertrace.visit_events(ts)"
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_visits_visitor_ts "
-            "ON tickertrace.visit_events(visitor_hash, ts)"
-        )
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS tickertrace.visit_meta (
-                key   TEXT PRIMARY KEY,
-                value BIGINT NOT NULL
-            )
-        """)
-        conn.execute(
-            "INSERT INTO tickertrace.visit_meta (key, value) VALUES (%s, 0) "
-            "ON CONFLICT DO NOTHING",
-            ('lifetime_visits',),
-        )
-        conn.execute(
-            "INSERT INTO tickertrace.visit_meta (key, value) VALUES (%s, 0) "
-            "ON CONFLICT DO NOTHING",
-            ('last_prune_ts',),
-        )
-        conn.commit()
 
 
 def _visitor_hash(ip: str) -> str:
