@@ -1,6 +1,6 @@
 # ULTI — Theme Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-09-14** · 20 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-09-15** · 20 holdings · last 12 weekly samples._
 
 > ⚠️ **Uncategorized tickers** (add to the map in the tracker): CBRS, MRVL, MSTR, PURR, SMCI, TEM
 
@@ -8,30 +8,30 @@ _Auto-generated from daily holdings. As of **2026-09-14** · 20 holdings · last
 
 | Theme | Weight |
 |------|-------:|
-| Uncategorized | 29.7% |
-| Semis/photonics | 20.0% |
-| Bitcoin miners | 19.7% |
-| Crypto financials | 19.7% |
-| Clean energy | 9.9% |
+| Uncategorized | 30.3% |
+| Crypto financials | 21.1% |
+| Bitcoin miners | 19.6% |
+| Semis/photonics | 18.7% |
+| Clean energy | 9.7% |
 
 ## Theme-weight drift (weekly)
 
-| Theme | 07-03 | 07-10 | 07-17 | 07-21 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-14 |
+| Theme | 07-03 | 07-10 | 07-17 | 07-21 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-15 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
 | Uncategorized | 41 | 45 | 51 | 73 | 36 | 13 | 4 | 20 | 26 | 26 | 34 | 30 |
-| Semis/photonics | 10 | 5 | · | · | · | 5 | 14 | 23 | 10 | 12 | 11 | 20 |
+| Crypto financials | · | · | 5 | 10 | 5 | · | 5 | · | · | · | 20 | 21 |
 | Bitcoin miners | 13 | · | 10 | 6 | 10 | 13 | · | 19 | · | · | 10 | 20 |
-| Crypto financials | · | · | 5 | 10 | 5 | · | 5 | · | · | · | 20 | 20 |
+| Semis/photonics | 10 | 5 | · | · | · | 5 | 14 | 23 | 10 | 12 | 11 | 19 |
 | Clean energy | 16 | 9 | · | · | · | · | · | · | · | 5 | · | 10 |
+| Other | · | · | · | · | 5 | 5 | 5 | · | · | · | · | · |
+| Quantum | · | · | · | · | · | · | · | 9 | · | · | · | · |
 | Fintech | · | · | 5 | · | · | · | · | · | · | 5 | · | · |
-| Healthcare/biotech | 5 | 5 | · | 5 | · | · | 4 | · | 5 | · | · | · |
 | Cloud/AI | 5 | 5 | · | 5 | · | · | · | · | 10 | 10 | · | · |
 | Nuclear/uranium | · | · | · | · | 5 | · | 5 | · | 5 | · | · | · |
-| Rare earth/materials | · | · | · | · | · | · | 5 | 4 | 10 | 5 | · | · |
-| Other | · | · | · | · | 5 | 5 | 5 | · | · | · | · | · |
 | Space | 5 | 9 | · | · | · | · | 5 | 9 | 9 | · | · | · |
+| Rare earth/materials | · | · | · | · | · | · | 5 | 4 | 10 | 5 | · | · |
+| Healthcare/biotech | 5 | 5 | · | 5 | · | · | 4 | · | 5 | · | · | · |
 | Precious metals | · | · | · | · | · | · | · | · | · | · | 5 | · |
-| Quantum | · | · | · | · | · | · | · | 9 | · | · | · | · |
 
 ## Roster churn (latest week vs prior sample)
 
