@@ -2,8 +2,8 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-09-16",
-  "holdings": 19,
+  "asOf": "2026-09-17",
+  "holdings": 18,
   "dates": [
     "2026-07-03",
     "2026-07-10",
@@ -16,23 +16,23 @@
     "2026-08-28",
     "2026-09-04",
     "2026-09-11",
-    "2026-09-16"
+    "2026-09-17"
   ],
   "themes": [
     "Uncategorized",
-    "Crypto financials",
     "Semis/photonics",
     "Bitcoin miners",
+    "Crypto financials",
     "Clean energy",
     "Quantum",
-    "Healthcare/biotech",
     "Nuclear/uranium",
-    "Fintech",
-    "Precious metals",
     "Space",
-    "Cloud/AI",
+    "Fintech",
     "Rare earth/materials",
-    "Other"
+    "Healthcare/biotech",
+    "Other",
+    "Cloud/AI",
+    "Precious metals"
   ],
   "timeline": [
     {
@@ -154,31 +154,31 @@
       }
     },
     {
-      "date": "2026-09-16",
+      "date": "2026-09-17",
       "weights": {
-        "Crypto financials": 20.167184204572724,
-        "Uncategorized": 25.263121352072037,
-        "Semis/photonics": 19.483758526665316,
-        "Clean energy": 10.097319459594214,
-        "Bitcoin miners": 19.344626129710402
+        "Uncategorized": 25.610644218362637,
+        "Crypto financials": 14.81272377784067,
+        "Clean energy": 10.328268651101258,
+        "Semis/photonics": 20.269314680149282,
+        "Bitcoin miners": 19.65306608347765
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 25.3,
-    "Crypto financials": 20.2,
-    "Semis/photonics": 19.5,
-    "Bitcoin miners": 19.3,
-    "Clean energy": 10.1,
+    "Uncategorized": 25.6,
+    "Semis/photonics": 20.3,
+    "Bitcoin miners": 19.7,
+    "Crypto financials": 14.8,
+    "Clean energy": 10.3,
     "Quantum": 0.0,
-    "Healthcare/biotech": 0.0,
     "Nuclear/uranium": 0.0,
-    "Fintech": 0.0,
-    "Precious metals": 0.0,
     "Space": 0.0,
-    "Cloud/AI": 0.0,
+    "Fintech": 0.0,
     "Rare earth/materials": 0.0,
-    "Other": 0.0
+    "Healthcare/biotech": 0.0,
+    "Other": 0.0,
+    "Cloud/AI": 0.0,
+    "Precious metals": 0.0
   },
   "churnSincePrior": {
     "added": [
@@ -195,6 +195,7 @@
     "dropped": [
       "CDE",
       "COIN",
+      "CRCL",
       "HL",
       "IREN",
       "SLS",
@@ -205,14 +206,13 @@
       "ASST.UQ",
       "BMNR",
       "CBRS",
-      "CRCL",
       "MSTR",
       "PURR",
       "RIOT",
       "SMCI",
       "SNDK"
     ],
-    "rate": 0.47
+    "rate": 0.5
   },
   "unmapped": [
     "CBRS",
