@@ -2,20 +2,34 @@ import { whopSdk } from "@/lib/whop-sdk";
 import { getWhopUserId } from "@/lib/whop-auth";
 import { WhopRequired } from "@/components/whop-required";
 import { notFound } from "next/navigation";
+import { api } from "@/lib/api";
+import { BroadcastComposer } from "@/components/broadcast-composer";
+import { buildBroadcast } from "@/lib/brief";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle2, Layers, Link2, Megaphone } from "lucide-react";
+import { CheckCircle2, Layers, Link2, ListChecks, Megaphone } from "lucide-react";
 import Link from "next/link";
 
 /**
  * Admin dashboard view. Whop renders this inside the company-owner's
- * settings panel for the app. It confirms install state and explains the
- * creator workflow — the Broadcast tab — that admins drive from inside the
- * experience.
+ * settings panel for the app — this is the creator-utility surface Whop's
+ * app review looks for. It does three things:
+ *
+ *   1. Embeds the real Broadcast composer (same component + server action
+ *      the in-app Broadcast tab uses) so an admin can push the daily brief
+ *      to their community without ever opening the experience.
+ *   2. Shows a live preview of what members see today, so the admin can
+ *      confirm the app is doing something before they push anything.
+ *   3. Explains the daily workflow in plain language.
+ *
+ * There's no persistence layer in this app (by design — it's a pure
+ * frontend over the public TickerTrace API), so nothing here is
+ * "configuration" in the traditional sense. The composer IS the
+ * configuration surface.
  *
  * Only renders for users with admin access to the company; anyone else
  * gets notFound() so we don't leak experience IDs.
@@ -42,6 +56,12 @@ export default async function DashboardPage({
     notFound();
   }
 
+  // Resolve the experience this app is installed as, for this company, so
+  // we can embed the real Broadcast composer here. A company can in theory
+  // have more than one install of the same app; we take the first one,
+  // which matches how a single-hub app like this is normally installed.
+  const experienceId = await resolveExperienceId(companyId);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-4 py-10 sm:px-6 space-y-6">
@@ -54,32 +74,54 @@ export default async function DashboardPage({
             TickerTrace is live in your community
           </h1>
           <p className="text-sm text-muted-foreground">
-            Open the app from your community sidebar to use it. The theme
-            follows your Whop — light or dark — automatically.
+            The theme follows your Whop, light or dark, automatically.
+            There&apos;s nothing to configure here because there&apos;s
+            nothing to break, but there is one thing worth doing daily:
+            broadcast today&apos;s brief. You can do that right below.
           </p>
         </header>
 
+        {experienceId ? (
+          <BroadcastPreview experienceId={experienceId} />
+        ) : (
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-2 pb-3">
+              <Megaphone className="size-4 text-primary" />
+              <CardTitle className="text-base">
+                Broadcast from inside the app
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              We couldn&apos;t automatically confirm which community
+              experience this install belongs to, so the composer isn&apos;t
+              embedded here. Open TickerTrace from your community sidebar
+              instead — as an admin you&apos;ll see a{" "}
+              <span className="font-medium text-foreground">Broadcast</span>{" "}
+              tab there that members don&apos;t see, with the same one-tap
+              push.
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 pb-3">
-            <Megaphone className="size-4 text-primary" />
+            <ListChecks className="size-4 text-primary" />
             <CardTitle className="text-base">
-              Your workflow: broadcast the daily brief
+              How to use this with your community
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>
-              As an admin you get a{" "}
-              <span className="font-medium text-foreground">Broadcast</span> tab
-              that members don&apos;t see. Open it to review today&apos;s
-              institutional brief — top buying and selling conviction, plus
-              multi-day streaks — then push it to your whole community in one
-              tap.
+              Once a day (mornings work best, right after the overnight
+              holdings scrape), skim the brief above, add a one-line note if
+              something stands out to you, and send it. Members get a
+              notification that opens straight into the app.
             </p>
             <p>
-              Members get a notification (with your note, if you add one) that
-              opens straight to the live signals. It&apos;s a daily reason for
-              them to come back, and a daily piece of content you don&apos;t
-              have to write from scratch.
+              That&apos;s the whole loop: it&apos;s a daily reason for
+              members to come back, and a daily piece of content you
+              don&apos;t have to write from scratch. Nothing else needs
+              setup, and there&apos;s no paywall or tier to manage.
             </p>
           </CardContent>
         </Card>
@@ -92,12 +134,14 @@ export default async function DashboardPage({
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>
               Signals · Briefing · Changes · Divergences · Sectors as the five
-              top-level tabs, plus per-fund and per-ticker deep dives.
-              Everything is read-only and tied to the public TickerTrace API.
+              top-level tabs, plus per-fund and per-ticker deep dives, a daily
+              brief summary, a signal track record, and a trending-tickers
+              row. Everything is read-only and tied to the public
+              TickerTrace API.
             </p>
             <p>
-              Members don&apos;t need an account, key, or subscription. As long
-              as they have access to your Whop, they have access to the
+              Members don&apos;t need an account, key, or subscription. As
+              long as they have access to your Whop, they have access to the
               dashboard.
             </p>
           </CardContent>
@@ -121,7 +165,7 @@ export default async function DashboardPage({
             />
             <LinkRow
               label="Source on GitHub"
-              href="https://github.com/mphinance/etf-holdings-tracker"
+              href="https://github.com/tradernetwork/etf-holdings-tracker"
               hint="Scraper, normalizer, API, dashboards — all of it"
             />
           </CardContent>
@@ -132,6 +176,74 @@ export default async function DashboardPage({
         </p>
       </div>
     </main>
+  );
+}
+
+/**
+ * Finds the experienceId this app is installed as for the given company, by
+ * asking Whop for experiences under this company scoped to our own app id.
+ * Best-effort: any failure (missing scope, network blip, zero results)
+ * resolves to null and the page falls back to pointing the admin at the
+ * in-app Broadcast tab instead of embedding the composer.
+ */
+async function resolveExperienceId(companyId: string): Promise<string | null> {
+  const appId = process.env.NEXT_PUBLIC_WHOP_APP_ID;
+  if (!appId) return null;
+  try {
+    const result = await whopSdk.experiences.listExperiences({
+      companyId,
+      appId,
+      first: 1,
+    });
+    return result?.experiencesV2?.nodes?.[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The live composer, embedded directly in the admin dashboard. This is the
+ * exact same BroadcastComposer + broadcastBrief server action the in-app
+ * Broadcast tab uses — the action re-checks admin access against
+ * `experienceId` server-side regardless of how the composer got rendered,
+ * so there's no new trust boundary here.
+ */
+async function BroadcastPreview({ experienceId }: { experienceId: string }) {
+  const payload = await api.signals({ throwOnError: false });
+
+  if (!payload) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          Couldn&apos;t reach the TickerTrace API. Give it a minute and
+          reload before broadcasting.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const brief = buildBroadcast(payload);
+
+  if (brief.isEmpty) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          No signals on the tape today — nothing to broadcast yet. Check
+          back after the next scrape.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <BroadcastComposer
+      experienceId={experienceId}
+      briefText={brief.briefText}
+      pushTitle={brief.pushTitle}
+      pushSummary={brief.pushSummary}
+      topBuys={brief.topBuys}
+      topSells={brief.topSells}
+    />
   );
 }
 

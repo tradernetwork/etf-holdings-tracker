@@ -36,6 +36,8 @@ export async function BroadcastTab({
       briefText={brief.briefText}
       pushTitle={brief.pushTitle}
       pushSummary={brief.pushSummary}
+      topBuys={brief.topBuys}
+      topSells={brief.topSells}
     />
   );
 }

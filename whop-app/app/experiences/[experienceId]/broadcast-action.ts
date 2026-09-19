@@ -51,6 +51,15 @@ export async function broadcastBrief(
 
   const content = note.trim().slice(0, MAX_NOTE) || brief.pushSummary;
 
+  // A push notification carries exactly one tap target, so "each signal
+  // deep-links" happens in the composer's preview (real links per ticker),
+  // while the push itself opens the single most relevant one: today's top
+  // mover. Falls back to the Signals tab when there's no single standout
+  // (shouldn't happen once isEmpty is false, but stay defensive).
+  const restPath = brief.topSignal
+    ? `/ticker/${encodeURIComponent(brief.topSignal.ticker)}`
+    : "?tab=signals";
+
   try {
     await whopSdk.notifications.sendPushNotification({
       experienceId,
@@ -58,9 +67,11 @@ export async function broadcastBrief(
       content,
       // Whose avatar shows on the notification — the creator who sent it.
       senderUserId: access.userId,
-      // Deep-link target: opens the app and lands on the Signals tab. Requires
-      // the app's experience path to include [restPath] in the Whop dashboard.
-      restPath: "?tab=signals",
+      // Deep-link target. Requires the app's experience path to include
+      // [restPath] in the Whop dashboard (e.g.
+      // /experiences/[experienceId][restPath]); if that token isn't set,
+      // Whop just opens the app's default view instead.
+      restPath,
       isMention: false,
     });
   } catch (e) {

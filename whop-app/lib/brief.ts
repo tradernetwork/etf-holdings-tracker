@@ -29,6 +29,17 @@ export interface Broadcast {
   pushSummary: string;
   /** True when there's nothing to report — caller should block the send. */
   isEmpty: boolean;
+  /** Top 5 buy signals, for the composer to render as real deep links. */
+  topBuys: ApiSignal[];
+  /** Top 5 sell signals, for the composer to render as real deep links. */
+  topSells: ApiSignal[];
+  /**
+   * The single ticker the push notification itself deep-links to (a push
+   * notification carries one tap target, not one per signal — see
+   * broadcast-action.ts). The top buy if there is one, else the top sell,
+   * else null when there's nothing to point at.
+   */
+  topSignal: ApiSignal | null;
 }
 
 export function buildBroadcast(payload: ApiFullPayload): Broadcast {
@@ -75,5 +86,8 @@ export function buildBroadcast(payload: ApiFullPayload): Broadcast {
       ? `${summaryParts.join(" · ")}.`
       : "Today's institutional holdings brief is ready.",
     isEmpty: buys.length === 0 && sells.length === 0 && streaks.length === 0,
+    topBuys: buys,
+    topSells: sells,
+    topSignal: topBuy ?? topSell ?? null,
   };
 }
