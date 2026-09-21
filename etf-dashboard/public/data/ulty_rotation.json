@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-09-18",
+  "asOf": "2026-09-21",
   "holdings": 27,
   "dates": [
-    "2026-07-03",
     "2026-07-10",
     "2026-07-16",
     "2026-07-24",
@@ -16,7 +15,8 @@
     "2026-08-28",
     "2026-09-04",
     "2026-09-11",
-    "2026-09-18"
+    "2026-09-18",
+    "2026-09-21"
   ],
   "themes": [
     "Technology",
@@ -30,20 +30,6 @@
     "Healthcare"
   ],
   "timeline": [
-    {
-      "date": "2026-07-03",
-      "weights": {
-        "Consumer": 8.31458926799541,
-        "Financials": 4.827262163340701,
-        "Crypto": 5.689543833620961,
-        "Technology": 47.042284429677856,
-        "Uncategorized": 2.870978853608184,
-        "Materials": 7.417990902276583,
-        "Industrials": 12.431770261046049,
-        "Communications": 7.229258537297038,
-        "Healthcare": 1.9972128901658763
-      }
-    },
     {
       "date": "2026-07-10",
       "weights": {
@@ -197,17 +183,31 @@
         "Uncategorized": 14.331668010049196,
         "Crypto": 4.027962329643604
       }
+    },
+    {
+      "date": "2026-09-21",
+      "weights": {
+        "Materials": 8.592451372006797,
+        "Uncategorized": 14.54650250002386,
+        "Technology": 42.17816389693626,
+        "Communications": 7.165043537769953,
+        "Financials": 4.055573441653531,
+        "Consumer": 4.977225480258716,
+        "Industrials": 10.330557300280926,
+        "Healthcare": 3.4713473780803845,
+        "Crypto": 4.650426500790217
+      }
     }
   ],
   "currentThemes": {
-    "Technology": 41.4,
-    "Uncategorized": 14.3,
-    "Industrials": 10.1,
-    "Materials": 8.7,
+    "Technology": 42.2,
+    "Uncategorized": 14.5,
+    "Industrials": 10.3,
+    "Materials": 8.6,
     "Communications": 7.2,
-    "Consumer": 5.1,
-    "Crypto": 4.0,
-    "Financials": 3.7,
+    "Consumer": 5.0,
+    "Crypto": 4.7,
+    "Financials": 4.1,
     "Healthcare": 3.5
   },
   "churnSincePrior": {
