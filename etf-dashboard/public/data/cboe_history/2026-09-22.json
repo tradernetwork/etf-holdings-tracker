@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-22T16:50:56.698867+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5331,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 574
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "GCPU": "GRAYSCALE FUNDS TRUST AI COMPUTE ETF",
+        "SVIA": "SILVIA INC COM SHS"
+      },
+      "removed": {
+        "BRR": "PROCAP FINL INC COM SHS",
+        "MNRS": "GRAYSCALE FUNDS TRUST BITCOIN MINERS"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {
+        "SVIA": "SILVIA INC COM SHS"
+      },
+      "removed": {
+        "BRR": "PROCAP FINL INC COM SHS"
+      }
+    }
+  },
+  "hasChanges": true
+}
