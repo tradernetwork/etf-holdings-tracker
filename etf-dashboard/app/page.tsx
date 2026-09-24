@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="September 24, 2026"
+            tag="feature"
+            title="Two new funds: Roundhill’s memory chip ETF and their generative AI one"
+            desc="DRAM is a bet on the memory chip makers, Samsung, SK hynix, Micron, Sandisk and friends, and it has grown to about twenty seven billion dollars, which makes it the biggest fund Roundhill runs by a distance and one we had been ignoring. CHAT is their generative AI fund, run by an actual investment committee rather than an index. Both are picking stocks, so they count as stock pickers here, not premium sellers, even though most of Roundhill's other funds are the premium selling kind. The catch with DRAM is that about forty percent of it is held through swaps rather than shares, and our old plumbing hid swaps entirely, which would have shown Micron, about a quarter of the whole fund, as a rounding error. We fold the swaps into the stock they track now, so Micron reads about twenty six percent, which is what it actually is. Two things to know. It only rebalances quarterly, so this one will be quiet for weeks and then move all at once. And a handful of Asian listings, Kioxia, Nanya and Winbond among them, are still hidden by the same ticker filter that has always hidden them, roughly seven percent of DRAM. That one is on us."
+          />
+          <ChangelogEntry
             date="September 4, 2026"
             tag="bugfix"
             title="We pulled the “did the signals work” card, because it was answering the wrong question"

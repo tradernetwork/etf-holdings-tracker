@@ -302,6 +302,9 @@ FUND_PROVIDERS = {
     'MSTW': 'Roundhill', 'NVDW': 'Roundhill', 'COIW': 'Roundhill',
     'TSLW': 'Roundhill', 'HOOW': 'Roundhill', 'PLTW': 'Roundhill',
     'QDTE': 'Roundhill', 'XDTE': 'Roundhill', 'RDTE': 'Roundhill', 'YBTC': 'Roundhill',
+    # Roundhill actively managed equity (DRAM memory chips, CHAT generative AI) —
+    # provider is income-heavy, so these two need _ACTIVE_EQUITY_FUNDS below.
+    'DRAM': 'Roundhill', 'CHAT': 'Roundhill',
     'MSTY': 'YieldMax', 'NVDY': 'YieldMax', 'CONY': 'YieldMax',
     'CHPY': 'YieldMax', 'YMAX': 'YieldMax', 'AMDY': 'YieldMax', 'AMZY': 'YieldMax', 'GOOY': 'YieldMax', 'GDXY': 'YieldMax',
     'TSLY': 'YieldMax', 'HOOY': 'YieldMax', 'PLTY': 'YieldMax',
@@ -362,6 +365,8 @@ FUND_AUM = {
     'CGDV': 39.0, 'CGGR': 25.0, 'CGGO': 12.0, 'CGUS': 12.0, 'CGXU': 6.8,
     # First Trust (approximate, non-authoritative — real AUM auto-derives from holdings once scraped)
     'FTLS': 3.0, 'WCME': 0.1, 'WCMG': 0.2, 'WCMI': 0.3, 'CRPT': 0.05, 'MMSC': 0.1, 'EMLP': 1.9,
+    # Roundhill active equity (approximate, non-authoritative)
+    'DRAM': 27.3, 'CHAT': 1.9,
 }
 
 
@@ -460,14 +465,23 @@ _OPTION_INCOME_PROVIDERS = frozenset({
 # the equity signals.
 _OPTION_INCOME_FUNDS = frozenset({'DIVO', 'QDVO', 'IDVO'})
 
+# The mirror image: Roundhill is an option-income provider (WeeklyPay, 0DTE
+# overlays), but DRAM and CHAT are actively managed stock-pickers with no
+# written options — their equity book IS the signal. Checked first, so the
+# provider default can't pull them into the income bucket.
+_ACTIVE_EQUITY_FUNDS = frozenset({'DRAM', 'CHAT'})
+
 
 def get_fund_category(fund: str) -> str:
     """Return 'option-income' or 'active-equity' for a fund ticker.
 
     Keyed per fund: the provider decides it for single-line shops, with
-    _OPTION_INCOME_FUNDS overriding for providers that ship both. Unknown
+    _OPTION_INCOME_FUNDS / _ACTIVE_EQUITY_FUNDS overriding for providers that
+    ship both. Unknown
     funds default to 'active-equity'.
     """
+    if fund in _ACTIVE_EQUITY_FUNDS:
+        return 'active-equity'
     if fund in _OPTION_INCOME_FUNDS:
         return 'option-income'
     provider = FUND_PROVIDERS.get(fund, '')

@@ -141,6 +141,13 @@ FUNDS = [
     {'ticker': 'XDTE', 'type': 'roundhill'},
     {'ticker': 'RDTE', 'type': 'roundhill'},
     {'ticker': 'YBTC', 'type': 'roundhill'},
+    # Roundhill actively managed equity — a real stock-picker book, unlike the
+    # WeeklyPay/options funds above. 'active_book' runs the normalisation in
+    # _prepare_roundhill_active_book (swap consolidation, local-ticker cleanup).
+    # DRAM (memory chips) holds ~40% of its book as total-return swaps on
+    # names it also holds directly; CHAT (generative AI) is all cash equities.
+    {'ticker': 'DRAM', 'type': 'roundhill', 'active_book': True},  # Memory
+    {'ticker': 'CHAT', 'type': 'roundhill', 'active_book': True},  # Generative AI & Technology
     # YieldMax single-stock
     {'ticker': 'MSTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/MSTY/TidalFG_Holdings_MSTY.csv'},
     {'ticker': 'NVDY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/NVDY/TidalFG_Holdings_NVDY.csv'},
@@ -567,7 +574,94 @@ def get_holdings_roundhill(fund_config):
         return None
     
     log(f"Filtered {len(fund_df)} rows for {fund_ticker} from Roundhill bulk CSV")
+    if fund_config.get('active_book'):
+        fund_df = _prepare_roundhill_active_book(fund_df)
     return fund_df
+
+
+# Foreign-currency cash sweeps Roundhill lists as if they were holdings
+# ("KRW  SOUTH KOREA WON"). They pass the ticker-shape filter downstream and
+# would surface as tickers, so they are dropped here.
+_ROUNDHILL_FX_CASH = frozenset({'USD', 'CNY', 'KRW', 'TWD', 'JPY', 'HKD', 'EUR', 'GBP', 'CAD'})
+
+# Exchange suffixes the shared Bloomberg-suffix strip in main() doesn't cover.
+_ROUNDHILL_KRX_RE = re.compile(r'^(\d{6}) KS$')
+_ROUNDHILL_EXCH_SUFFIX_RE = re.compile(r'^(\S+) (?:TT|C1|C2)$')
+
+_SWAP_TAIL_RE = re.compile(r'[\s,.\-]*SWAP\b.*$', re.I)
+_CORP_WORD_RE = re.compile(r'\b(?:INC|CORP|CORPORATION|CO|LTD|LIMITED|PLC|HOLDINGS|GROUP|NV|SA|SE|AG|COM)\b')
+
+
+def _roundhill_local_ticker(ticker):
+    """Map Roundhill's Bloomberg-style local tickers onto the repo convention.
+
+    Korean codes become 'A000660' (what Avantis and Capital Group already
+    publish, so SK hynix / Samsung line up across funds); Taiwan and China-A
+    codes just lose the exchange suffix ('2344 TT' -> '2344'), as AVEM's do.
+    Anything else is returned untouched for main()'s suffix strip.
+    """
+    t = str(ticker).strip()
+    m = _ROUNDHILL_KRX_RE.match(t)
+    if m:
+        return 'A' + m.group(1)
+    m = _ROUNDHILL_EXCH_SUFFIX_RE.match(t)
+    return m.group(1) if m else t
+
+
+def _swap_underlying_key(name):
+    """'MICRON TECHNOLOGY, INC.-SWAP-GOL' and 'Micron Technology Inc' -> 'MICRON TECHNOLOGY'."""
+    base = _SWAP_TAIL_RE.sub('', str(name))
+    base = re.sub(r"[.,'\u2019]", '', base).upper()
+    base = re.sub(r'[^A-Z0-9 ]', ' ', base)
+    return ' '.join(_CORP_WORD_RE.sub(' ', base).split())
+
+
+def _is_roundhill_swap(row):
+    return ' TRS ' in str(row['StockTicker']) or 'SWAP' in str(row['SecurityName']).upper()
+
+
+def _prepare_roundhill_active_book(df):
+    """Turn a swap-heavy Roundhill active fund into one row per economic holding.
+
+    Roundhill gets part of DRAM's exposure through total-return swaps and
+    reports each as its own row under a CUSIP + 'TRS' identifier. The API
+    (correctly) hides every ' TRS ' row as junk, which for DRAM would delete
+    ~40% of the book and leave Micron — 25% of the fund — showing as its 0.4%
+    direct line. Instead each swap is folded into the direct row for the same
+    underlying (matched on the company name, ties going to the largest direct
+    row). A swap with no direct row (CXMT is private and has no ticker) keeps
+    its own row under a name-derived ticker.
+
+    Shares, MarketValue and Weightings are summed, so downstream price
+    (MV / shares) stays a USD figure and share deltas track total exposure.
+    Only opted-in funds go through this: the same fold applied retroactively
+    to the WeeklyPay funds would read as a phantom multi-hundred-percent buy.
+    """
+    df = df[~df['StockTicker'].astype(str).str.strip().isin(_ROUNDHILL_FX_CASH)].copy()
+    df['StockTicker'] = df['StockTicker'].map(_roundhill_local_ticker)
+    df['_swap'] = df.apply(_is_roundhill_swap, axis=1)
+    df['_key'] = df['SecurityName'].map(_swap_underlying_key)
+    df['_w'] = df['Weightings'].astype(str).str.rstrip('%').astype(float)
+
+    direct = df[~df['_swap']]
+    # Largest direct row per company wins the swap's exposure.
+    canonical = (direct.sort_values('MarketValue', ascending=False)
+                 .drop_duplicates('_key').set_index('_key')['StockTicker'])
+    swaps = df['_swap']
+    df.loc[swaps, 'StockTicker'] = df.loc[swaps, '_key'].map(canonical).fillna(
+        df.loc[swaps, '_key'].str.replace(' ', '-').str[:10])
+    df.loc[swaps, 'SecurityName'] = df.loc[swaps, 'SecurityName'].map(
+        lambda n: _SWAP_TAIL_RE.sub('', str(n)).strip())
+
+    # Direct rows first so the merged row keeps their name/price/CUSIP.
+    df = df.sort_values('_swap', kind='stable')
+    agg = {c: 'first' for c in df.columns if c not in ('Shares', 'MarketValue', '_w')}
+    agg.update({'Shares': 'sum', 'MarketValue': 'sum', '_w': 'sum'})
+    merged = df.groupby(['Account', 'StockTicker'], sort=False, as_index=False).agg(agg)
+    merged['Weightings'] = merged['_w'].map(lambda w: f"{w:.2f}%")
+    merged = merged.drop(columns=['_swap', '_key', '_w'])
+    log(f"Roundhill active book: {len(df)} rows -> {len(merged)} after swap consolidation")
+    return merged
 
 def get_holdings_ishares(fund_config):
     url = fund_config['url']
