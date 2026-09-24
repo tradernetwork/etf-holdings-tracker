@@ -2,7 +2,7 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-09-22",
+  "asOf": "2026-09-24",
   "holdings": 27,
   "dates": [
     "2026-07-10",
@@ -16,7 +16,7 @@
     "2026-09-04",
     "2026-09-11",
     "2026-09-18",
-    "2026-09-22"
+    "2026-09-24"
   ],
   "themes": [
     "Technology",
@@ -24,9 +24,9 @@
     "Industrials",
     "Materials",
     "Communications",
-    "Crypto",
-    "Consumer",
     "Financials",
+    "Consumer",
+    "Crypto",
     "Healthcare"
   ],
   "timeline": [
@@ -185,29 +185,29 @@
       }
     },
     {
-      "date": "2026-09-22",
+      "date": "2026-09-24",
       "weights": {
-        "Industrials": 10.217172432457993,
-        "Materials": 8.458846672460904,
-        "Uncategorized": 14.305086844777808,
-        "Technology": 43.72287598451937,
-        "Crypto": 5.034634594698875,
-        "Healthcare": 3.467517228815104,
-        "Consumer": 5.0132785847537695,
-        "Communications": 7.296966916362543,
-        "Financials": 4.1272079560081725
+        "Technology": 43.87154099525106,
+        "Materials": 8.584823650726621,
+        "Industrials": 10.313909973171935,
+        "Uncategorized": 14.113436614693157,
+        "Healthcare": 3.5118016584102185,
+        "Communications": 7.073727658760402,
+        "Financials": 4.173442468323019,
+        "Consumer": 4.153727016952012,
+        "Crypto": 3.9873790328201735
       }
     }
   ],
   "currentThemes": {
-    "Technology": 43.7,
-    "Uncategorized": 14.3,
-    "Industrials": 10.2,
-    "Materials": 8.5,
-    "Communications": 7.3,
-    "Crypto": 5.0,
-    "Consumer": 5.0,
-    "Financials": 4.1,
+    "Technology": 43.9,
+    "Uncategorized": 14.1,
+    "Industrials": 10.3,
+    "Materials": 8.6,
+    "Communications": 7.1,
+    "Financials": 4.2,
+    "Consumer": 4.2,
+    "Crypto": 4.0,
     "Healthcare": 3.5
   },
   "churnSincePrior": {

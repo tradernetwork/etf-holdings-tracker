@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-24T17:04:52.217740+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5330,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 579
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "HUCK": "HUCKLEBERRY AI INC COM CL B"
+      },
+      "removed": {
+        "DOMO": "DOMO INC COM CL B",
+        "TBPH": "THERAVANCE BIOPHARMA INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {
+        "CYPH": "CYPHERPUNK TECHNOLOGIES INC COM NEW",
+        "DPRO": "DRAGANFLY INC. COM",
+        "PDSB": "PDS BIOTECHNOLOGY CORP COM",
+        "RARE": "ULTRAGENYX PHARMACEUTICAL INC COM",
+        "SMTC": "SEMTECH CORP COM"
+      },
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
