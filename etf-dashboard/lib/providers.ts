@@ -24,6 +24,8 @@ export const FUND_PROVIDERS: Record<string, string> = {
     MSTW: 'Roundhill', NVDW: 'Roundhill', COIW: 'Roundhill',
     TSLW: 'Roundhill', HOOW: 'Roundhill', PLTW: 'Roundhill',
     QDTE: 'Roundhill', XDTE: 'Roundhill', RDTE: 'Roundhill', YBTC: 'Roundhill',
+    // Roundhill actively managed equity — see ACTIVE_EQUITY_FUNDS below.
+    DRAM: 'Roundhill', CHAT: 'Roundhill',
     MSTY: 'YieldMax', NVDY: 'YieldMax', CONY: 'YieldMax',
     CHPY: 'YieldMax', YMAX: 'YieldMax', AMDY: 'YieldMax', AMZY: 'YieldMax', GOOY: 'YieldMax', GDXY: 'YieldMax',
     TSLY: 'YieldMax', HOOY: 'YieldMax', PLTY: 'YieldMax',
@@ -97,6 +99,8 @@ export const FUND_AUM: Record<string, number> = {
     CGDV: 39.0, CGGR: 25.0, CGGO: 12.0, CGUS: 12.0, CGXU: 6.8,
     // First Trust (approximate, non-authoritative — real AUM auto-derives from holdings once scraped)
     FTLS: 3.0, WCME: 0.1, WCMG: 0.2, WCMI: 0.3, CRPT: 0.05, MMSC: 0.1, EMLP: 1.9,
+    // Roundhill active equity (approximate, non-authoritative)
+    DRAM: 27.3, CHAT: 1.9,
 };
 
 export function getProvider(fund: string): string {
@@ -140,7 +144,12 @@ const OPTION_INCOME_PROVIDERS = new Set<string>([
 // _OPTION_INCOME_FUNDS in api/data.py — keep the two in lockstep.
 const OPTION_INCOME_FUNDS = new Set<string>(['DIVO', 'QDVO', 'IDVO']);
 
+// Mirror image: Roundhill is an income provider, but DRAM and CHAT are active
+// stock-pickers. Mirrors _ACTIVE_EQUITY_FUNDS in api/data.py; checked first.
+const ACTIVE_EQUITY_FUNDS = new Set<string>(['DRAM', 'CHAT']);
+
 export function getFundCategory(fund: string): FundCategory {
+    if (ACTIVE_EQUITY_FUNDS.has(fund)) return 'active-equity';
     if (OPTION_INCOME_FUNDS.has(fund)) return 'option-income';
     return OPTION_INCOME_PROVIDERS.has(getProvider(fund))
         ? 'option-income'

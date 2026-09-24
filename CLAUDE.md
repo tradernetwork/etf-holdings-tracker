@@ -156,7 +156,7 @@ option-income fund work.
 
 ## Covered Funds
 
-96 funds across 13 providers (September 2026). The authoritative list is `FUNDS` in
+98 funds across 13 providers (September 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes.
 
@@ -168,7 +168,17 @@ the README table whenever `FUNDS` changes.
   BATT, CNBS, COWS, DRVR, ETHO, GAMR, SILJ (18 thematic + income funds)
 - **Corgi Funds**: EUV, CMAG, CQTM, XA, EYES, KYC, GNMX, AV, DOCK, WATS, GLAM,
   NYNY, STYL, WNDR, FDRS, FDRX
-- **Roundhill**: MSTW, NVDW, COIW, TSLW, HOOW, PLTW, QDTE, XDTE, RDTE, YBTC
+- **Roundhill**: MSTW, NVDW, COIW, TSLW, HOOW, PLTW, QDTE, XDTE, RDTE, YBTC, DRAM, CHAT.
+  Roundhill is an option-income provider, but **DRAM** (memory chips, ~$27B) and
+  **CHAT** (generative AI) are active stock-pickers and are pinned to
+  `active-equity` via `_ACTIVE_EQUITY_FUNDS` (mirrored in `providers.ts`). Both
+  carry `'active_book': True` in `FUNDS`: `_prepare_roundhill_active_book` folds
+  DRAM's total-return-swap rows into the direct row for the same company (swaps
+  are ~40% of its book — without this Micron reads 0.4% instead of ~26%), maps
+  Korean codes to the `A000660` convention, and drops FX-cash rows. Do not apply
+  this to the WeeklyPay funds without a migration — it would read as a phantom
+  buy. Known gap: digit-leading tickers (Kioxia `285A`, Nanya `2408`, Winbond
+  `2344`, GigaDevice) are still hidden by the API's ticker-shape filter, ~7% of DRAM.
 - **Capital Group**: CGDV, CGGR, CGGO, CGUS, CGXU (discretionary multi-manager
   active equity; daily holdings via an XLSX endpoint — needs `openpyxl`)
 - **First Trust**: FTLS, WCME, WCMG, WCMI, CRPT, MMSC, EMLP (actively managed —
