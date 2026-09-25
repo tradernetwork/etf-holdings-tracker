@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-25T17:06:16.549867+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5337,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 579
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ASSX": "T-REX 2X Long ASST Daily Target ETF",
+        "BALY": "BALLYS CORPORATION COMMON STOCK",
+        "BXDC": "BLACKSTONE DIGITAL INFRASTRUCT COMMON STOCK",
+        "HUTG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "MOVE": "CORVEX INC COM NEW",
+        "MRNX": "TIDAL TRUST II DEFI 2X MRNA ETF",
+        "ZCSH": "ZCASH ETF ETV"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
