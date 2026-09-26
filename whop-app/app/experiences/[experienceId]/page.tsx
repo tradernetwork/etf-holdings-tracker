@@ -13,14 +13,9 @@ import { TrendingTickers } from "@/components/trending-tickers";
 import { TrackRecordCard } from "@/components/track-record-card";
 import { TraderMatrixCard } from "@/components/trader-matrix-card";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  api,
-  type ApiSignal,
-  type ApiFullPayload,
-  type ApiBriefing,
-  type ApiSignalPerformance,
-  type ApiTraderMatrixHandoff,
-} from "@/lib/api";
+import { SectionSkeleton } from "@/components/section-skeleton";
+import { Suspense } from "react";
+import { api, type ApiSignal } from "@/lib/api";
 
 const TAB_IDS = [
   "signals",
@@ -78,29 +73,6 @@ export default async function ExperiencePage({
   const greeting = user?.name ?? user?.username ?? undefined;
   const flatSp = flattenSearchParams(sp);
 
-  // Headline data for the top-of-page brief, the trending row, the track
-  // record card, and the TraderMatrix footnote. Fetched once here (Next.js
-  // dedupes identical fetch() calls made again inside individual tabs during
-  // the same request) and skipped entirely on the broadcast tab, which has
-  // its own focused view. Every fetch is best-effort — a missing card here
-  // should never block the page.
-  let payload: ApiFullPayload | null = null;
-  let briefing: ApiBriefing | null = null;
-  let signalPerformance: ApiSignalPerformance | null = null;
-  let tradermatrix: ApiTraderMatrixHandoff | null = null;
-  if (tab !== "broadcast") {
-    [payload, briefing, signalPerformance, tradermatrix] = await Promise.all([
-      api.signals({ throwOnError: false }),
-      api.briefing({ throwOnError: false }),
-      api.signalPerformance(),
-      api.tradermatrix({ throwOnError: false }),
-    ]);
-  }
-
-  const trending: ApiSignal[] = payload
-    ? [...payload.signals.buying.slice(0, 3), ...payload.signals.selling.slice(0, 3)]
-    : [];
-
   return (
     <ExperienceShell
       experienceId={experienceId}
@@ -111,11 +83,13 @@ export default async function ExperiencePage({
       <div className="space-y-4">
         {tab === "broadcast" ? null : (
           <>
-            {briefing ? (
-              <DailyBriefCard briefing={briefing} experienceId={experienceId} />
-            ) : null}
+            <Suspense fallback={<SectionSkeleton rows={1} />}>
+              <HeadlineBrief experienceId={experienceId} />
+            </Suspense>
             <TickerSearchForm experienceId={experienceId} />
-            <TrendingTickers signals={trending} experienceId={experienceId} />
+            <Suspense fallback={null}>
+              <HeadlineTrending experienceId={experienceId} />
+            </Suspense>
           </>
         )}
 
@@ -128,7 +102,7 @@ export default async function ExperiencePage({
             </CardContent>
           </Card>
         ) : (
-          <>
+          <Suspense key={tab} fallback={<SectionSkeleton rows={6} />}>
             {tab === "signals" ? <SignalsTab experienceId={experienceId} /> : null}
             {tab === "briefing" ? <BriefingTab experienceId={experienceId} /> : null}
             {tab === "changes" ? (
@@ -141,16 +115,49 @@ export default async function ExperiencePage({
             {tab === "broadcast" ? (
               <BroadcastTab experienceId={experienceId} />
             ) : null}
-          </>
+          </Suspense>
         )}
 
         {tab === "broadcast" ? null : (
-          <>
-            <TrackRecordCard performance={signalPerformance} />
-            <TraderMatrixCard handoff={tradermatrix} />
-          </>
+          <Suspense fallback={null}>
+            <FooterCards />
+          </Suspense>
         )}
       </div>
     </ExperienceShell>
+  );
+}
+
+// ─── Streamed sections ──────────────────────────────────────────────────────
+// Each section fetches its own data inside a Suspense boundary so the shell
+// paints before the TickerTrace API answers. Next.js dedupes the identical
+// /signals fetch shared with SignalsTab within a request. Every fetch is
+// best-effort — a missing card never blocks the page.
+
+async function HeadlineBrief({ experienceId }: { experienceId: string }) {
+  const briefing = await api.briefing({ throwOnError: false });
+  return briefing ? (
+    <DailyBriefCard briefing={briefing} experienceId={experienceId} />
+  ) : null;
+}
+
+async function HeadlineTrending({ experienceId }: { experienceId: string }) {
+  const payload = await api.signals({ throwOnError: false });
+  const trending: ApiSignal[] = payload
+    ? [...payload.signals.buying.slice(0, 3), ...payload.signals.selling.slice(0, 3)]
+    : [];
+  return <TrendingTickers signals={trending} experienceId={experienceId} />;
+}
+
+async function FooterCards() {
+  const [signalPerformance, tradermatrix] = await Promise.all([
+    api.signalPerformance(),
+    api.tradermatrix({ throwOnError: false }),
+  ]);
+  return (
+    <>
+      <TrackRecordCard performance={signalPerformance} />
+      <TraderMatrixCard handoff={tradermatrix} />
+    </>
   );
 }
