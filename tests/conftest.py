@@ -24,4 +24,7 @@ def data_with_fixtures(fixture_dir, monkeypatch):
     """Import api.data with HISTORY_DIR pointed at fixtures/. Returns the module."""
     from api import data as _data
     monkeypatch.setattr(_data, "HISTORY_DIR", fixture_dir)
+    # The snapshot cache would otherwise hand one test the payload another
+    # test built (and hide call-count regressions like review #14's).
+    _data.clear_snapshot_cache()
     return _data

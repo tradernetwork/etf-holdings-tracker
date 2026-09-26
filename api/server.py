@@ -21,6 +21,7 @@ Env vars (all optional):
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -124,6 +125,9 @@ limiter = Limiter(
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     auth.init_db()
+    # Build the heavy /signals and /briefing payloads off the event loop so
+    # the first request after a deploy doesn't pay the ~30s cold rebuild.
+    threading.Thread(target=data.warm_snapshot_cache, daemon=True).start()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
     yield
     # graceful shutdown — close any pooled connections
