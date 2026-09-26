@@ -11,6 +11,7 @@ import csv
 import functools
 import os
 import re
+import threading
 from collections import defaultdict
 from datetime import date, timedelta
 from typing import Any
@@ -1666,7 +1667,7 @@ def get_activity(period: str = 'daily', *, category: str | None = None) -> dict:
     return _activity_from(_filter_by_category(changes, category))
 
 
-def get_briefing() -> dict:
+def _build_briefing() -> dict:
     """Pre-market briefing — top moves, multi-provider convergence, streaks, options."""
     changes = compute_daily_changes_with_options()
     streaks = _compute_streaks()
@@ -2185,7 +2186,7 @@ def get_tickers_index(limit: int = 100, sort: str = 'funds', *,
     return rows[:limit]
 
 
-def get_full_payload(*, category: str | None = None) -> dict:
+def _build_full_payload(category: str | None = None) -> dict:
     """
     Complete API payload — the single endpoint everything else can be derived from.
 
@@ -2214,3 +2215,90 @@ def get_full_payload(*, category: str | None = None) -> dict:
         'briefing': _briefing_from(signals, activity, streaks),
         'activity': activity,
     }
+
+
+# ─── Snapshot cache for the heavy endpoints ─────────────────────
+# /api/v1/signals and /api/v1/briefing rebuild everything from the history
+# CSVs — ~5s warm and ~30s cold on the Vultr box — yet the data only changes
+# when the scraper writes a new holdings file. Cache the built payload keyed
+# on the history directory's state (path, file count, newest mtime), so a
+# re-scrape of the same date still invalidates it.
+#
+# When the key changes and a previous payload exists, the stale payload is
+# served while one background thread rebuilds (stale-while-revalidate): no
+# request ever waits on a rebuild except the very first after a restart, and
+# warm_snapshot_cache() covers that at startup. Callers must treat the
+# returned dicts as read-only — they are shared across requests.
+
+_snapshot_lock = threading.Lock()
+_snapshot_cache: dict[tuple, tuple[tuple, Any]] = {}  # name -> (key, value)
+_snapshot_refreshing: set[tuple] = set()
+
+
+def _snapshot_key() -> tuple:
+    count, newest = 0, 0
+    try:
+        with os.scandir(HISTORY_DIR) as it:
+            for entry in it:
+                if entry.name.startswith('holdings_') and entry.name.endswith('.csv'):
+                    count += 1
+                    newest = max(newest, entry.stat().st_mtime_ns)
+    except FileNotFoundError:
+        pass
+    return (HISTORY_DIR, count, newest)
+
+
+def _refresh_snapshot(name: tuple, key: tuple, build) -> None:
+    try:
+        value = build()
+        with _snapshot_lock:
+            _snapshot_cache[name] = (key, value)
+    finally:
+        with _snapshot_lock:
+            _snapshot_refreshing.discard(name)
+
+
+def _cached_snapshot(name: tuple, build):
+    key = _snapshot_key()
+    with _snapshot_lock:
+        hit = _snapshot_cache.get(name)
+        if hit and hit[0][0] != key[0]:
+            hit = None  # different HISTORY_DIR (tests) — never serve across it
+        if hit and hit[0] == key:
+            return hit[1]
+        if hit and name not in _snapshot_refreshing:
+            # Stale: serve it now, rebuild once in the background.
+            _snapshot_refreshing.add(name)
+            threading.Thread(
+                target=_refresh_snapshot, args=(name, key, build), daemon=True
+            ).start()
+        if hit:
+            return hit[1]
+    # Nothing cached yet — build inline. The lock is not held while building,
+    # so a cold stampede may build more than once; the results are identical.
+    value = build()
+    with _snapshot_lock:
+        _snapshot_cache[name] = (key, value)
+    return value
+
+
+def clear_snapshot_cache() -> None:
+    with _snapshot_lock:
+        _snapshot_cache.clear()
+
+
+def warm_snapshot_cache() -> None:
+    """Build the default /signals and /briefing payloads. Call at startup."""
+    get_full_payload()
+    get_briefing()
+
+
+def get_full_payload(*, category: str | None = None) -> dict:
+    """Complete API payload — see _build_full_payload. Snapshot-cached."""
+    return _cached_snapshot(('full_payload', category),
+                            lambda: _build_full_payload(category))
+
+
+def get_briefing() -> dict:
+    """Pre-market briefing — see _build_briefing. Snapshot-cached."""
+    return _cached_snapshot(('briefing',), _build_briefing)

@@ -660,3 +660,32 @@ def test_layering_respects_min_funds(tmp_path, monkeypatch):
     # Only 3 funds ever enter TARGET; requiring 4 should yield no pattern for it.
     res = _data.compute_layering_patterns(window_days=5, min_funds=4)
     assert "TARGET" not in {p["ticker"] for p in res["patterns"]}
+
+
+def test_snapshot_cache_reuses_payload_until_history_changes(data_with_fixtures, monkeypatch):
+    """/signals and /briefing are cached per history-dir snapshot: repeat calls
+    don't rebuild, and a new/rewritten holdings file triggers a rebuild while
+    the stale payload keeps being served in the meantime."""
+    builds = {"n": 0}
+    orig = data_with_fixtures._build_full_payload
+
+    def counting(*args, **kwargs):
+        builds["n"] += 1
+        return orig(*args, **kwargs)
+
+    monkeypatch.setattr(data_with_fixtures, "_build_full_payload", counting)
+    first = data_with_fixtures.get_full_payload()
+    assert data_with_fixtures.get_full_payload() is first
+    assert builds["n"] == 1
+
+    # Simulate the scraper rewriting a file: the key changes.
+    real_key = data_with_fixtures._snapshot_key()
+    monkeypatch.setattr(data_with_fixtures, "_snapshot_key",
+                        lambda: (real_key[0], real_key[1], real_key[2] + 1))
+    stale = data_with_fixtures.get_full_payload()
+    assert stale is first  # served immediately, rebuild runs in the background
+    for t in __import__("threading").enumerate():
+        if t is not __import__("threading").current_thread() and t.daemon:
+            t.join(timeout=10)
+    assert builds["n"] == 2
+    assert data_with_fixtures.get_full_payload() is not first
