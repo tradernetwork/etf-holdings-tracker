@@ -3,9 +3,10 @@
 //   active-equity  → conviction over time. A Daily/Weekly/Monthly toggle, a
 //                    New Entrances / Total Exits marquee, and a streak tracker.
 //                    Daily holdings noise is exactly what obscures these funds.
-//   option-income  → a brokerage-style positions view first (stock rows with
-//                    their option legs, covered/uncovered split), then the
-//                    option book grouped by expiry, plus strategy effectiveness.
+//   option-income  → a brokerage-style Positions table (stock rows with their
+//                    option legs, covered/uncovered split, sortable/filterable,
+//                    state in the URL), then option activity, rolls and
+//                    strategy effectiveness.
 //
 // AUM comes straight from the API's `aum` field on ApiFundDetail (backend's
 // get_fund_aum(), derived from the latest holdings snapshot). The static
@@ -27,12 +28,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { FundEffectiveness } from '@/components/fund-effectiveness';
 import { RotationPanel } from '@/components/rotation-panel';
-import { FundPortfolio } from '@/components/fund-portfolio';
 import { FundPositions } from '@/components/fund-positions';
-import { OptionStrategyChart } from '@/components/option-strategy-chart';
 
 // The page reads searchParams (the Daily/Weekly/Monthly toggle), so it MUST
 // be dynamically rendered. A statically-generated route cannot touch
@@ -257,62 +256,70 @@ async function ActiveEquityBody({ detail, fund, period }: {
 // ─── Option-income body ──────────────────────────────────────────────────────
 
 async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund: string }) {
-    // The positions view is additive — an API blip here hides that one card
-    // rather than taking the whole fund page down with it.
+    // An API blip on the income endpoint must not take the whole fund page
+    // down — it falls back to the plain holdings list below instead.
     const income = await api.incomeFund(fund).catch(() => null);
+    const hasPositions = !!income?.positions && !!income.positionsSummary;
 
     const recentChanges = detail.recentChanges ?? [];
     const equityChanges = recentChanges.filter(c => !c.isOption);
     const optionChanges = recentChanges.filter(c => c.isOption);
 
+    // The Positions table carries today's stock changes itself (a Δ today
+    // column, a "Changed today" filter, NEW badges and an "Exited today"
+    // line), so these per-type lists only render as the fallback.
     const newPositions = equityChanges.filter(c => c.type === 'NEW');
     const closedPositions = equityChanges.filter(c => c.type === 'REMOVED');
     const increased = equityChanges.filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) > 0);
     const trimmed = equityChanges.filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) < 0);
-    const hasChanges = equityChanges.length > 0 || optionChanges.length > 0;
+    const shownEquityChanges = hasPositions ? [] : equityChanges;
+    const hasChanges = shownEquityChanges.length > 0 || optionChanges.length > 0;
 
     return (
         <>
             {/* Positions — brokerage-style: one row per stock, legs underneath,
-                covered / uncovered split. The question a holder asks first. */}
-            {income && <FundPositions income={income} />}
-
-            {/* Strategy map — spot vs. written strikes, the at-a-glance hero */}
-            <OptionStrategyChart options={detail.optionHoldings ?? []} />
-
-            {/* The option book — contracts grouped by expiry */}
-            <FundPortfolio detail={detail} />
+                covered / uncovered split, sortable and filterable. Replaces the
+                old Strategy Map, expiry-grouped Portfolio card, Top Holdings
+                table and the stock half of Daily Activity. */}
+            {hasPositions && income && (
+                <Suspense fallback={null}>
+                    <FundPositions income={income} changes={equityChanges} />
+                </Suspense>
+            )}
 
             {/* Rolls — contracts closed and reopened, routine income mechanics */}
             {(detail.optionRolls ?? []).length > 0 && <RollHistory rolls={detail.optionRolls} />}
 
-            {/* Daily activity — equity churn + contracts opened/closed */}
+            {/* Option activity — contracts opened/closed today (plus stock churn
+                when the Positions table isn't available to show it). */}
             <Card className="bg-surface border-rule">
                 <CardHeader className="pb-3 border-b border-rule">
                     <CardTitle className="text-base font-bold flex items-center gap-2 text-white">
-                        <Zap className="h-5 w-5 text-warning" /> Daily Activity
+                        <Zap className="h-5 w-5 text-warning" /> {hasPositions ? 'Option Activity' : 'Daily Activity'}
                         {hasChanges && (
                             <span className="text-xs font-normal text-slate-500 ml-auto">
-                                {equityChanges.length} equity • {optionChanges.length} options
+                                {hasPositions
+                                    ? `${optionChanges.length} contract${optionChanges.length === 1 ? '' : 's'}`
+                                    : `${equityChanges.length} equity • ${optionChanges.length} options`}
                             </span>
                         )}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                     {!hasChanges ? (
-                        <EmptyState label="No changes detected today" />
+                        <EmptyState label={hasPositions ? 'No contracts opened or closed today' : 'No changes detected today'} />
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {newPositions.length > 0 && (
+                            {!hasPositions && newPositions.length > 0 && (
                                 <ChangeSection title="New Positions" icon={<Plus className="h-3.5 w-3.5" />} records={newPositions} color="cyan" />
                             )}
-                            {closedPositions.length > 0 && (
+                            {!hasPositions && closedPositions.length > 0 && (
                                 <ChangeSection title="Closed" icon={<X className="h-3.5 w-3.5" />} records={closedPositions} color="amber" />
                             )}
-                            {increased.length > 0 && (
+                            {!hasPositions && increased.length > 0 && (
                                 <ChangeSection title="Increased" icon={<ChevronUp className="h-3.5 w-3.5" />} records={increased} color="green" />
                             )}
-                            {trimmed.length > 0 && (
+                            {!hasPositions && trimmed.length > 0 && (
                                 <ChangeSection title="Trimmed" icon={<ChevronDown className="h-3.5 w-3.5" />} records={trimmed} color="red" />
                             )}
                             {optionChanges.length > 0 && (
@@ -329,7 +336,7 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
 
             <RotationPanel fund={detail.fund} />
 
-            <TopHoldingsTable holdings={detail.topHoldings ?? []} />
+            {!hasPositions && <TopHoldingsTable holdings={detail.topHoldings ?? []} />}
         </>
     );
 }

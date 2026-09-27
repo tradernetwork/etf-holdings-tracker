@@ -641,6 +641,8 @@ export interface ApiPositionLeg {
 export interface ApiPosition {
     ticker: string;
     name: string;
+    /** Blank when neither the file nor the ticker fallback map knows it. */
+    sector?: string;
     sharesHeld: number;
     syntheticShares: number;
     totalShares: number;

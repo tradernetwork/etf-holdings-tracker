@@ -43,6 +43,7 @@ from collections import defaultdict
 
 from .data import (
     EXCLUDED_FUNDS,
+    _SECTOR_FALLBACK,
     FUND_AUM,
     FUND_PROVIDERS,
     _clean_ticker,
@@ -452,9 +453,10 @@ def build_positions(equities: list[dict], options: list[dict],
             continue
         shares = _safe_float(r.get('Share Quantity', '0'))
         st = stocks.setdefault(ticker, {
-            'ticker': ticker, 'name': r.get('Name', ''), 'shares': 0.0,
+            'ticker': ticker, 'name': r.get('Name', ''), 'sector': '', 'shares': 0.0,
             'marketValue': 0.0, 'weight': 0.0, 'price': None, 'legs': [],
         })
+        st['sector'] = st['sector'] or (r.get('Sector') or '').strip()
         st['shares'] += shares
         st['marketValue'] += mv
         st['weight'] += w
@@ -467,7 +469,7 @@ def build_positions(equities: list[dict], options: list[dict],
         opt_type = (r.get('Option_Type') or '').strip()
         mv = _nullable_float(r.get('Market Value'))
         st = stocks.setdefault(underlying, {
-            'ticker': underlying, 'name': '', 'shares': 0.0,
+            'ticker': underlying, 'name': '', 'sector': '', 'shares': 0.0,
             'marketValue': 0.0, 'weight': 0.0, 'price': None, 'legs': [],
         })
         if st['price'] is None:
@@ -519,6 +521,10 @@ def build_positions(equities: list[dict], options: list[dict],
         positions.append({
             'ticker': t,
             'name': st['name'],
+            # ~70% of rows arrive with a blank Sector; fall back to the same
+            # ticker map the rest of the API uses (which also covers names
+            # held only synthetically). Blank when neither knows.
+            'sector': st['sector'] or _SECTOR_FALLBACK.get(t, ''),
             'sharesHeld': st['shares'],
             'syntheticShares': synth,
             'totalShares': total,

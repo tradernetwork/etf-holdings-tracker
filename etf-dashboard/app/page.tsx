@@ -358,6 +358,12 @@ export default function LandingPage() {
           <ChangelogEntry
             date="September 27, 2026"
             tag="feature"
+            title="The positions table ate four other sections, and you can sort and filter it now"
+            desc="Once the positions table existed it was obvious most of what sat under it was the same information drawn worse. The strike map, the expiry ladder, the top holdings list and the stock half of daily activity are gone, and the table does all of their jobs. Every column sorts. There are quick filters for covered, partly covered and uncovered, for names held synthetically, for calls already in the money, for anything expiring inside a week and for anything the fund changed today, plus a sector dropdown and a search box. There is a by expiry switch if you liked the old ladder. Whatever you set ends up in the address bar, so a link to KQQQ sorted by its uncovered names is just a link. Option contracts opened and closed today still get their own little card underneath, because those are events and not positions, and the rolls and the fund grade are untouched."
+          />
+          <ChangelogEntry
+            date="September 27, 2026"
+            tag="feature"
             title="Income fund pages now have a positions view that looks like your brokerage"
             desc="Someone asked a fair question. How much of KYLD is actually covered? And the honest answer was that you could not tell from our page without doing arithmetic on a list of option contracts sorted by expiry date, which is not how anybody thinks about a portfolio. So every income fund page now opens with a plain positions table, one row per stock with quantity, price, value and percent of the fund, and a covered column showing how much of that position has a call written against it. Tap a row and the option legs sit underneath it, the way Schwab or Fidelity shows them. Up top is the headline number. KYLD is about 86 percent covered. KQQQ only writes calls on about 46 percent of its stock, which is a real difference in how much upside you keep, and one you could not see before. Stock the fund holds through a long call and short put pair counts as stock and is marked with an asterisk, because that is how KQQQ and the YieldMax single stock funds actually own their names, and ignoring it would call MSTY completely uncovered when it is the opposite. Treasury bills and cash get one line each at the bottom instead of cluttering the list."
           />
