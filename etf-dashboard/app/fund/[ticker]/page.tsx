@@ -3,8 +3,9 @@
 //   active-equity  → conviction over time. A Daily/Weekly/Monthly toggle, a
 //                    New Entrances / Total Exits marquee, and a streak tracker.
 //                    Daily holdings noise is exactly what obscures these funds.
-//   option-income  → the option book. Contracts grouped by expiry with
-//                    ITM/OTM badges, plus strategy effectiveness.
+//   option-income  → a brokerage-style positions view first (stock rows with
+//                    their option legs, covered/uncovered split), then the
+//                    option book grouped by expiry, plus strategy effectiveness.
 //
 // AUM comes straight from the API's `aum` field on ApiFundDetail (backend's
 // get_fund_aum(), derived from the latest holdings snapshot). The static
@@ -30,6 +31,7 @@ import React from 'react';
 import { FundEffectiveness } from '@/components/fund-effectiveness';
 import { RotationPanel } from '@/components/rotation-panel';
 import { FundPortfolio } from '@/components/fund-portfolio';
+import { FundPositions } from '@/components/fund-positions';
 import { OptionStrategyChart } from '@/components/option-strategy-chart';
 
 // The page reads searchParams (the Daily/Weekly/Monthly toggle), so it MUST
@@ -111,7 +113,7 @@ export default async function FundProfilePage({
             <SiteNav />
             <FundHeader detail={detail} aum={aum} category={category} />
             {category === 'option-income' ? (
-                <OptionIncomeBody detail={detail} />
+                <OptionIncomeBody detail={detail} fund={fund} />
             ) : (
                 <ActiveEquityBody detail={detail} fund={fund} period={normalizePeriod(sp.period)} />
             )}
@@ -254,7 +256,11 @@ async function ActiveEquityBody({ detail, fund, period }: {
 
 // ─── Option-income body ──────────────────────────────────────────────────────
 
-function OptionIncomeBody({ detail }: { detail: ApiFundDetail }) {
+async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund: string }) {
+    // The positions view is additive — an API blip here hides that one card
+    // rather than taking the whole fund page down with it.
+    const income = await api.incomeFund(fund).catch(() => null);
+
     const recentChanges = detail.recentChanges ?? [];
     const equityChanges = recentChanges.filter(c => !c.isOption);
     const optionChanges = recentChanges.filter(c => c.isOption);
@@ -267,6 +273,10 @@ function OptionIncomeBody({ detail }: { detail: ApiFundDetail }) {
 
     return (
         <>
+            {/* Positions — brokerage-style: one row per stock, legs underneath,
+                covered / uncovered split. The question a holder asks first. */}
+            {income && <FundPositions income={income} />}
+
             {/* Strategy map — spot vs. written strikes, the at-a-glance hero */}
             <OptionStrategyChart options={detail.optionHoldings ?? []} />
 

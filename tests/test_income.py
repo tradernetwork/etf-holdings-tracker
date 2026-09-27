@@ -242,3 +242,80 @@ def test_known_fund_shapes():
     assert o['MSTY']['archetype'] == 'synthetic'
     # ULTY writes a call against essentially the whole sleeve.
     assert o['ULTY']['tiles']['callCoveragePct'] > 90
+
+
+# ─── Brokerage-style positions view ─────────────────────────────────────────
+
+def _stock(ticker, shares, price, weight=10.0):
+    return {'Ticker': ticker, 'Name': f'{ticker} Inc', 'Share Quantity': str(shares),
+            'Market Value': str(shares * price), 'Weight': str(weight)}
+
+
+def _leg(underlying, otype, contracts, strike, expiry='2026-10-02', dte='7', spot='100', mv='0'):
+    return {'Ticker': f'{underlying} {expiry} {strike}', 'Underlying_Ticker': underlying,
+            'Option_Type': otype, 'Share Quantity': str(contracts), 'Option_Strike': str(strike),
+            'Option_Expiry': expiry, 'DTE': dte, 'Underlying_Price': spot,
+            'Market Value': mv, 'Weight': '-0.1' if contracts < 0 else '0.1'}
+
+
+def test_positions_partial_coverage():
+    """1,000 shares, 4 written calls → 40% of the position is covered."""
+    positions, _, summary = income.build_positions(
+        [_stock('AAA', 1000, 100.0)], [_leg('AAA', 'Call', -4, 110)], nav=1_000_000)
+    p = positions[0]
+    assert p['coveragePct'] == 40.0
+    assert p['nakedShares'] == 0
+    assert summary['coveredPct'] == 40.0 and summary['uncoveredPct'] == 60.0
+
+
+def test_positions_synthetic_shares_count_as_stock():
+    """No shares held, a 10-lot synthetic long, 10 written calls → fully covered.
+    Counting only real shares would read this as 0% (and 1,000 naked)."""
+    legs = [_leg('MMM', 'Call', 10, 95.0, expiry='2026-12-18', dte='84'),
+            _leg('MMM', 'Put', -10, 95.01, expiry='2026-12-18', dte='84'),
+            _leg('MMM', 'Call', -10, 110)]
+    positions, _, summary = income.build_positions([], legs, nav=1_000_000)
+    p = positions[0]
+    assert p['sharesHeld'] == 0 and p['syntheticShares'] == 1000
+    assert p['coveragePct'] == 100.0
+    assert p['nakedShares'] == 0
+    assert summary['syntheticPct'] == 100.0
+    assert sorted(l['role'] for l in p['legs']) == ['synthetic', 'synthetic', 'written-call']
+
+
+def test_positions_call_spread_is_not_naked():
+    """Written beyond the shares held, but capped by long calls — not naked."""
+    legs = [_leg('AAA', 'Call', -15, 110), _leg('AAA', 'Call', 5, 120)]
+    positions, _, _ = income.build_positions([_stock('AAA', 1000, 100.0)], legs, nav=None)
+    assert positions[0]['coveragePct'] == 100.0
+    assert positions[0]['nakedShares'] == 0
+
+
+def test_positions_uncapped_overwrite_is_naked():
+    positions, _, _ = income.build_positions(
+        [_stock('AAA', 1000, 100.0)], [_leg('AAA', 'Call', -15, 110)], nav=None)
+    assert positions[0]['nakedShares'] == 500
+
+
+def test_positions_short_stock_covered_by_written_puts():
+    positions, _, _ = income.build_positions(
+        [_stock('SSS', -1000, 50.0, weight=-5.0)], [_leg('SSS', 'Put', -10, 45, spot='50')], nav=None)
+    assert positions[0]['coveragePct'] == 100.0
+
+
+def test_positions_expired_calls_do_not_cover():
+    positions, _, _ = income.build_positions(
+        [_stock('AAA', 1000, 100.0)], [_leg('AAA', 'Call', -10, 110, dte='-3')], nav=None)
+    assert positions[0]['coveragePct'] == 0.0
+    assert positions[0]['legs'][0]['expired'] is True
+
+
+def test_positions_collapse_cash_and_tbills():
+    eq = [_stock('AAA', 1000, 100.0),
+          {'Ticker': '912797TC1', 'Name': 'United States Treasury Bill', 'Share Quantity': '500000',
+           'Market Value': '495000', 'Weight': '40'},
+          {'Ticker': 'FGXXX', 'Name': 'First American Government Obligations', 'Share Quantity': '5000',
+           'Market Value': '5000', 'Weight': '1'}]
+    positions, others, _ = income.build_positions(eq, [], nav=None)
+    assert [p['ticker'] for p in positions] == ['AAA']
+    assert {o['sleeve'] for o in others} == {'treasury', 'cash'}

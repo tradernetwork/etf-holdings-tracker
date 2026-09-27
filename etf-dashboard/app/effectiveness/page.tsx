@@ -79,7 +79,7 @@ const METHODOLOGY = [
     {
         title: 'DTE Management',
         icon: <Clock className="h-4 w-4 text-warning" />,
-        text: 'Scores WHEN options expire. Theta (time decay) accelerates non-linearly below 21 DTE. The sweet spot depends on fund strategy — weekly distribution funds target 3-7 DTE, monthly funds target 14-21 DTE. Includes a consistency bonus for systematic execution (tight DTE clustering) and gamma risk penalties for very short DTE when it\'s off-strategy.',
+        text: 'Scores WHEN options expire. Theta (time decay) accelerates non-linearly below 21 DTE. The sweet spot depends on the fund\'s write cycle — weekly writers sit around 3 DTE, two-week cycles around 6, monthly writers 14-21. The cycle label next to each fund (weekly / biweekly / monthly) is measured from its actual expiries, not a prospectus guess. Synthetic-stock legs (long call + short put used to hold the underlying) and expired contracts are excluded. Includes a consistency bonus for systematic execution (tight DTE clustering) and gamma risk penalties for very short DTE when it\'s off-strategy.',
     },
     {
         title: 'Spread Efficiency',
@@ -89,7 +89,7 @@ const METHODOLOGY = [
     {
         title: 'Roll Behavior',
         icon: <RefreshCw className="h-4 w-4 text-meta" />,
-        text: 'Tracks position MANAGEMENT over time by comparing daily snapshots. Detects rolls (same underlying + type, changed expiry). Scores roll timing (ideal: 3-7 DTE remaining), penalizes weekend gap risk, and tracks roll direction (up = bullish adjustment, down = defensive).',
+        text: 'Tracks position MANAGEMENT over time by comparing daily snapshots. Detects rolls (same underlying + type, changed expiry). Scores roll timing (ideal: 3-7 DTE remaining) and tracks roll direction (up = bullish adjustment, down = defensive).',
     },
     {
         title: 'Premium Capture',
@@ -99,7 +99,7 @@ const METHODOLOGY = [
     {
         title: 'Hedge Ratio',
         icon: <Shield className="h-4 w-4 text-meta" />,
-        text: 'Scores COVERAGE using Black-Scholes approximate delta (σ=30%, r=5%). For each underlying with written options, checks for equity holdings or protective long options. Lower net directional delta and higher coverage = better hedged. Funds where hedging is NOT mandated by prospectus get reduced weight for this metric.',
+        text: 'Scores COVERAGE using Black-Scholes approximate delta (σ=30%, r=5%). For each underlying with written options, checks for stock (held outright or via a synthetic long) or protective long options. Only stock the options are written on counts toward delta — cash and T-bills do not. Lower net directional delta and higher coverage = better hedged. Funds where hedging is NOT mandated by prospectus get reduced weight for this metric.',
     },
     {
         title: 'Concentration Risk',

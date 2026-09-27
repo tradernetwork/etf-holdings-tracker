@@ -328,7 +328,7 @@ export function FundEffectiveness({ fund }: { fund: string }) {
                         title="Hedge Ratio"
                         icon={<Shield className="h-3.5 w-3.5 text-meta" />}
                         score={hedgeRatio.score}
-                        tooltip="Measures directional risk management using Black-Scholes approximate delta. Higher coverage ratio and lower net delta = better hedged. Detects covered calls and collar structures."
+                        tooltip="Measures directional risk management using Black-Scholes approximate delta. Higher coverage ratio and lower net delta = better hedged. Stock held outright or via a synthetic long (long call + short put) covers written calls; a collar is stock + written call + long put."
                     >
                         <div className="text-xs text-slate-400 space-y-1">
                             <StatRow
@@ -497,7 +497,7 @@ export function FundEffectiveness({ fund }: { fund: string }) {
                         title="Roll Behavior"
                         icon={<RefreshCw className="h-3.5 w-3.5 text-meta" />}
                         score={rollBehavior.score}
-                        tooltip="Tracks how positions are managed at expiry. Detects rolls by comparing daily snapshots. Scores roll timing (ideal: 3-7 DTE), penalizes weekend gap risk, and tracks roll direction (up=bullish, down=defensive)."
+                        tooltip="Tracks how positions are managed at expiry. Detects rolls by comparing daily snapshots. Scores roll timing (ideal: 3-7 DTE) and tracks roll direction (up=bullish, down=defensive). Synthetic-stock legs are excluded."
                     >
                         <div className="text-xs text-slate-400 space-y-1">
                             <StatRow label="Rolls Detected" value={`${rollBehavior.rollsDetected}`} />
@@ -505,12 +505,6 @@ export function FundEffectiveness({ fund }: { fund: string }) {
                                 label="Avg Roll DTE"
                                 value={rollBehavior.avgRollDTE !== null ? `${rollBehavior.avgRollDTE} days` : '—'}
                             />
-                            {rollBehavior.weekendGapRolls > 0 && (
-                                <div className="flex items-center gap-1 text-amber-400">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    <span className="text-[10px]">{rollBehavior.weekendGapRolls} weekend gap rolls</span>
-                                </div>
-                            )}
                         </div>
                         {rollBehavior.rollsDetected > 0 && (
                             <MiniBar
