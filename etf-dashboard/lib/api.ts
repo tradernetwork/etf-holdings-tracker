@@ -617,9 +617,73 @@ export interface ApiIncomeFundSummary {
     incomeLegVisible: boolean;
 }
 
+/** An option leg inside a brokerage-style position row. */
+export interface ApiPositionLeg {
+    /** 'synthetic' = one half of a long-call/short-put synthetic stock pair. */
+    role: "written-call" | "written-put" | "long-call" | "long-put" | "synthetic";
+    optionType: string;
+    strike: number;
+    expiry: string;
+    dte: number | null;
+    /** Contract already expired but still in the provider's file. */
+    expired: boolean;
+    /** Signed contracts — negative = written. */
+    contracts: number;
+    /** Per-share option price (market value ÷ contracts ÷ 100). */
+    price: number | null;
+    marketValue: number | null;
+    weight: number;
+    /** (K − S)/S for written calls — how far the stock can run before the cap. */
+    upsideRoomPct: number | null;
+}
+
+/** One stock, held outright and/or synthetically, with its option legs. */
+export interface ApiPosition {
+    ticker: string;
+    name: string;
+    sharesHeld: number;
+    syntheticShares: number;
+    totalShares: number;
+    price: number | null;
+    spotSuppressed: boolean;
+    marketValue: number;
+    /** |totalShares| × price — includes synthetic shares, unlike marketValue. */
+    exposureValue: number;
+    weight: number;
+    exposurePctNav: number | null;
+    coveredShares: number;
+    /** Null when the fund holds no shares (real or synthetic) in this name. */
+    coveragePct: number | null;
+    /** Written beyond shares held and beyond any long wings — genuinely naked. */
+    nakedShares: number;
+    legs: ApiPositionLeg[];
+}
+
+export interface ApiOtherPosition {
+    sleeve: "treasury" | "cash" | "swap";
+    label: string;
+    marketValue: number;
+    weight: number;
+    lines: number;
+}
+
+export interface ApiPositionsSummary {
+    coveredPct: number | null;
+    uncoveredPct: number | null;
+    syntheticPct: number | null;
+    stockExposureValue: number;
+    coveredValue: number;
+    stockPositions: number;
+    otherPctNav: number;
+}
+
 export interface ApiIncomeFund extends ApiIncomeFundSummary {
     book: ApiIncomeBookRow[];
     asOfDate: string;
+    /** Optional — absent from API deploys that predate the positions view. */
+    positions?: ApiPosition[];
+    otherPositions?: ApiOtherPosition[];
+    positionsSummary?: ApiPositionsSummary;
 }
 
 export interface ApiIncomeOverview {

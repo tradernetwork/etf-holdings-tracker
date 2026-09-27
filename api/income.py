@@ -296,6 +296,8 @@ def build_fund_book(fund: str, rows: list[dict]) -> dict:
         },
         'tiles': _coverage_tiles(book, options, sleeves, nav, archetype),
         'book': book,
+        **dict(zip(('positions', 'otherPositions', 'positionsSummary'),
+                   build_positions(equities, options, nav))),
         # LEAP_PROXY funds hold long exposure and write nothing we can see.
         # Flagged explicitly so the UI states the gap instead of implying the
         # fund has no income strategy.
@@ -389,6 +391,170 @@ def _coverage_tiles(book: list[dict], options: list[dict], sleeves: dict[str, fl
         'writtenCallLegs': len(written_calls),
         'writtenLegs': len(written_any),
     }
+
+
+# ─── Brokerage-style positions view ──────────────────────────────────────────
+# The book above is organised around the option legs. A reader who wants to
+# know "how much of this fund's stock is covered?" needs the other shape — the
+# one every brokerage shows: one row per stock, its option legs tucked under
+# it, and a covered/uncovered split.
+#
+# Stock comes in two forms here. Shares held outright, and synthetic shares: a
+# long call + short put at the same strike/expiry/size, which is how KQQQ,
+# GDXY and the YieldMax single-name funds hold their underlying. Counting only
+# the outright shares would report MSTY as 0% covered when every one of its
+# written calls sits on synthetic stock. Pairing is shared with the
+# effectiveness engine (effectiveness.split_synthetic_legs) so the two views
+# can't disagree about what a synthetic is.
+
+def _leg_role(contracts: float, opt_type: str, synthetic: bool) -> str:
+    if synthetic:
+        return 'synthetic'
+    side = 'written' if contracts < 0 else 'long'
+    return f"{side}-{'call' if opt_type.upper().startswith('C') else 'put'}"
+
+
+def build_positions(equities: list[dict], options: list[dict],
+                    nav: float | None) -> tuple[list[dict], list[dict], dict]:
+    """Return (stock_positions, other_positions, summary).
+
+    stock_positions: one row per stock (held outright and/or synthetically),
+        with its option legs, sorted by exposure. Coverage is shares covered by
+        live written calls ÷ total long shares (or written puts ÷ short shares
+        for a short-equity book), capped at 100%.
+    other_positions: T-bills, cash, swaps — collapsed to one row per sleeve.
+    summary: exposure-weighted covered / uncovered split of the stock book.
+    """
+    from effectiveness import split_synthetic_legs, _is_live
+
+    _, synthetic_rows, synthetic_shares = split_synthetic_legs(
+        [o for o in options if _is_live(o)])
+    synthetic_ids = {id(o) for o in synthetic_rows}
+
+    stocks: dict[str, dict] = {}
+    other: dict[str, dict] = {}
+    sleeve_labels = {'treasury': 'Treasury bills & notes', 'cash': 'Cash & money market',
+                     'swap': 'Swaps'}
+
+    for r in equities:
+        sleeve = _sleeve_of(r)
+        mv = _nullable_float(r.get('Market Value')) or 0.0
+        w = _safe_float(r.get('Weight', '0'))
+        if sleeve != 'equity':
+            o = other.setdefault(sleeve, {'sleeve': sleeve, 'label': sleeve_labels[sleeve],
+                                          'marketValue': 0.0, 'weight': 0.0, 'lines': 0})
+            o['marketValue'] += mv
+            o['weight'] += w
+            o['lines'] += 1
+            continue
+        ticker = _clean_ticker(r.get('Ticker', ''))
+        if not ticker:
+            continue
+        shares = _safe_float(r.get('Share Quantity', '0'))
+        st = stocks.setdefault(ticker, {
+            'ticker': ticker, 'name': r.get('Name', ''), 'shares': 0.0,
+            'marketValue': 0.0, 'weight': 0.0, 'price': None, 'legs': [],
+        })
+        st['shares'] += shares
+        st['marketValue'] += mv
+        st['weight'] += w
+        if shares and mv:
+            st['price'] = mv / shares
+
+    for r in options:
+        underlying = (r.get('Underlying_Ticker') or '').strip() or _clean_ticker(r.get('Ticker', ''))
+        contracts = _safe_float(r.get('Share Quantity', '0'))
+        opt_type = (r.get('Option_Type') or '').strip()
+        mv = _nullable_float(r.get('Market Value'))
+        st = stocks.setdefault(underlying, {
+            'ticker': underlying, 'name': '', 'shares': 0.0,
+            'marketValue': 0.0, 'weight': 0.0, 'price': None, 'legs': [],
+        })
+        if st['price'] is None:
+            st['quotedSpot'] = st.get('quotedSpot') or _nullable_float(r.get('Underlying_Price'))
+        strike = _safe_float(r.get('Option_Strike', '0'))
+        st['legs'].append({
+            'role': _leg_role(contracts, opt_type, id(r) in synthetic_ids),
+            'optionType': opt_type,
+            'strike': strike,
+            'expiry': r.get('Option_Expiry', ''),
+            'dte': _nullable_float(r.get('DTE')),
+            'expired': not _is_live(r),
+            'contracts': contracts,
+            'price': round(mv / (contracts * CONTRACT_MULTIPLIER), 4) if mv and contracts else None,
+            'marketValue': round(mv, 2) if mv is not None else None,
+            'weight': round(_safe_float(r.get('Weight', '0')), 4),
+        })
+
+    positions: list[dict] = []
+    covered_value = exposure_value = 0.0
+    for t, st in stocks.items():
+        synth = synthetic_shares.get(t, 0.0)
+        total = st['shares'] + synth
+        spot, suppressed = _resolve_spot(st['price'], st.pop('quotedSpot', None))
+        live = [l for l in st['legs'] if not l['expired']]
+        def _sh(role):
+            return sum(abs(l['contracts']) for l in live if l['role'] == role) * CONTRACT_MULTIPLIER
+        call_sh, put_sh = _sh('written-call'), _sh('written-put')
+        if total > 0:
+            covered_sh = min(call_sh, total)
+            written_sh, wing_sh = call_sh, _sh('long-call')
+        elif total < 0:
+            covered_sh = min(put_sh, -total)
+            written_sh, wing_sh = put_sh, _sh('long-put')
+        else:
+            covered_sh, written_sh, wing_sh = 0.0, call_sh + put_sh, _sh('long-call') + _sh('long-put')
+        coverage = covered_sh / abs(total) if total else None
+
+        for l in st['legs']:
+            l['upsideRoomPct'] = (round((l['strike'] - spot) / spot * 100.0, 2)
+                                  if spot and l['strike'] and l['role'] == 'written-call' else None)
+
+        exposure = abs(total) * spot if spot else abs(st['marketValue'])
+        if total and coverage is not None:
+            exposure_value += exposure
+            covered_value += exposure * coverage
+
+        st['legs'].sort(key=lambda l: (l['role'] == 'synthetic', l['expiry'], l['strike']))
+        positions.append({
+            'ticker': t,
+            'name': st['name'],
+            'sharesHeld': st['shares'],
+            'syntheticShares': synth,
+            'totalShares': total,
+            'price': round(spot, 4) if spot else None,
+            'spotSuppressed': suppressed,
+            'marketValue': round(st['marketValue'], 2),
+            'exposureValue': round(exposure, 2),
+            'weight': round(st['weight'], 4),
+            'exposurePctNav': round(exposure / nav * 100.0, 2) if nav else None,
+            'coveredShares': covered_sh,
+            'coveragePct': round(coverage * 100.0, 1) if coverage is not None else None,
+            # Written beyond the shares held AND beyond any long wings of the
+            # same type (a call spread caps the excess) — genuinely naked.
+            'nakedShares': max(0.0, written_sh - abs(total) - wing_sh),
+            'legs': st['legs'],
+        })
+
+    positions.sort(key=lambda p: -p['exposureValue'])
+    others = sorted(
+        ({**o, 'marketValue': round(o['marketValue'], 2), 'weight': round(o['weight'], 4)}
+         for o in other.values()),
+        key=lambda o: -o['marketValue'])
+
+    covered_pct = covered_value / exposure_value * 100.0 if exposure_value else None
+    synth_value = sum(abs(p['syntheticShares']) * p['price'] for p in positions
+                      if p['price'] and p['syntheticShares'])
+    summary = {
+        'coveredPct': round(covered_pct, 1) if covered_pct is not None else None,
+        'uncoveredPct': round(100.0 - covered_pct, 1) if covered_pct is not None else None,
+        'syntheticPct': round(synth_value / exposure_value * 100.0, 1) if exposure_value else None,
+        'stockExposureValue': round(exposure_value, 2),
+        'coveredValue': round(covered_value, 2),
+        'stockPositions': sum(1 for p in positions if p['totalShares']),
+        'otherPctNav': round(sum(o['weight'] for o in others), 2),
+    }
+    return positions, others, summary
 
 
 def get_income_overview() -> dict:
