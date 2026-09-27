@@ -37,6 +37,7 @@ All endpoints are open — no API key or authentication required.
 | `GET /api/v1/ticker/TSLA` | Cross-fund view — who's buying/selling this ticker |
 | `GET /api/v1/sectors` | Sector-level weight flows |
 | `GET /api/v1/divergences` | Cross-fund conflicts (same ticker, opposite directions) |
+| `GET /api/v1/options/AMD` | One underlying's option legs across funds, grouped into synthetics / spreads / collars / rolls |
 | `GET /api/v1/funds` | All tracked funds |
 | `GET /api/v1/stats` | Global stats |
 | `GET /docs` | Interactive Swagger docs |
@@ -49,12 +50,13 @@ The FastMCP server (`api/mcp_server.py`) exposes the same data as MCP tools:
 python -m api.mcp_server
 ```
 
-Tools (20 — an AI agent should not see less than a human does on the dashboard/REST API):
+Tools (21 — an AI agent should not see less than a human does on the dashboard/REST API):
 `get_signals`, `get_changes`, `get_fund_detail`, `get_ticker_detail`, `get_sector_flow`,
 `get_divergences`, `get_layering_patterns`, `get_market_summary`, `get_briefing`,
 `get_institutional_flow`, `get_institutional_trend`, `get_holdings_changes`,
 `get_stock_activity`, `list_all_funds`, `list_all_tickers`, `get_income_overview`,
-`get_income_fund_detail`, `get_options_listings`, `get_signal_performance`, `get_global_stats`
+`get_income_fund_detail`, `get_options_listings`, `get_signal_performance`, `get_global_stats`,
+`get_option_structures`
 
 ### Claude Desktop Integration
 

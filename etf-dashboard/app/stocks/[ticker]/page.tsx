@@ -231,9 +231,9 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
             {optionHolders.length > 0 && (
                 <div className="bg-surface border border-rule rounded-xl shadow-lg overflow-hidden">
                     <div className="px-4 py-3 border-b border-rule">
-                        <h2 className="text-sm font-black tracking-tight">Options written against it</h2>
+                        <h2 className="text-sm font-black tracking-tight">Option positions on it</h2>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                            {optionHolders.length} position{optionHolders.length === 1 ? '' : 's'} from income funds — excluded from the institutional blend above. Covered call strikes indicate near-term resistance.
+                            {optionHolders.length} live leg{optionHolders.length === 1 ? '' : 's'} from income funds — excluded from the institutional blend above. Negative contracts are written; a long call and a written put at the same strike together are synthetic stock, not two trades. Expired contracts are hidden.
                         </p>
                     </div>
                     {(() => {
@@ -241,6 +241,7 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                             { key: 'fund', header: 'Fund' },
                             { key: 'provider', header: 'Provider', mobilePriority: 'sm' },
                             { key: 'type', header: 'Type' },
+                            { key: 'contracts', header: 'Contracts', align: 'right' },
                             { key: 'strike', header: 'Strike', align: 'right' },
                             { key: 'expiry', header: 'Expiry', align: 'right' },
                             { key: 'weight', header: 'Wt in fund', align: 'right', mobilePriority: 'md' },
@@ -253,7 +254,24 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                             return {
                                 key: `${h.fund}-${h.optionDetails?.strike ?? ''}-${h.optionDetails?.expiry ?? ''}-${i}`,
                                 cells: {
-                                    fund: <Link href={`/fund/${h.fund}`} className="font-mono font-bold text-equity hover:underline">{h.fund}</Link>,
+                                    fund: (
+                                        <span>
+                                            <Link href={`/fund/${h.fund}`} className="font-mono font-bold text-equity hover:underline">{h.fund}</Link>
+                                            {h.stale && h.fileDate && (
+                                                <span className="block text-[10px] text-warning" title="The issuer hasn't published newer holdings">
+                                                    stale · {h.fileDate}
+                                                </span>
+                                            )}
+                                        </span>
+                                    ),
+                                    contracts: (() => {
+                                        const c = h.optionDetails?.contracts ?? h.shares;
+                                        return (
+                                            <span className={`font-mono ${c < 0 ? 'text-warning' : 'text-buy'}`} title={c < 0 ? 'Written (short)' : 'Bought (long)'}>
+                                                {c > 0 ? '+' : ''}{Math.round(c).toLocaleString('en-US')}
+                                            </span>
+                                        );
+                                    })(),
                                     provider: <span className="text-slate-400">{h.provider}</span>,
                                     type: (
                                         <span
@@ -269,7 +287,14 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                                             {isCall ? 'CALL' : isPut ? 'PUT' : (h.optionDetails?.type ?? '?')}
                                         </span>
                                     ),
-                                    strike: <span className="font-mono text-slate-300">{h.optionDetails?.strike != null ? `$${h.optionDetails.strike.toFixed(2)}` : '—'}</span>,
+                                    strike: (
+                                        <span className="font-mono text-slate-300">
+                                            {h.optionDetails?.strike != null ? `$${h.optionDetails.strike.toFixed(2)}` : '—'}
+                                            {h.optionDetails?.isFlex && (
+                                                <span className="ml-1 text-[9px] px-1 rounded border border-rule text-slate-500" title="FLEX contract — customised, not exchange-listed">FLEX</span>
+                                            )}
+                                        </span>
+                                    ),
                                     expiry: <span className="font-mono text-slate-400 text-xs">{h.optionDetails?.expiry ? formatExpiry(h.optionDetails.expiry) : '—'}</span>,
                                     weight: <span className="font-mono text-slate-300">{h.weight.toFixed(2)}%</span>,
                                 },

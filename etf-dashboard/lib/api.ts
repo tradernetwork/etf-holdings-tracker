@@ -30,6 +30,13 @@ export interface ApiOptionDetails {
     strike: number;
     expiry: string;
     underlying?: string;
+    // Added 2026-09-27 on /api/v1/ticker option rows (optional: older API deploys).
+    /** Uppercase CALL / PUT — `type` keeps the CSV's 'Call' / 'Put'. */
+    optionType?: "CALL" | "PUT" | null;
+    /** Signed contracts: negative = written. */
+    contracts?: number;
+    /** FLEX (non-listed) contract — often one leg of a synthetic. */
+    isFlex?: boolean | null;
 }
 
 export interface ApiChangeRecord {
@@ -377,6 +384,12 @@ export interface ApiTickerHolding {
     optionDetails?: ApiOptionDetails;
     /** Fund AUM in $B, from the backend's get_fund_aum(). Null when unknown. */
     aum?: number | null;
+    /** The fund's own holdings date (issuer file), not the snapshot date. */
+    fileDate?: string | null;
+    /** fileDate older than the previous trading day. */
+    stale?: boolean;
+    /** False = carried forward because today's issuer fetch failed. */
+    refreshed?: boolean | null;
 }
 
 export interface ApiTickerDetail {
@@ -939,6 +952,17 @@ export const api = {
                 sharesDelta: number;
                 isOption: boolean;
                 cusip: string;
+                // Added 2026-09-27 — optional so older API deploys still type-check.
+                marketValue?: number | null;
+                fileDate?: string | null;
+                refreshed?: boolean | null;
+                stale?: boolean;
+                underlying?: string | null;
+                optionType?: "CALL" | "PUT" | null;
+                strike?: number | null;
+                expiry?: string | null;
+                contracts?: number | null;
+                isFlex?: boolean | null;
             }[];
         }>("/api/v1/holdings", opts),
 };
