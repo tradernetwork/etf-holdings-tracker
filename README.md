@@ -102,13 +102,46 @@ Base URL: `https://api.tickertrace.pro` — **no key, no auth, no rate caps beyo
 | `GET /api/v1/divergences` | Cross-fund conflicts (same ticker, opposite directions) |
 | `GET /api/v1/briefing` | Pre-built dashboard payload (signals + sectors + activity) |
 | `GET /api/v1/activity` | Most-active tickers by net change |
-| `GET /api/v1/holdings` | Full holdings dump |
-| `GET /api/v1/funds` | All tracked funds + AUM |
+| `GET /api/v1/holdings` | Full holdings dump — option rows carry underlying, CALL/PUT, strike, expiry, signed contracts, FLEX flag; every row carries its file date and staleness |
+| `GET /api/v1/funds` | All tracked funds + AUM, with each fund's `lastHoldingsDate` and `stale` |
+| `GET /api/v1/options/{underlying}` | One underlying's option legs across funds, grouped into synthetics / spreads / collars / rolls |
 | `GET /api/v1/stats` | Global stats |
 | `GET /api/v1/fund-effectiveness` | Per-fund signal-vs-price scorecard |
 | `GET /api/v1/tradermatrix` | Marketing handoff payload |
 | `GET /api/v1/traderdaddy` | Deprecated alias for `/api/v1/tradermatrix` (same payload) |
 | `GET /docs` | Interactive Swagger |
+
+### Data-quality fields (added 2026-09-27)
+
+All additive — no existing CSV column or JSON field was renamed, removed or
+changed meaning. Background: [`docs/DATA_QUALITY_2026-09.md`](docs/DATA_QUALITY_2026-09.md).
+
+**History CSVs** (`holdings_YYYY-MM-DD.csv`) gain three columns. Files written
+before 2026-09-27 don't have them; the API derives what it can for those.
+
+| Column | Meaning |
+|---|---|
+| `Refreshed` | `True` = fetched from the issuer this run. `False` = the fetch failed after retries and these rows were **carried forward** from the previous file, so the fund is marked instead of silently missing. |
+| `Source_Date` | Date the rows are really from (the issuer's own date). Survives repeated carry-forwards, so a fund failing for a week still shows the first day. |
+| `Is_Flex` | Option rows only: FLEX (non-listed) contract, from the OCC root's leading digit (`2AMAT …`) or a strike off the $0.25 grid (`490.01`). Blank on non-option rows. |
+
+`Option_Strike` is unchanged and stays exact (`490.01`, never rounded). The file
+name is still the **run** date; a fund's data date is `Source_Date`, else `Date`.
+
+**`/api/v1/holdings`**: new on every row: `marketValue`, `fileDate`, `refreshed`
+(`null` for pre-2026-09-27 files), `stale`. New on option rows: `underlying`,
+`optionType` (uppercase `CALL`/`PUT`; the CSV stores `Call`/`Put`), `strike`,
+`expiry`, `contracts`, `isFlex` (these are `null` on non-option rows). `shares`
+keeps its existing meaning: on option rows it is the **signed contract count**
+(negative = written). `contracts` repeats it under a clearer name.
+
+**`/api/v1/funds`**: new per fund: `lastHoldingsDate`, `stale` (older than the
+previous trading day; exchange holidays not modelled) and `refreshed`.
+
+**`/api/v1/ticker/{ticker}`**: option legs already past expiry are no longer
+listed. A frozen issuer file used to keep them there for weeks. Each holding
+gains `fileDate`, `stale` and `refreshed`; `optionDetails` gains `optionType`,
+`contracts`, `isFlex` and `underlying`, alongside the unchanged `type`.
 
 ---
 
@@ -177,7 +210,9 @@ cd etf-dashboard && npm install && npm run dev
 
 ```
 7:00 AM CST  GitHub Actions runs scrape_avantis.py
-             → fetches all fund CSVs
+             → fetches all fund CSVs (NestYield: link discovered from each
+               fund page; non-CSV 200s rejected); failed funds retried in two
+               passes, then carried forward with Refreshed=False
              → resolves CUSIPs via cache + OpenFIGI fallback
              → writes normalized_holdings.csv
              → copies into etf-dashboard/public/data/history/

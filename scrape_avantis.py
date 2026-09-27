@@ -65,9 +65,14 @@ FUNDS = [
     {'ticker': 'KYLD', 'type': 'csv', 'url': 'https://web.services.kurvinvest.com/etfdata/KYLD/holdings.csv'},
     {'ticker': 'KQQQ', 'type': 'csv', 'url': 'https://web.services.kurvinvest.com/etfdata/KQQQ/holdings.csv'},
     {'ticker': 'BLOX', 'type': 'csv', 'url': 'https://nicholasx.com/wp-content/uploads/data/TidalFG_Holdings_BLOX.csv'},
-    {'ticker': 'EGGQ', 'type': 'csv', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGQ.csv'},
-    {'ticker': 'EGGY', 'type': 'csv', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGY.csv'},
-    {'ticker': 'EGGS', 'type': 'csv', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGS.csv'},
+    # NestYield froze these fixed `uploads/data/` URLs on 2026-08-14 (they still
+    # answer 200 with that day's file) and now publishes dated, versioned media
+    # uploads linked from each fund page, e.g.
+    # uploads/2026/09/TidalFG_Holdings_EGGQ-10.csv. `page` makes
+    # get_holdings_csv discover the current link each run; `url` is the fallback.
+    {'ticker': 'EGGQ', 'type': 'csv', 'page': 'https://nestyield.com/eggq/', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGQ.csv'},
+    {'ticker': 'EGGY', 'type': 'csv', 'page': 'https://nestyield.com/eggy/', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGY.csv'},
+    {'ticker': 'EGGS', 'type': 'csv', 'page': 'https://nestyield.com/eggs/', 'url': 'https://nestyield.com/wp-content/uploads/data/TidalFG_Holdings_EGGS.csv'},
     {'ticker': 'ULTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/ULTY/TidalFG_Holdings_ULTY.csv'},
     {'ticker': 'SLTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/SLTY/TidalFG_Holdings_SLTY.csv'},
     {'ticker': 'CHPY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/CHPY/TidalFG_Holdings_CHPY.csv'},
@@ -481,13 +486,62 @@ def get_holdings_avantis(fund_config):
         
     return pd.DataFrame(holdings_list)
 
+# ─── Source-file discovery & validation ─────────────────────────────
+_UPLOAD_LINK_RE = r'https?://[^"\'\s<>]*/wp-content/uploads/(\d{{4}})/(\d{{2}})/TidalFG_Holdings_{ticker}(?:-(\d+))?\.csv'
+
+
+def discover_upload_csv(page_html: str, ticker: str) -> str | None:
+    """Newest `…/uploads/YYYY/MM/TidalFG_Holdings_{ticker}[-N].csv` linked from a
+    fund page. Ordered by (year, month, version suffix) so a re-upload that
+    WordPress renamed `-11` beats `-10`. None when the page links none."""
+    pattern = re.compile(_UPLOAD_LINK_RE.format(ticker=re.escape(ticker)), re.IGNORECASE)
+    best = None
+    for m in pattern.finditer(page_html or ''):
+        key = (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0))
+        if best is None or key > best[0]:
+            best = (key, m.group(0))
+    return best[1] if best else None
+
+
+class NotACsvError(ValueError):
+    """A 200 response whose body isn't the holdings CSV.
+
+    YieldMax intermittently serves an HTML/challenge page with HTTP 200 (18
+    weekdays between 2026-04-14 and 09-23). pandas then fails with
+    'Expected 1 fields in line 5, saw 2' — the first line had no commas.
+    Raising a named error keeps the log readable and lets the caller retry.
+    """
+
+
+def looks_like_holdings_csv(lines: list[str]) -> bool:
+    """Header line has several comma-separated fields and a known column name."""
+    if not lines:
+        return False
+    head = lines[0]
+    if head.lstrip().startswith('<'):
+        return False
+    header_keywords = ['Ticker', 'Name', 'Date', 'Symbol', 'Weight', 'Quantity', 'Account']
+    return head.count(',') >= 2 and any(kw in head for kw in header_keywords)
+
+
 def get_holdings_csv(fund_config):
     url = fund_config['url']
     fund_ticker = fund_config['ticker']
     method = fund_config.get('method', 'get').lower()
     data = fund_config.get('data', None)
-    log(f"Fetching CSV data for {fund_ticker} from {url}...")
     headers = {'User-Agent': USER_AGENT}
+    if fund_config.get('page'):
+        try:
+            page = _http_get(fund_config['page'], headers=headers)
+            page.raise_for_status()
+            found = discover_upload_csv(page.text, fund_ticker)
+            if found:
+                url = found
+            else:
+                log(f"No holdings upload linked from {fund_config['page']} — falling back to {url}")
+        except Exception as e:
+            log(f"Could not read {fund_config['page']} ({e}) — falling back to {url}")
+    log(f"Fetching CSV data for {fund_ticker} from {url}...")
     try:
         if method == 'post':
             response = _http_post(url, headers=headers, data=data)
@@ -500,6 +554,10 @@ def get_holdings_csv(fund_config):
         lines = [line.strip() for line in content.splitlines() if line.strip()]
         if not lines:
              return None
+        if not looks_like_holdings_csv(lines):
+            raise NotACsvError(
+                f"response is not a holdings CSV (content-type "
+                f"{response.headers.get('content-type', '?')!r}, first line {lines[0][:80]!r})")
              
         # Check if the first line looks like a header (contains common header keywords)
         header_keywords = ['Ticker', 'Name', 'Date', 'Symbol', 'Weight', 'Quantity', 'Account']
@@ -1230,6 +1288,165 @@ def cleanup_old_records():
     except Exception as vacuum_e:
         log(f"Vacuum warning: {vacuum_e}")
 
+# Retry passes for funds that failed on the first sweep (seconds before each
+# pass). Retried at the END of the run, not in place, so a whole-issuer outage
+# (14 YieldMax funds) costs ~2 minutes rather than ~20. Override with
+# SCRAPE_RETRY_DELAYS="" to disable, e.g. in tests.
+FUND_RETRY_DELAYS = [int(x) for x in os.environ.get('SCRAPE_RETRY_DELAYS', '30,90').split(',') if x.strip()]
+
+HISTORY_DIR = os.path.join(SCRIPT_DIR, "etf-dashboard", "public", "data", "history")
+
+_FLEX_ROOT_RE = re.compile(r'^\d[A-Z]')
+
+
+def is_flex_option(ticker, name, strike) -> bool:
+    """FLEX (customised, OTC-cleared) option — not a listed contract.
+
+    OCC gives FLEX series a root with a leading digit ('2AMAT 261218C00440000').
+    That is the primary test: it also catches FLEX legs struck at ordinary
+    prices (KQQQ, KYLD). A strike off the $0.25 listing grid (490.01, 95.01) is
+    a secondary test in case an issuer ever drops the prefix. On 2026-09-25,
+    52 of 615 option rows were FLEX; all 33 off-grid strikes had the prefix.
+    """
+    for s in (ticker, name):
+        if isinstance(s, str) and _FLEX_ROOT_RE.match(s.strip()):
+            return True
+    try:
+        cents = round(float(strike) * 100)
+    except (TypeError, ValueError):
+        return False
+    return cents % 25 != 0
+
+
+def add_quality_columns(df, refreshed: bool):
+    """Additive columns: Refreshed, Source_Date, Is_Flex (see README)."""
+    df['Refreshed'] = refreshed
+    if 'Source_Date' not in df.columns or refreshed:
+        df['Source_Date'] = df['Date'] if 'Date' in df.columns else None
+    if 'Option_Type' in df.columns:
+        is_opt = df['Option_Type'].notna() & (df['Option_Type'].astype(str).str.strip() != '')
+        df['Is_Flex'] = [
+            is_flex_option(t, n, k) if o else None
+            for t, n, k, o in zip(df.get('Ticker'), df.get('Name'), df.get('Option_Strike'), is_opt)
+        ]
+    return df
+
+
+def fetch_fund(fund):
+    """Dispatch one fund to its provider fetcher. Returns a DataFrame or None."""
+    kind = fund['type']
+    if kind == 'avantis':
+        return get_holdings_avantis(fund)
+    if kind == 'ishares':
+        return get_holdings_ishares(fund)
+    if kind == 'roundhill':
+        return get_holdings_roundhill(fund)
+    if kind == 'corgi':
+        return get_holdings_corgi(fund)
+    if kind == 'sprott':
+        return get_holdings_sprott(fund)
+    if kind == 'amplify':
+        return get_holdings_amplify(fund)
+    if kind == 'capitalgroup':
+        return get_holdings_capitalgroup(fund)
+    if kind == 'firsttrust':
+        return get_holdings_firsttrust(fund)
+    return get_holdings_csv(fund)
+
+
+def process_fund_frame(df, ticker, today):
+    """Normalise, clean and enrich one fund's freshly fetched rows."""
+    log(f"Extracted {len(df)} rows for {ticker}")
+    df = normalize_columns(df)
+    # Always set ETF Ticker to our config ticker (source CSVs may use different names like REX_ULTI)
+    df['ETF Ticker'] = ticker
+    
+    if 'Ticker' in df.columns:
+        df['Ticker'] = df['Ticker'].astype(str).str.strip().replace('nan', '')
+        # Strip Bloomberg exchange suffixes (e.g. "RKLB UQ" → "RKLB", "NU UN" → "NU")
+        # ARK fund CSVs use Bloomberg-style tickers with exchange codes appended
+        BLOOMBERG_SUFFIXES = r'\s+(?:UQ|UN|UW|UP|UA|FP|LN|GY|SJ|AU|CT|CN|JP|HK|SW|SS|IT|SM|NA|BB|PL|DC|NO|AV|ID|MK|TB|PM|IJ)$'
+        df['Ticker'] = df['Ticker'].str.replace(BLOOMBERG_SUFFIXES, '', regex=True)
+        mask = (df['Ticker'] == '') | (df['Ticker'].isnull())
+        if mask.any():
+            df.loc[mask, 'Ticker'] = df.loc[mask, 'Name'].apply(lambda x: 'CASH' if 'CASH' in str(x).upper() or 'GOVT' in str(x).upper() else 'OTHER')
+    
+    # CUSIP lookup: resolve 'OTHER' tickers using CUSIP→ticker mapping
+    if 'Ticker' in df.columns and 'CUSIP' in df.columns:
+        other_mask = df['Ticker'] == 'OTHER'
+        if other_mask.any():
+            cusips_to_resolve = df.loc[other_mask, 'CUSIP'].dropna().unique().tolist()
+            cusips_to_resolve = [c for c in cusips_to_resolve if c.strip()]
+            if cusips_to_resolve:
+                resolved = cusip_resolver.resolve_batch(cusips_to_resolve)
+                if resolved:
+                    for idx in df[other_mask].index:
+                        cusip = str(df.at[idx, 'CUSIP']).strip()
+                        if cusip in resolved:
+                            df.at[idx, 'Ticker'] = resolved[cusip]
+                    resolved_count = sum(1 for c in cusips_to_resolve if c in resolved)
+                    log(f"CUSIP lookup resolved {resolved_count}/{len(cusips_to_resolve)} tickers for {ticker}")
+    
+    # Filter out disclaimers (e.g. iShares puts disclaimers in the Ticker column)
+    if 'Ticker' in df.columns:
+        df = df[df['Ticker'].astype(str).str.len() < 30]
+    
+    if 'Name' in df.columns:
+        df = df.dropna(subset=['Name'])
+        
+    if 'Date' not in df.columns:
+        df['Date'] = today
+        
+    df = clean_data(df)
+    # Enrich with option analytics and real-time prices
+    df = enrich_with_analytics(df)
+    
+    raw_date_dir = os.path.join(RAW_DIR, today)
+    os.makedirs(raw_date_dir, exist_ok=True)
+    df.to_csv(os.path.join(raw_date_dir, f"{ticker}_{today}.csv"), index=False)
+    return add_quality_columns(df, refreshed=True)
+
+
+def carry_forward_rows(ticker, today, history_dir=None):
+    """The fund's rows from the newest history file, marked not refreshed.
+
+    Source_Date keeps the date the data is really from — if those rows were
+    themselves carried, their original Source_Date survives, so a fund that
+    has been failing for a week still says so. DTE is recomputed for today;
+    everything else is exactly what the issuer last published.
+    """
+    history_dir = history_dir or HISTORY_DIR
+    files = sorted(glob.glob(os.path.join(history_dir, "holdings_*.csv")))
+    files = [f for f in files if os.path.basename(f) < f"holdings_{today}.csv"]
+    if not files:
+        return None
+    prev = pd.read_csv(files[-1], dtype=str, keep_default_na=False)
+    rows = prev[prev.get('ETF Ticker', pd.Series(dtype=str)) == ticker].copy()
+    if rows.empty:
+        return None
+    src = rows['Source_Date'] if 'Source_Date' in rows.columns else pd.Series('', index=rows.index)
+    fallback = rows['Date'] if 'Date' in rows.columns else pd.Series(os.path.basename(files[-1])[9:19], index=rows.index)
+    rows['Source_Date'] = src.where(src.astype(str).str.strip() != '', fallback)
+    for col in ('Weight', 'Market Value', 'Share Quantity'):
+        if col in rows.columns:
+            rows[col] = pd.to_numeric(rows[col], errors='coerce').fillna(0)
+    if 'Option_Expiry' in rows.columns:
+        t = datetime.date.fromisoformat(today)
+        def _dte(exp):
+            try:
+                return (datetime.date.fromisoformat(str(exp)[:10]) - t).days
+            except ValueError:
+                return None
+        rows['DTE'] = [(_dte(e) if str(e).strip() else None) for e in rows['Option_Expiry']]
+    rows['Refreshed'] = False
+    if 'Option_Type' in rows.columns:
+        rows['Is_Flex'] = [
+            is_flex_option(tk, nm, k) if str(o).strip() else None
+            for tk, nm, k, o in zip(rows.get('Ticker'), rows.get('Name'), rows.get('Option_Strike'), rows['Option_Type'])
+        ]
+    return rows
+
+
 def main():
     # Ensure DB is setup correctly
     setup_database()
@@ -1245,94 +1462,52 @@ def main():
     
     failed_funds = []
     
-    for fund in FUNDS:
-        ticker = fund['ticker']
-        df = None
-        try:
-            if fund['type'] == 'avantis':
-                df = get_holdings_avantis(fund)
-            elif fund['type'] == 'ishares':
-                df = get_holdings_ishares(fund)
-            elif fund['type'] == 'roundhill':
-                df = get_holdings_roundhill(fund)
-            elif fund['type'] == 'corgi':
-                df = get_holdings_corgi(fund)
-            elif fund['type'] == 'sprott':
-                df = get_holdings_sprott(fund)
-            elif fund['type'] == 'amplify':
-                df = get_holdings_amplify(fund)
-            elif fund['type'] == 'capitalgroup':
-                df = get_holdings_capitalgroup(fund)
-            elif fund['type'] == 'firsttrust':
-                df = get_holdings_firsttrust(fund)
+    pending = list(FUNDS)
+    for attempt, delay in enumerate([0] + FUND_RETRY_DELAYS):
+        if not pending:
+            break
+        if attempt:
+            log(f"Retry pass {attempt}: {len(pending)} fund(s) after {delay}s — {[f['ticker'] for f in pending]}")
+            time.sleep(delay)
+        still_failing = []
+        for fund in pending:
+            ticker = fund['ticker']
+            try:
+                df = fetch_fund(fund)
+            except Exception as e:
+                log(f"CRITICAL ERROR for {ticker}: {e}")
+                df = None
+            if df is None or df.empty:
+                log(f"FAILED to extract data for {ticker}")
+                still_failing.append(fund)
             else:
-                df = get_holdings_csv(fund)
-        except Exception as e:
-            log(f"CRITICAL ERROR for {ticker}: {e}")
-            failed_funds.append(ticker)
-            continue
-        
-        if df is not None:
-            log(f"Extracted {len(df)} rows for {ticker}")
-            df = normalize_columns(df)
-            # Always set ETF Ticker to our config ticker (source CSVs may use different names like REX_ULTI)
-            df['ETF Ticker'] = ticker
-            
-            if 'Ticker' in df.columns:
-                df['Ticker'] = df['Ticker'].astype(str).str.strip().replace('nan', '')
-                # Strip Bloomberg exchange suffixes (e.g. "RKLB UQ" → "RKLB", "NU UN" → "NU")
-                # ARK fund CSVs use Bloomberg-style tickers with exchange codes appended
-                BLOOMBERG_SUFFIXES = r'\s+(?:UQ|UN|UW|UP|UA|FP|LN|GY|SJ|AU|CT|CN|JP|HK|SW|SS|IT|SM|NA|BB|PL|DC|NO|AV|ID|MK|TB|PM|IJ)$'
-                df['Ticker'] = df['Ticker'].str.replace(BLOOMBERG_SUFFIXES, '', regex=True)
-                mask = (df['Ticker'] == '') | (df['Ticker'].isnull())
-                if mask.any():
-                    df.loc[mask, 'Ticker'] = df.loc[mask, 'Name'].apply(lambda x: 'CASH' if 'CASH' in str(x).upper() or 'GOVT' in str(x).upper() else 'OTHER')
-            
-            # CUSIP lookup: resolve 'OTHER' tickers using CUSIP→ticker mapping
-            if 'Ticker' in df.columns and 'CUSIP' in df.columns:
-                other_mask = df['Ticker'] == 'OTHER'
-                if other_mask.any():
-                    cusips_to_resolve = df.loc[other_mask, 'CUSIP'].dropna().unique().tolist()
-                    cusips_to_resolve = [c for c in cusips_to_resolve if c.strip()]
-                    if cusips_to_resolve:
-                        resolved = cusip_resolver.resolve_batch(cusips_to_resolve)
-                        if resolved:
-                            for idx in df[other_mask].index:
-                                cusip = str(df.at[idx, 'CUSIP']).strip()
-                                if cusip in resolved:
-                                    df.at[idx, 'Ticker'] = resolved[cusip]
-                            resolved_count = sum(1 for c in cusips_to_resolve if c in resolved)
-                            log(f"CUSIP lookup resolved {resolved_count}/{len(cusips_to_resolve)} tickers for {ticker}")
-            
-            # Filter out disclaimers (e.g. iShares puts disclaimers in the Ticker column)
-            if 'Ticker' in df.columns:
-                df = df[df['Ticker'].astype(str).str.len() < 30]
-            
-            if 'Name' in df.columns:
-                df = df.dropna(subset=['Name'])
-                
-            if 'Date' not in df.columns:
-                df['Date'] = today
-                
-            df = clean_data(df)
-            # Enrich with option analytics and real-time prices
-            df = enrich_with_analytics(df)
-            
-            raw_date_dir = os.path.join(RAW_DIR, today)
-            os.makedirs(raw_date_dir, exist_ok=True)
-            df.to_csv(os.path.join(raw_date_dir, f"{ticker}_{today}.csv"), index=False)
-            
-            all_holdings.append(df)
-        else:
-            log(f"FAILED to extract data for {ticker}")
-            failed_funds.append(ticker)
-        time.sleep(1)
+                all_holdings.append(process_fund_frame(df, ticker, today))
+            time.sleep(1)
+        pending = still_failing
+    failed_funds = [f['ticker'] for f in pending]
+
+    # Never silently drop a fund. Anything that still failed is carried forward
+    # from the newest history file, marked Refreshed=False with the date its
+    # data is actually from — downstream sees a stale fund, not a vanished one
+    # (a vanished fund also reads as a full exit today and a full re-entry
+    # tomorrow in every day-over-day diff).
+    carried = []
+    for ticker in failed_funds:
+        cf = carry_forward_rows(ticker, today)
+        if cf is not None and not cf.empty:
+            all_holdings.append(cf)
+            carried.append(f"{ticker}@{cf['Source_Date'].iloc[0]}")
+    if carried:
+        log(f"Carried forward (Refreshed=False): {carried}")
+        # Surfaces on the Actions run summary instead of only in the log.
+        print(f"::warning title=Funds not refreshed::{', '.join(carried)}")
     
     if all_holdings:
         final_df = pd.concat(all_holdings, ignore_index=True)
         
-        # 1. Save to SQLite
-        save_to_db(final_df)
+        # 1. Save to SQLite — fresh rows only; carried-forward rows are not a
+        #    new observation and must not overwrite history with old values.
+        save_to_db(final_df[final_df['Refreshed'] != False])  # noqa: E712
         
         # 2. Generate Changes in DB
         generate_changes_sql(today)

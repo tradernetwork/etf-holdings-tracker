@@ -50,6 +50,8 @@ EXPECTED_TOOLS = {
     "get_holdings_changes", "get_stock_activity", "list_all_funds",
     "list_all_tickers", "get_income_overview", "get_income_fund_detail",
     "get_options_listings", "get_signal_performance", "get_global_stats",
+    # Added 2026-09-27
+    "get_option_structures",
 }
 
 

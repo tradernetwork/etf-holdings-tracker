@@ -29,6 +29,8 @@ MCP tools exposed:
     - get_options_listings: CBOE daily diff of newly-optionable / weekly-options stocks
     - get_signal_performance: Backtest stats for historical buy/sell signals
     - get_global_stats: Funds tracked, unique underlyings, options counts
+    - get_option_structures: One underlying's option legs across funds, grouped
+      into synthetics / spreads / collars / rolls
 
 This server runs in-process next to api/data.py and calls its functions
 directly rather than round-tripping over HTTP to the public REST API.
@@ -37,6 +39,7 @@ directly rather than round-tripping over HTTP to the public REST API.
 from fastmcp import FastMCP
 from . import data
 from . import income
+from . import structures
 
 mcp = FastMCP("TickerTrace")
 
@@ -402,6 +405,27 @@ def get_global_stats() -> dict:
     """
     return data.get_global_stats()
 
+
+
+@mcp.tool()
+def get_option_structures(underlying: str) -> dict:
+    """
+    Get every tracked fund's option legs on one underlying, grouped into
+    structures instead of a flat CALL/PUT list.
+
+    Args:
+        underlying: Stock ticker the options are written on (e.g. 'AMD', 'MSTR').
+
+    Returns:
+        Per fund: `legs` (signed contracts — negative = written — plus
+        optionType CALL/PUT, strike, expiry, isFlex, change vs. the fund's
+        previous snapshot), `structures` as held (synthetic-long/short,
+        call/put spreads with credit/debit side, collars, singles) and
+        `trades` pairing today's changes (roll / synthetic / spread / collar).
+        A synthetic long is stock exposure, not two option trades.
+    """
+    result = structures.get_option_structures(underlying.upper())
+    return result or {"error": f"No tracked fund holds options on {underlying.upper()}"}
 
 if __name__ == "__main__":
     mcp.run()

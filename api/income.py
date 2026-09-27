@@ -618,4 +618,9 @@ def get_income_fund(fund: str) -> dict | None:
         return None
     book = build_fund_book(fund, rows)
     book['asOfDate'] = get_as_of_date()
+    # Dated, contract-based option trades for the last 10 snapshots — paired
+    # into rolls / spreads / synthetics (api/structures.py). Separate from
+    # build_fund_book so the all-funds overview doesn't pay for it.
+    from .structures import get_fund_option_activity
+    book['optionActivity'] = get_fund_option_activity(fund, days=10)['days']
     return book

@@ -37,6 +37,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from . import data
 from . import income
+from . import structures
 from . import auth
 from . import visits
 # Heavy import paid at server startup, not on first request (review #18)
@@ -523,6 +524,27 @@ def income_fund(request: Request, fund: str):
         raise HTTPException(status_code=404,
                             detail=f"{fund.upper()} is not a tracked option-income fund")
     return book
+
+
+@app.get("/api/v1/options/{underlying}", tags=["public"])
+@limiter.limit("60/minute")
+def option_structures(request: Request, underlying: str):
+    """Every fund's option legs on one underlying, grouped into structures.
+
+    `structures` pairs the book as held (synthetic-long/short, call/put
+    spreads with credit/debit side, collars, singles). `trades` pairs the
+    day-over-day changes by equal absolute contract change (roll / synthetic
+    / spread / collar / pair / single), each fund compared against its own
+    previous snapshot. Legs carry signed `contracts` (negative = written),
+    `optionType` CALL/PUT, `isFlex`, and `change` vs. that snapshot.
+    """
+    if not _TICKER_PATTERN.match(underlying):
+        raise HTTPException(status_code=400, detail="Invalid ticker format")
+    result = structures.get_option_structures(underlying)
+    if result is None:
+        raise HTTPException(status_code=404,
+                            detail=f"No tracked fund holds options on {underlying.upper()}")
+    return result
 
 
 @app.get("/api/v1/tickers", tags=["public"])

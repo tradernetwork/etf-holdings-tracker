@@ -571,6 +571,103 @@ def get_available_dates() -> list[str]:
     return sorted([d for d in dates if _is_trading_day(d)], reverse=True)
 
 
+# ─── Row provenance & option-leg fields ──────────────────────────────────────
+# See docs/DATA_QUALITY_2026-09.md. The scraper now writes three additive
+# columns: Refreshed (False = carried forward from an earlier file because the
+# issuer fetch failed), Source_Date (the date the rows are really from) and
+# Is_Flex. Files written before 2026-09-27 lack them, so every reader below
+# falls back to deriving what it can from the columns that do exist.
+
+_FLEX_ROOT_RE = re.compile(r'^\d[A-Z]')
+
+
+def _iso_date(v: str | None) -> str | None:
+    """'2026-08-14', '08/14/2026' or '2026-08-14 00:00:00' → '2026-08-14'."""
+    v = (v or '').strip()
+    if not v:
+        return None
+    m = re.match(r'^(\d{4})-(\d{2})-(\d{2})', v)
+    if m:
+        return m.group(0)
+    m = re.match(r'^(\d{1,2})/(\d{1,2})/(\d{4})', v)
+    if m:
+        return f"{m.group(3)}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+    return None
+
+
+def row_file_date(r: dict) -> str | None:
+    """The date a row's data is actually from: Source_Date, else the issuer's
+    own Date column. NOT the history file's name — that is the run date."""
+    return _iso_date(r.get('Source_Date')) or _iso_date(r.get('Date'))
+
+
+def row_refreshed(r: dict) -> bool | None:
+    """False when the scraper carried the row forward. None for files that
+    predate the Refreshed column (unknown — use `stale` instead)."""
+    v = (r.get('Refreshed') or '').strip().lower()
+    if v in ('true', '1'):
+        return True
+    if v in ('false', '0'):
+        return False
+    return None
+
+
+def row_is_flex(r: dict) -> bool | None:
+    """FLEX option leg. Mirrors scrape_avantis.is_flex_option (the API image
+    doesn't ship the scraper): OCC root with a leading digit, or a strike off
+    the $0.25 listing grid. None for non-option rows."""
+    if not (r.get('Option_Type') or '').strip():
+        return None
+    v = (r.get('Is_Flex') or '').strip().lower()
+    if v in ('true', 'false'):
+        return v == 'true'
+    for field in ('Ticker', 'Name'):
+        if _FLEX_ROOT_RE.match((r.get(field) or '').strip()):
+            return True
+    strike = _nullable_float(r.get('Option_Strike'))
+    return strike is not None and round(strike * 100) % 25 != 0
+
+
+def previous_trading_day(day: str) -> str:
+    """Weekday before `day` (ISO). Exchange holidays are not modelled — on the
+    day after one, a fund is judged against the holiday, which errs toward
+    calling it fresh."""
+    d = date.fromisoformat(day) - timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d.isoformat()
+
+
+def is_stale(file_date: str | None, as_of: str | None = None) -> bool:
+    """File date older than the trading day before the snapshot. Issuers stamp
+    files T-1 or T, so both count as fresh; anything older is stale."""
+    as_of = as_of or get_as_of_date()
+    if not file_date or as_of == 'unknown':
+        return False
+    return file_date < previous_trading_day(as_of)
+
+
+def option_leg_fields(r: dict) -> dict:
+    """Option-leg fields for API rows. `optionType` is uppercase CALL/PUT (the
+    CSV stores 'Call'/'Put'); `contracts` is signed, negative = written."""
+    opt = (r.get('Option_Type') or '').strip()
+    return {
+        'underlying': (r.get('Underlying_Ticker') or '').strip() or None,
+        'optionType': opt.upper() or None,
+        'strike': _nullable_float(r.get('Option_Strike')),
+        'expiry': _iso_date(r.get('Option_Expiry')),
+        'contracts': _safe_float(r.get('Share Quantity', '0')),
+        'isFlex': row_is_flex(r),
+    }
+
+
+def option_leg_expired(r: dict, as_of: str | None = None) -> bool:
+    """Option already past expiry as of the snapshot date."""
+    exp = _iso_date(r.get('Option_Expiry'))
+    as_of = as_of or get_as_of_date()
+    return bool(exp and as_of != 'unknown' and exp < as_of)
+
+
 def get_as_of_date() -> str:
     dates = get_available_dates()
     return dates[0] if dates else 'unknown'
@@ -1691,6 +1788,7 @@ def get_all_holdings() -> dict:
             'shares': _safe_float(r.get('Share Quantity', '0')),
         }
 
+    as_of = get_as_of_date()
     rows: list[dict] = []
     for r in latest:
         fund = r.get('ETF Ticker', '')
@@ -1698,6 +1796,8 @@ def get_all_holdings() -> dict:
         weight = _safe_float(r.get('Weight', '0'))
         shares = _safe_float(r.get('Share Quantity', '0'))
         prev = prev_map.get((fund, ticker))
+        is_option = bool(r.get('Option_Type'))
+        file_date = row_file_date(r)
         rows.append({
             'fund': fund,
             'ticker': ticker,
@@ -1707,11 +1807,22 @@ def get_all_holdings() -> dict:
             'shares': shares,
             'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
             'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
-            'isOption': bool(r.get('Option_Type')),
+            'isOption': is_option,
             'cusip': r.get('CUSIP', ''),
+            # ── Added 2026-09-27 (additive; see docs/DATA_QUALITY_2026-09.md) ──
+            # `shares` is unchanged: on option rows it is the signed contract
+            # count (negative = written), repeated as `contracts` below.
+            'marketValue': _nullable_float(r.get('Market Value')),
+            'fileDate': file_date,
+            'refreshed': row_refreshed(r),
+            'stale': is_stale(file_date, as_of),
+            **(option_leg_fields(r) if is_option else {
+                'underlying': None, 'optionType': None, 'strike': None,
+                'expiry': None, 'contracts': None, 'isFlex': None,
+            }),
         })
     return {
-        'asOfDate': get_as_of_date(),
+        'asOfDate': as_of,
         'count': len(rows),
         'holdings': rows,
     }
@@ -1778,6 +1889,8 @@ def get_fund_detail(fund: str) -> dict | None:
             'dte': _nullable_float(r.get('DTE')),
             'moneyness': _nullable_float(r.get('Moneyness')),
             'underlyingPrice': _nullable_float(r.get('Underlying_Price')),
+            'isFlex': row_is_flex(r),
+            'marketValue': _nullable_float(r.get('Market Value')),
         })
     option_holdings.sort(key=lambda x: -abs(x['weight']))
 
@@ -1902,6 +2015,20 @@ def get_fund_detail(fund: str) -> dict | None:
         'streaks': fund_streaks,
         'flow': flow,
         'optionRolls': option_rolls,
+        # The fund's own holdings date — asOfDate is the snapshot (run) date,
+        # which a frozen or carried-forward fund doesn't actually match.
+        **_fund_freshness(fund_rows),
+    }
+
+
+def _fund_freshness(fund_rows: list[dict]) -> dict:
+    dates = [fd for fd in (row_file_date(r) for r in fund_rows) if fd]
+    holdings_date = max(dates) if dates else None
+    flags = [f for f in (row_refreshed(r) for r in fund_rows) if f is not None]
+    return {
+        'holdingsDate': holdings_date,
+        'stale': is_stale(holdings_date),
+        'refreshed': (all(flags) if flags else None),
     }
 
 
@@ -1919,10 +2046,16 @@ def get_ticker_detail(ticker: str) -> dict | None:
     if not matches:
         return None
 
+    as_of = get_as_of_date()
     funds = []
     for r in matches:
         fund = r.get('ETF Ticker', '')
         is_option = bool(r.get('Option_Type'))
+        # A contract past expiry is not a position, however long a frozen
+        # issuer file keeps listing it (EGGQ showed a Sep 4 AMD call on 9/27).
+        if is_option and option_leg_expired(r, as_of):
+            continue
+        file_date = row_file_date(r)
         entry: dict = {
             'fund': fund,
             'provider': FUND_PROVIDERS.get(fund, fund),
@@ -1932,12 +2065,16 @@ def get_ticker_detail(ticker: str) -> dict | None:
             # $B, from get_fund_aum() — added so /api/v1/ticker/{t} can drive
             # dollar-exposure estimates without a separate client-side lookup.
             'aum': get_fund_aum(fund),
+            'fileDate': file_date,
+            'stale': is_stale(file_date, as_of),
+            'refreshed': row_refreshed(r),
         }
         if is_option:
             entry['optionDetails'] = {
                 'type': r.get('Option_Type', ''),
                 'strike': _safe_float(r.get('Option_Strike', '0')),
                 'expiry': r.get('Option_Expiry', ''),
+                **option_leg_fields(r),
             }
         funds.append(entry)
 
@@ -2084,7 +2221,14 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             continue
         if category and get_fund_category(fund) != category:
             continue
-        d = by_fund.setdefault(fund, {'holdings': 0, 'options': 0, 'top': None})
+        d = by_fund.setdefault(fund, {'holdings': 0, 'options': 0, 'top': None,
+                                      'fileDate': None, 'refreshed': None})
+        fd = row_file_date(r)
+        if fd and (d['fileDate'] is None or fd > d['fileDate']):
+            d['fileDate'] = fd
+        rf = row_refreshed(r)
+        if rf is not None:
+            d['refreshed'] = rf if d['refreshed'] is None else (d['refreshed'] and rf)
         if r.get('Option_Type'):
             d['options'] += 1
             continue
@@ -2096,6 +2240,7 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
         if d['top'] is None or w > d['top']['weight']:
             d['top'] = {'ticker': ticker, 'weight': round(w, 4)}
 
+    as_of = get_as_of_date()
     out = []
     for fund in sorted(by_fund):
         d = by_fund[fund]
@@ -2109,6 +2254,13 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             'holdingsCount': d['holdings'],
             'optionsCount': d['options'],
             'topHolding': d['top'],
+            # The fund's own holdings date (not the snapshot date) and whether
+            # it is older than the previous trading day. `refreshed` is False
+            # when today's fetch failed and yesterday's rows were carried
+            # forward; None for snapshots that predate that column.
+            'lastHoldingsDate': d['fileDate'],
+            'stale': is_stale(d['fileDate'], as_of),
+            'refreshed': d['refreshed'],
         })
     return out
 

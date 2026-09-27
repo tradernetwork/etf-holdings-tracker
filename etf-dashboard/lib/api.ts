@@ -30,6 +30,13 @@ export interface ApiOptionDetails {
     strike: number;
     expiry: string;
     underlying?: string;
+    // Added 2026-09-27 on /api/v1/ticker option rows (optional: older API deploys).
+    /** Uppercase CALL / PUT — `type` keeps the CSV's 'Call' / 'Put'. */
+    optionType?: "CALL" | "PUT" | null;
+    /** Signed contracts: negative = written. */
+    contracts?: number;
+    /** FLEX (non-listed) contract — often one leg of a synthetic. */
+    isFlex?: boolean | null;
 }
 
 export interface ApiChangeRecord {
@@ -309,6 +316,12 @@ export interface ApiFundDetail {
         activeWeightDelta?: number;
         sharesDelta: number;
     }[];
+    /** The fund's own holdings date (issuer file). asOfDate is the snapshot date. */
+    holdingsDate?: string | null;
+    /** holdingsDate older than the previous trading day. */
+    stale?: boolean;
+    /** False = today's issuer fetch failed; rows carried forward. */
+    refreshed?: boolean | null;
     optionHoldings: ApiOptionHolding[];
     recentChanges: ApiChangeRecord[];
     streaks: ApiFundStreak[];
@@ -377,6 +390,12 @@ export interface ApiTickerHolding {
     optionDetails?: ApiOptionDetails;
     /** Fund AUM in $B, from the backend's get_fund_aum(). Null when unknown. */
     aum?: number | null;
+    /** The fund's own holdings date (issuer file), not the snapshot date. */
+    fileDate?: string | null;
+    /** fileDate older than the previous trading day. */
+    stale?: boolean;
+    /** False = carried forward because today's issuer fetch failed. */
+    refreshed?: boolean | null;
 }
 
 export interface ApiTickerDetail {
@@ -617,6 +636,38 @@ export interface ApiIncomeFundSummary {
     incomeLegVisible: boolean;
 }
 
+/** One leg of a dated option trade — contracts are signed (negative = written). */
+export interface ApiActivityLeg {
+    optionType: "CALL" | "PUT" | null;
+    strike: number | null;
+    expiry: string | null;
+    contracts: number;
+    prevContracts: number;
+    change: number;
+    isFlex: boolean | null;
+    dte: number | null;
+    marketValue: number | null;
+}
+
+export interface ApiOptionTrade {
+    /** Paired by equal |contract change| within fund + underlying. */
+    kind: "roll" | "synthetic" | "spread" | "collar" | "pair" | "single";
+    /** For `single`: what the lone change was. */
+    action?: "open" | "close" | "expired" | "add" | "reduce" | "flip";
+    size: number;
+    underlying: string;
+    legs: ApiActivityLeg[];
+}
+
+export interface ApiOptionActivityDay {
+    date: string;
+    /** The fund's previous snapshot this day was diffed against. */
+    compareDate: string;
+    /** False = rows carried forward (issuer fetch failed) — no trades knowable. */
+    refreshed: boolean | null;
+    trades: ApiOptionTrade[];
+}
+
 /** An option leg inside a brokerage-style position row. */
 export interface ApiPositionLeg {
     /** 'synthetic' = one half of a long-call/short-put synthetic stock pair. */
@@ -684,6 +735,8 @@ export interface ApiIncomeFund extends ApiIncomeFundSummary {
     asOfDate: string;
     /** Optional — absent from API deploys that predate the positions view. */
     positions?: ApiPosition[];
+    /** Dated option trades, newest day first (last 10 snapshots). */
+    optionActivity?: ApiOptionActivityDay[];
     otherPositions?: ApiOtherPosition[];
     positionsSummary?: ApiPositionsSummary;
 }
@@ -939,6 +992,17 @@ export const api = {
                 sharesDelta: number;
                 isOption: boolean;
                 cusip: string;
+                // Added 2026-09-27 — optional so older API deploys still type-check.
+                marketValue?: number | null;
+                fileDate?: string | null;
+                refreshed?: boolean | null;
+                stale?: boolean;
+                underlying?: string | null;
+                optionType?: "CALL" | "PUT" | null;
+                strike?: number | null;
+                expiry?: string | null;
+                contracts?: number | null;
+                isFlex?: boolean | null;
             }[];
         }>("/api/v1/holdings", opts),
 };
