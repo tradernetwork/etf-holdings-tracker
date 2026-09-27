@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="September 27, 2026"
+            tag="bugfix"
+            title="The NestYield funds are current again, no waiting for Monday"
+            desc="Rather than leave EGGQ, EGGY and EGGS sitting on their August 14th holdings over the weekend, we pulled NestYield's real September 25th files through the fixed scraper and swapped them into Friday's snapshot. They now match the date on everything else. Fair warning if you look at their day over day activity for Friday: it covers six weeks of changes in one go, because that is how long we were reading the frozen file. Also, EGGQ turns out to be mostly long straddles and put spreads right now, with a single written call, so it shows about 2 percent of its stock covered. That is what the fund is actually holding, not a bug on our end."
+          />
+          <ChangelogEntry
+            date="September 27, 2026"
             tag="feature"
             title="Option activity now has dates, sizes, and tells you what the trade actually was"
             desc="The option activity card on the income fund pages was a grid of contract names with ADDED or TRIMMED stickers and no dates, and it was quietly wrong. It judged ADDED versus TRIMMED from weight, and weight moves when the price moves, so KQQQ's synthetic positions showed as trimmed on days it held exactly the same number of contracts. It also called every call Capping upside, including the ones the fund bought. It is now a dated timeline of the last ten trading days built from actual contract counts. Changes of the same size on the same stock get paired up, so instead of two unrelated lines you see one roll from the 360 call expiring 9/18 to the 375 call expiring 10/2, 210 contracts, written. Spreads, synthetic stock and expiries get named for what they are, and every leg shows the before and after count. The separate rolls card folded into it. The positions table picked up an opened date on each option leg, and the fund header now shows the date on the issuer's own file and flags it when that file is stale, so a fund frozen since August can't pass itself off as current."
