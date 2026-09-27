@@ -71,9 +71,10 @@ HISTORY_DIR = os.path.join(SCRIPT_DIR, "etf-dashboard", "public", "data", "histo
 # all of Roundhill, REX's NVII/TSII, and Amplify's DIVO/QDVO/IDVO.
 #
 # Breadth is safe because _get_profile() falls back to _DEFAULT_PROFILE, and
-# analyze_fund() additionally requires the fund to actually hold option rows —
-# so swap-based funds (NVDW, MSTW ...) and the 0DTE funds whose income leg
-# never appears in an end-of-day file return None instead of a bogus score.
+# analyze_fund() additionally requires a live, written income leg (not just
+# any option row) — so swap-based funds (NVDW, MSTW ...) and the 0DTE funds
+# whose income leg never appears in an end-of-day file return None instead of
+# a bogus score.
 OPTION_FUNDS = {
     fund for fund in _fund_categories.FUND_PROVIDERS
     if _fund_categories.get_fund_category(fund) == 'option-income'
@@ -91,7 +92,10 @@ OPTION_FUNDS = {
 #   hedging_mandated:   True if prospectus requires hedging; False = optional
 #   hedge_weight:       Override weight for hedge ratio (lower if not mandated)
 #   spread_expected:    True if fund's strategy involves defined-risk spreads
-#   peer_group:         'weekly' | 'monthly' — for peer comparison context
+#   peer_group:         'weekly' | 'biweekly' | 'monthly' — FALLBACK label only.
+#                       The label actually reported is measured from the book
+#                       by detect_write_cadence(); this is used only when there
+#                       isn't enough history to measure it.
 #   distribution_freq:  'weekly' | 'monthly' — stated distribution cadence
 #
 FUND_PROFILES = {
@@ -101,11 +105,12 @@ FUND_PROFILES = {
         'strike_style': 'any',     # Prospectus allows ATM, OTM, ITM strategies
         'call_optimal': (-0.09, 0.07),  # Calibrated to 8-snapshot median (~-0.10)
         'put_optimal': (-0.14, 0.08),   # Puts written notably deeper OTM (~-0.17 median)
-        'target_dte': (6.0, 5.0),       # Empirical short-leg median ~5.8 DTE, not 14
+        'target_dte': (6.0, 5.0),       # Two-week call cycle since mid-2026 — a 14→0 DTE
+                                        # cycle averages ~5.5 DTE across business-day snapshots
         'hedging_mandated': False,       # Uses hedging but not universally required
         'hedge_weight': 0.15,            # Reduced — complex strategy, not pure covered
         'spread_expected': True,         # Prospectus lists spreads as a strategy
-        'peer_group': 'weekly',
+        'peer_group': 'biweekly',
         'distribution_freq': 'monthly',
     },
     'KQQQ': {
@@ -115,11 +120,14 @@ FUND_PROFILES = {
         'strike_style': 'otm',     # Explicitly targets 5-15% OTM calls
         'call_optimal': (-0.10, 0.05),  # 5-15% OTM (median -0.107 — on target)
         'put_optimal': (-0.09, 0.05),   # Puts run deeper OTM than profiled (~-0.10 median)
-        'target_dte': (6.0, 5.0),       # Writes weekly (~5.3 median), not 14 DTE
+        'target_dte': (6.0, 5.0),       # Two-week call cycle (weekly until late June 2026);
+                                        # a 14→0 DTE cycle averages ~5.5 DTE across snapshots.
+                                        # Its ~3-month short puts are synthetic-long legs,
+                                        # excluded from DTE scoring by income_legs().
         'hedging_mandated': False,       # "May" use protective puts
         'hedge_weight': 0.15,
         'spread_expected': True,         # Call spreads mentioned
-        'peer_group': 'weekly',
+        'peer_group': 'biweekly',
         'distribution_freq': 'monthly',
     },
     'ULTY': {
@@ -295,6 +303,162 @@ def get_fund_equities(rows: list[dict], fund: str) -> list[dict]:
     return [r for r in rows if r.get('ETF Ticker') == fund and not r.get('Option_Type')]
 
 
+# ─── Leg Classification ──────────────────────────────────────────────────────
+# Not every option row is an income write. Two kinds of rows used to be scored
+# as if they were, and both distorted every metric:
+#
+#   • Expired legs. Some provider feeds keep publishing options after they
+#     expire (NestYield's book sat frozen at DTE -42; KQQQ carried its 9/18
+#     calls to 9/23). A dead contract has no strike, DTE, or premium left to
+#     manage, so it is excluded everywhere.
+#
+#   • Synthetic-stock pairs. A long call + short put on the same underlying,
+#     expiry, strike and size IS 100 shares of stock — it is how YieldMax's
+#     single-name funds, GDXY, and KQQQ hold their underlyings. The short put
+#     in that pair is not an income put: scored as one it dragged DTE Management
+#     toward its ~3-month tenor, got graded on moneyness, was counted as a naked
+#     write, and was paired with its own long call as a "collar" — the opposite
+#     of what it is. Synthetic pairs are treated as the stock position they
+#     replicate: they count as coverage for written calls and they carry delta,
+#     but they are not part of the income book.
+
+_SYNTHETIC_STRIKE_TOL = 0.01  # Strikes within 1% — MSTY pairs a 95.00 call with a 95.01 put
+
+
+def _is_live(option: dict) -> bool:
+    """True unless the row's DTE says the contract has already expired.
+    Rows with no DTE are kept — absence of data is not evidence of expiry."""
+    dte = _safe_float(option.get('DTE'), None)
+    return dte is None or dte >= 0
+
+
+def split_synthetic_legs(options: list[dict]) -> tuple[list[dict], list[dict], dict[str, float]]:
+    """Separate synthetic-stock pairs from the rest of the option book.
+
+    A synthetic long is long call + short put, a synthetic short is short call
+    + long put — same underlying, same expiry, same contract count, strikes
+    within _SYNTHETIC_STRIKE_TOL.
+
+    Returns (other_legs, synthetic_legs, synthetic_shares) where
+    synthetic_shares maps underlying → signed share-equivalent position
+    (+100 per synthetic-long contract, -100 per synthetic-short contract).
+    """
+    groups: dict[tuple, list[dict]] = defaultdict(list)
+    for o in options:
+        groups[(o.get('Underlying_Ticker', ''), o.get('Option_Expiry', ''))].append(o)
+
+    paired: set[int] = set()
+    synthetic_shares: dict[str, float] = defaultdict(float)
+    for (underlying, _), legs in groups.items():
+        if not underlying:
+            continue
+        calls = [o for o in legs if o.get('Option_Type') == 'Call']
+        puts = [o for o in legs if o.get('Option_Type') == 'Put']
+        for c in calls:
+            qc = _safe_float(c.get('Share Quantity', '0'))
+            kc = _safe_float(c.get('Option_Strike', '0'))
+            if qc == 0 or kc <= 0:
+                continue
+            for p in puts:
+                if id(p) in paired:
+                    continue
+                qp = _safe_float(p.get('Share Quantity', '0'))
+                kp = _safe_float(p.get('Option_Strike', '0'))
+                if qp != -qc or kp <= 0:
+                    continue
+                if abs(kc - kp) > _SYNTHETIC_STRIKE_TOL * max(kc, kp):
+                    continue
+                paired.update((id(c), id(p)))
+                synthetic_shares[underlying] += qc * 100  # long call → +, short call → −
+                break
+
+    other = [o for o in options if id(o) not in paired]
+    synthetic = [o for o in options if id(o) in paired]
+    return other, synthetic, dict(synthetic_shares)
+
+
+def income_legs(options: list[dict]) -> list[dict]:
+    """The legs the income strategy actually manages: live, and not part of a
+    synthetic-stock pair."""
+    live = [o for o in options if _is_live(o)]
+    return split_synthetic_legs(live)[0]
+
+
+def _written(options: list[dict]) -> list[dict]:
+    return [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+
+
+# ─── Write Cadence ───────────────────────────────────────────────────────────
+# The peer-group label ("weekly" / "biweekly" / "monthly") used to be hardcoded
+# per fund and went stale: KQQQ and KYLD both wrote weekly calls through June
+# 2026 and then moved to a two-week cycle, but kept showing "weekly". Cadence
+# is now measured from the book itself.
+
+CADENCE_WINDOW_DAYS = 60  # Look-back for cadence detection — recent behaviour only
+
+
+def _cadence_label(days: float) -> str:
+    if days <= 2:
+        return 'daily'
+    if days <= 10:
+        return 'weekly'
+    if days <= 21:
+        return 'biweekly'
+    return 'monthly'
+
+
+def detect_write_cadence(fund: str, dates: list[str],
+                         window_days: int = CADENCE_WINDOW_DAYS) -> dict:
+    """Measure how often a fund opens a new income-write cycle.
+
+    For each snapshot in the window, the "primary" expiry is the one carrying
+    the most written notional among live income legs (count as a tiebreak when
+    the underlying-price feed is empty). The cycle length is the median gap
+    between successive distinct primary expiries. Primary-expiry rather than
+    all-expiries matters: KYLD keeps a few monthly legs alongside its
+    two-week book, and counting every expiry would read it as weekly.
+
+    Returns {'label': str | None, 'days': float | None}.
+    """
+    if not dates:
+        return {'label': None, 'days': None}
+    try:
+        newest = datetime.date.fromisoformat(dates[0])
+    except ValueError:
+        return {'label': None, 'days': None}
+
+    primaries: set[datetime.date] = set()
+    for d in dates:
+        try:
+            snap = datetime.date.fromisoformat(d)
+        except ValueError:
+            continue
+        if (newest - snap).days > window_days:
+            break  # dates are newest-first
+        by_expiry: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
+        for o in _written(income_legs(get_fund_options(get_holdings_for_date(d), fund))):
+            exp = o.get('Option_Expiry', '')
+            try:
+                if datetime.date.fromisoformat(exp) < snap:
+                    continue
+            except ValueError:
+                continue
+            by_expiry[exp][0] += _notional(o)
+            by_expiry[exp][1] += 1
+        if by_expiry:
+            primary = max(by_expiry.items(), key=lambda kv: (kv[1][0], kv[1][1], kv[0]))[0]
+            primaries.add(datetime.date.fromisoformat(primary))
+
+    ordered = sorted(primaries)
+    gaps = [(b - a).days for a, b in zip(ordered, ordered[1:])]
+    if not gaps:
+        return {'label': None, 'days': None}
+    gaps.sort()
+    mid = len(gaps) // 2
+    median = gaps[mid] if len(gaps) % 2 else (gaps[mid - 1] + gaps[mid]) / 2
+    return {'label': _cadence_label(median), 'days': float(median)}
+
+
 # ─── Black-Scholes Approximations ────────────────────────────────────────────
 # These provide approximate Greeks when live market data isn't available.
 # We use them for hedge ratio analysis and directional exposure scoring.
@@ -446,8 +610,11 @@ def compute_strike_selection(options: list[dict], fund: str = '') -> dict:
     A high score means the fund consistently sells options in the
     institutional sweet spot — enough premium to justify the trade,
     enough buffer to avoid frequent assignment.
+
+    Only income legs are scored — expired rows and synthetic-stock short puts
+    are excluded (see income_legs).
     """
-    written = [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+    written = _written(income_legs(options))
     if not written:
         return {
             'avgMoneyness': None, 'callAvgMoneyness': None, 'putAvgMoneyness': None,
@@ -566,20 +733,25 @@ def compute_dte_management(options: list[dict], fund: str = '') -> dict:
     DTE Management — WHEN do options expire relative to optimal theta capture?
 
     Methodology:
-      • Theta decay is non-linear: it accelerates exponentially below ~21 DTE
-        and becomes extreme below ~5 DTE. The sweet spot is 7-21 DTE where
-        daily theta capture is high but gamma risk is manageable.
-      • Scoring uses a Gaussian curve centered on 14 DTE (peak efficiency),
-        with a sigma of 10 that provides smooth decay in both directions.
-      • All positions are weighted by notional exposure.
+      • Theta decay is non-linear: it accelerates below ~21 DTE and becomes
+        extreme below ~5 DTE.
+      • Scoring uses a Gaussian curve centered on the fund's profile
+        target_dte (e.g. ~3 for weekly writers, ~6 for two-week cycles,
+        14 for the unknown-fund default) — each fund is graded against the
+        cadence its strategy calls for.
+      • Calls and puts are scored as separate cadences, notional-weighted.
       • A "consistency bonus" rewards funds with tight DTE clustering
         (systematic execution) vs scattered DTE (ad hoc management).
-      • Very short DTE (<3) is penalized via an exponential gamma risk factor.
+      • Very short DTE (<3) is penalized via an exponential gamma risk factor
+        when short DTE is NOT the fund's stated strategy.
+      • Only income legs are scored — expired rows and synthetic-stock short
+        puts (which carry the ~quarterly tenor of the stock replication, not
+        the income cycle) are excluded.
 
     A high score means the fund manages expiry timing to maximize
     theta capture per day while controlling gamma blow-up risk.
     """
-    written = [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+    written = _written(income_legs(options))
     if not written:
         return {
             'avgDTE': None,
@@ -626,12 +798,13 @@ def compute_dte_management(options: list[dict], fund: str = '') -> dict:
     dte_center, dte_sigma = profile['target_dte']
 
     # Score calls and puts as SEPARATE cadences, then blend by notional.
-    # Some funds run a bimodal structure by design — e.g. KQQQ writes weekly
-    # income calls (~6 DTE) alongside quarterly collateral puts (~98 DTE).
-    # Collapsing both into one mean (~56 DTE) scores the weekly income engine
-    # against a number it never trades at. Scoring each leg-type on its own
-    # avg DTE (the same way strike selection treats calls vs puts) keeps the
-    # income cadence honest.
+    # Some funds write income calls alongside longer-dated puts (e.g. KYLD's
+    # ~monthly put legs next to its two-week calls). Collapsing both into one
+    # mean scores the call engine against a number it never trades at.
+    # Scoring each leg-type on its own avg DTE (the same way strike selection
+    # treats calls vs puts) keeps the income cadence honest. KQQQ's quarterly
+    # short puts, which this comment used to cite, are synthetic-long legs
+    # and never reach this point.
     def _leg_dte_score(legs):
         nd = [(_safe_float(o.get('DTE'), None), _notional(o)) for o in legs]
         nd = [(d, n) for d, n in nd if d is not None]
@@ -697,20 +870,32 @@ def compute_spread_efficiency(options: list[dict], equities: list[dict]) -> dict
 
     A high score means the fund uses capital-efficient, defined-risk structures
     with favorable risk/reward ratios.
+
+    Coverage counts stock in either form: shares held outright or a synthetic
+    long (long call + short put) covers written calls; short stock or a
+    synthetic short covers written puts (SLTY's "covered puts"). Synthetic
+    pairs themselves are neither spreads nor naked writes.
     """
+    live = [o for o in options if _is_live(o)]
+    options, synthetic, synthetic_shares = split_synthetic_legs(live)
     if not options:
         return {
             'spreadCount': 0, 'nakedCount': 0, 'coveredCount': 0,
+            'syntheticCount': len(synthetic) // 2,
             'spreadRatio': None, 'avgRiskReward': None, 'avgWidthPct': None,
             'spreads': [], 'score': None,
         }
 
-    # Build equity holdings map for coverage detection
-    equity_tickers = set()
+    # Stock positions (real or synthetic) that cover written legs
+    stock: dict[str, float] = defaultdict(float)
     for e in equities:
         t = e.get('Ticker', '').strip()
-        if t and _safe_float(e.get('Share Quantity', '0')) > 0:
-            equity_tickers.add(t)
+        if t:
+            stock[t] += _safe_float(e.get('Share Quantity', '0'))
+    for u, sh in synthetic_shares.items():
+        stock[u] += sh
+    long_stock = {t for t, q in stock.items() if q > 0}
+    short_stock = {t for t, q in stock.items() if q < 0}
 
     # Group options by (underlying, expiry) for spread detection
     groups: dict[tuple, list[dict]] = defaultdict(list)
@@ -773,8 +958,8 @@ def compute_spread_efficiency(options: list[dict], equities: list[dict]) -> dict
             continue  # Long positions aren't "naked"
         underlying = o.get('Underlying_Ticker', '')
         is_call = o.get('Option_Type') == 'Call'
-        if is_call and underlying in equity_tickers:
-            covered_count += 1  # Covered call — implicitly hedged
+        if underlying in (long_stock if is_call else short_stock):
+            covered_count += 1  # Covered call / covered put — implicitly hedged
         else:
             naked_count += 1
             naked_notional += _notional(o)
@@ -800,6 +985,7 @@ def compute_spread_efficiency(options: list[dict], equities: list[dict]) -> dict
         'spreadCount': spread_count,
         'nakedCount': naked_count,
         'coveredCount': covered_count,
+        'syntheticCount': len(synthetic) // 2,
         'spreadRatio': round(ratio, 3) if ratio is not None else None,
         'avgRiskReward': round(avg_rr, 3) if avg_rr is not None else None,
         'avgWidthPct': round(avg_width_pct, 2) if avg_width_pct is not None else None,
@@ -818,15 +1004,20 @@ def compute_roll_behavior(fund: str, dates: list[str]) -> dict:
       • **DTE at roll is computed from the OLD position's expiry date minus
         the PREVIOUS snapshot's date** — not from the DTE field, which would
         reflect current-day DTE and produce negative values for expired options.
-      • Weekend/holiday gap risk: flags rolls where the old expiry falls on
-        a Friday (weekend gap) or the day before a market holiday.
+      • weekendGapRolls counts rolls out of a Friday expiry. It is
+        informational only: standard listed options expire on Fridays, so
+        nearly every roll qualifies. It used to subtract 5 points per roll
+        (capped at 20), which amounted to a flat -20 on every fund that had
+        rolled four times — no signal, just a lower number.
+      • Synthetic-stock legs are excluded; rolling the stock replication is
+        not income management.
       • Roll direction: "up" = higher strike (bullish), "down" = lower strike
         (defensive), "same" = pure time extension.
       • Scoring: Gaussian centered on 5 DTE (ideal roll timing: captured most
-        theta, still time to manage). Frequency bonus for consistent rolling.
+        theta, still time to manage).
 
     A high score means the fund proactively manages positions before
-    expiration, avoids weekend gap risk, and rolls at optimal timing.
+    expiration and rolls at optimal timing.
     """
     # Filter to business days only — weekend snapshots cause false signals
     biz_dates = []
@@ -855,8 +1046,11 @@ def compute_roll_behavior(fund: str, dates: list[str]) -> dict:
         current_rows = get_holdings_for_date(current_date)
         previous_rows = get_holdings_for_date(prev_date)
 
-        curr_options = get_fund_options(current_rows, fund)
-        prev_options = get_fund_options(previous_rows, fund)
+        # Expired legs are kept here on purpose: a feed that lingers on a dead
+        # contract (KQQQ carried its 9/18 calls to 9/23) still resolves into a
+        # roll when the new expiry appears, with rollDTE clamped to 0.
+        curr_options = split_synthetic_legs(get_fund_options(current_rows, fund))[0]
+        prev_options = split_synthetic_legs(get_fund_options(previous_rows, fund))[0]
 
         # Build maps: (underlying, type) → list of written positions
         curr_map: dict[tuple, list[dict]] = defaultdict(list)
@@ -899,7 +1093,7 @@ def compute_roll_behavior(fund: str, dates: list[str]) -> dict:
                     roll_dte = max(0, sum(old_dtes) / len(old_dtes)) if old_dtes else None
                     old_expiry_str = sorted(expired)[0]
 
-                    # Weekend gap detection
+                    # Friday-expiry roll (informational — not penalized)
                     is_weekend_gap = False
                     try:
                         exp_dt = datetime.datetime.strptime(old_expiry_str, '%Y-%m-%d').date()
@@ -932,10 +1126,7 @@ def compute_roll_behavior(fund: str, dates: list[str]) -> dict:
 
     # Score: Gaussian centered on 5 DTE, sigma=4
     if avg_roll_dte is not None:
-        base_score = _gaussian_score(avg_roll_dte, 5.0, 4.0)
-        # Weekend gap penalty: each gap roll reduces score
-        gap_penalty = min(20, weekend_gap_count * 5)
-        score = max(0, base_score - gap_penalty)
+        score = _gaussian_score(avg_roll_dte, 5.0, 4.0)
     elif rolls:
         score = 40  # Rolls detected but no valid DTE data
     else:
@@ -969,8 +1160,13 @@ def compute_premium_capture(options: list[dict], net_assets: Optional[float]) ->
 
     A high score means the fund generates meaningful income relative to
     its assets with good hedge cost efficiency.
+
+    Synthetic-stock pairs are excluded: their long call is stock replication,
+    not protection, and counting it as "premium bought" drove hedge cost
+    above 100% and net premium negative for every synthetic fund.
     """
-    written = [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+    options = income_legs(options)
+    written = _written(options)
     bought = [o for o in options if _safe_float(o.get('Share Quantity', '0')) > 0]
 
     if not written:
@@ -1059,7 +1255,17 @@ def compute_hedge_ratio(options: list[dict], equities: list[dict]) -> dict:
 
     A high score means the fund has low net directional exposure, good
     equity coverage, and uses institutional hedge structures (collars).
+
+    Only stock the option book is written on counts toward delta. Every
+    non-option row used to be added as 1 delta per unit — so Treasury bills
+    (quantity = par value) and cash swamped the book, e.g. ~$850M of phantom
+    "delta" on MSTY, pinning its hedge score near zero.
+
+    A collar is stock (real or synthetic) + a written call + a long put. A
+    short put + long call is NOT a collar — at the same strike it is a
+    synthetic long, the most directional structure there is.
     """
+    options = [o for o in options if _is_live(o)]
     if not options:
         return {
             'netPortfolioDelta': None, 'coverageRatio': None,
@@ -1067,35 +1273,44 @@ def compute_hedge_ratio(options: list[dict], equities: list[dict]) -> dict:
             'avgAbsDelta': None, 'score': None,
         }
 
-    # Compute per-option Greeks
+    book, _synthetic, synthetic_shares = split_synthetic_legs(options)
+    underlyings = {o.get('Underlying_Ticker', '') for o in options} - {''}
+
+    # Directional exposure: every live option (synthetic pairs included — they
+    # are real exposure) plus stock held in the names the book is written on.
     total_delta = 0.0
     total_abs_delta = 0.0
     for o in options:
-        g = _option_greeks(o)
-        total_delta += g['position_delta']
-        total_abs_delta += abs(g['position_delta'])
+        pd = _option_greeks(o)['position_delta']
+        total_delta += pd
+        total_abs_delta += abs(pd)
+    options_abs_delta = total_abs_delta
 
-    # Add equity delta (stock delta = 1.0 per share)
-    equity_map = {}
+    equity_map: dict[str, float] = defaultdict(float)
     for e in equities:
         t = e.get('Ticker', '').strip()
-        qty = _safe_float(e.get('Share Quantity', '0'))
-        if t and qty > 0:
-            equity_map[t] = equity_map.get(t, 0) + qty
-            total_delta += qty  # Each share = 1 delta
+        if t in underlyings:
+            equity_map[t] += _safe_float(e.get('Share Quantity', '0'))
+    for qty in equity_map.values():
+        total_delta += qty  # Each share = 1 delta
+        total_abs_delta += abs(qty)
 
-    # Coverage analysis
-    written = [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+    stock = dict(equity_map)
+    for u, sh in synthetic_shares.items():
+        stock[u] = stock.get(u, 0.0) + sh
+    long_stock = {t for t, q in stock.items() if q > 0}
+    short_stock = {t for t, q in stock.items() if q < 0}
+
+    # Coverage analysis over the income book
+    written = _written(book)
     underlyings_written = set(o.get('Underlying_Ticker', '') for o in written)
-    long_opts = [o for o in options if _safe_float(o.get('Share Quantity', '0')) > 0]
-    underlyings_long = set(o.get('Underlying_Ticker', '') for o in long_opts)
+    long_opts = [o for o in book if _safe_float(o.get('Share Quantity', '0')) > 0]
 
     covered_call_count = 0
     collar_count = 0
     covered_set = set()
 
     for underlying in underlyings_written:
-        has_equity = underlying in equity_map
         written_calls = [o for o in written if o.get('Underlying_Ticker') == underlying
                          and o.get('Option_Type') == 'Call']
         written_puts = [o for o in written if o.get('Underlying_Ticker') == underlying
@@ -1105,22 +1320,27 @@ def compute_hedge_ratio(options: list[dict], equities: list[dict]) -> dict:
         long_calls = [o for o in long_opts if o.get('Underlying_Ticker') == underlying
                       and o.get('Option_Type') == 'Call']
 
-        # Covered call: short call + long equity
-        if written_calls and has_equity:
+        # Covered call: short call + long stock (outright or synthetic)
+        if written_calls and underlying in long_stock:
             covered_call_count += len(written_calls)
             covered_set.update(id(o) for o in written_calls)
+            # Collar: the stock is also protected by a long put
+            if long_puts:
+                collar_count += min(len(written_calls), len(long_puts))
 
-        # Collar: short call + long put (or short put + long call) on same name
-        if written_calls and long_puts:
-            collar_count += min(len(written_calls), len(long_puts))
-            covered_set.update(id(o) for o in written_calls[:len(long_puts)])
-        if written_puts and long_calls:
-            collar_count += min(len(written_puts), len(long_calls))
-            covered_set.update(id(o) for o in written_puts[:len(long_calls)])
+        # Covered put: short put + short stock (outright or synthetic)
+        if written_puts and underlying in short_stock:
+            covered_set.update(id(o) for o in written_puts)
+
+        # Long wings of the same type cap a written leg's loss (vertical spread)
+        if written_calls and long_calls:
+            covered_set.update(id(o) for o in written_calls[:len(long_calls)])
+        if written_puts and long_puts:
+            covered_set.update(id(o) for o in written_puts[:len(long_puts)])
 
     coverage_ratio = len(covered_set) / len(written) if written else None
 
-    avg_abs_delta = total_abs_delta / len(options) if options else None
+    avg_abs_delta = options_abs_delta / len(options) if options else None
 
     # Score: lower net delta (more hedged) = better
     # Normalize by total abs delta to get a "% hedged" metric
@@ -1162,8 +1382,10 @@ def compute_concentration_risk(options: list[dict]) -> dict:
 
     A high score means the fund spreads risk across multiple underlyings
     and expiry dates, reducing single-event blow-up risk.
+
+    Measured over income legs only (see income_legs).
     """
-    written = [o for o in options if _safe_float(o.get('Share Quantity', '0')) < 0]
+    written = _written(income_legs(options))
     if not written:
         return {
             'hhi': None, 'uniqueUnderlyings': 0,
@@ -1351,19 +1573,27 @@ def analyze_fund(fund: str) -> dict | None:
     if not dates:
         return None
 
-    # Find the most recent snapshot that actually has option legs for this
-    # fund. A single bad scrape (dropped option rows — e.g. ULTI on
-    # 2026-06-12) used to leave dates[0] empty, return None, and silently
-    # erase the fund from the effectiveness page. Walk back to the last good
-    # snapshot instead, and record how stale it is.
+    # Find the most recent snapshot with live income writes for this fund.
+    # A single bad scrape (dropped option rows — e.g. ULTI on 2026-06-12)
+    # used to leave dates[0] empty, return None, and silently erase the fund
+    # from the effectiveness page. A frozen feed is the mirror image: the
+    # rows are there but every contract has expired (NestYield sat at DTE -42
+    # for weeks) and was being graded as if live. Walk back to the last
+    # snapshot that has something real to score, and record how stale it is.
+    #
+    # Funds that never show a written income leg in an end-of-day file —
+    # long-call-only books like QDTE/XDTE/RDTE (0DTE writes open and close
+    # intraday) and MSTW (a deep-ITM call; income runs through swaps) —
+    # return None instead of a grade computed from the hedge-ratio metric
+    # alone.
     as_of = None
     latest_rows = None
     options = []
     for d in dates:
         rows = get_holdings_for_date(d)
-        opts = get_fund_options(rows, fund)
-        if opts:
-            as_of, latest_rows, options = d, rows, opts
+        live = [o for o in get_fund_options(rows, fund) if _is_live(o)]
+        if _written(split_synthetic_legs(live)[0]):
+            as_of, latest_rows, options = d, rows, live
             break
 
     if not options:
@@ -1401,6 +1631,8 @@ def analyze_fund(fund: str) -> dict | None:
 
     # Include fund profile info for frontend context
     profile = _get_profile(fund)
+    cadence = detect_write_cadence(fund, dates[dates.index(as_of):])
+    synthetic_pairs = len(split_synthetic_legs(options)[1]) // 2
 
     return {
         'fund': fund,
@@ -1414,7 +1646,10 @@ def analyze_fund(fund: str) -> dict | None:
         'compositeScore': composite,
         'weights': weights,
         'strategyDescription': profile['strategy'],
-        'peerGroup': profile['peer_group'],
+        # Measured write cycle, falling back to the profile when history is thin
+        'peerGroup': cadence['label'] or profile['peer_group'],
+        'writeCadenceDays': cadence['days'],
+        'syntheticPairs': synthetic_pairs,
         'hedgingMandated': profile['hedging_mandated'],
         **all_metrics,
     }

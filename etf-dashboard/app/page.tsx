@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="September 27, 2026"
+            tag="bugfix"
+            title="The fund grading page had KQQQ down as weekly. It isn’t, and that was the least of it"
+            desc="KQQQ wrote weekly calls until late June, then switched to a two week cycle, and we kept calling it weekly because somebody typed that label in by hand once and nothing ever checked it. KYLD had the same problem. The label is now measured from what the fund actually holds, so when a manager changes their rhythm the page notices. Pulling on that thread turned up worse things. KQQQ and every YieldMax single stock fund own their stock through a long call plus a short put at the same strike, which is just a synthetic share, and we were grading that short put as if it were an income trade, calling it naked, and counting it as a collar, which is roughly the opposite of what it is. The hedge score was counting Treasury bills and cash as if they were stock, which is why MSTY looked like it had no hedging at all. The NestYield funds were being graded on contracts that expired weeks ago because their feed froze, so they now fall back to the last day with live contracts and say how stale that is. And the roll score was docking every fund twenty points for letting options expire on a Friday, which is when options expire. Grades moved, mostly up, and they mean something now."
+          />
+          <ChangelogEntry
             date="September 24, 2026"
             tag="feature"
             title="Two new funds: Roundhill’s memory chip ETF and their generative AI one"
