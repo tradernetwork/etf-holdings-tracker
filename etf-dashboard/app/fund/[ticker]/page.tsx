@@ -32,6 +32,7 @@ import React, { Suspense } from 'react';
 import { FundEffectiveness } from '@/components/fund-effectiveness';
 import { RotationPanel } from '@/components/rotation-panel';
 import { FundPositions } from '@/components/fund-positions';
+import { OptionActivity } from '@/components/option-activity';
 
 // The page reads searchParams (the Daily/Weekly/Monthly toggle), so it MUST
 // be dynamically rendered. A statically-generated route cannot touch
@@ -152,8 +153,19 @@ function FundHeader({ detail, aum, category }: {
                         </Badge>
                     </h1>
                     {detail.asOfDate && (
-                        <p className="text-xs text-slate-500 font-mono mt-1">
-                            as of {formatAsOfDate(detail.asOfDate)}
+                        <p className="text-xs text-slate-500 font-mono mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span>as of {formatAsOfDate(detail.asOfDate)}</span>
+                            {detail.holdingsDate && detail.holdingsDate !== detail.asOfDate && (
+                                <span>· issuer file {formatAsOfDate(detail.holdingsDate)}</span>
+                            )}
+                            {(detail.stale || detail.refreshed === false) && (
+                                <span
+                                    className="font-sans text-[10px] px-1.5 py-0.5 rounded border border-warning/40 bg-warning/10 text-warning"
+                                    title="The issuer hasn't published newer holdings, or today's download failed and yesterday's rows are shown"
+                                >
+                                    {detail.refreshed === false ? 'not refreshed today' : 'stale'}
+                                </span>
+                            )}
                         </p>
                     )}
                 </div>
@@ -287,11 +299,18 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
                 </Suspense>
             )}
 
-            {/* Rolls — contracts closed and reopened, routine income mechanics */}
-            {(detail.optionRolls ?? []).length > 0 && <RollHistory rolls={detail.optionRolls} />}
+            {/* Dated option trades (contract-based, paired into rolls/spreads/
+                synthetics). Replaces the Rolls card and the weight-driven
+                ADDED/TRIMMED grid whenever the API provides it. */}
+            {income?.optionActivity && income.optionActivity.length > 0 && (
+                <OptionActivity days={income.optionActivity} />
+            )}
 
-            {/* Option activity — contracts opened/closed today (plus stock churn
-                when the Positions table isn't available to show it). */}
+            {/* Fallback for API deploys without optionActivity: the old Rolls
+                card and daily activity (plus stock churn when the Positions
+                table isn't available to show it). */}
+            {!income?.optionActivity && (detail.optionRolls ?? []).length > 0 && <RollHistory rolls={detail.optionRolls} />}
+            {(!income?.optionActivity || !hasPositions) && (
             <Card className="bg-surface border-rule">
                 <CardHeader className="pb-3 border-b border-rule">
                     <CardTitle className="text-base font-bold flex items-center gap-2 text-white">
@@ -331,6 +350,7 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
                     )}
                 </CardContent>
             </Card>
+            )}
 
             <FundEffectiveness fund={detail.fund} />
 

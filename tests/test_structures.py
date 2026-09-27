@@ -151,3 +151,57 @@ def test_unknown_underlying_is_none(monkeypatch, tmp_path):
     monkeypatch.setattr(d, 'HISTORY_DIR', str(tmp_path))
     monkeypatch.setattr(st, 'HISTORY_DIR', str(tmp_path))
     assert st.get_option_structures('ZZZZ') is None
+
+
+# ─── Fund activity timeline ─────────────────────────────────────────────────
+
+FIELDS_Q = FIELDS + ['Refreshed']
+
+
+def _write_q(path, rows):
+    with open(path, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS_Q)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, '') for k in FIELDS_Q})
+
+
+def test_fund_activity_is_dated_contract_based_and_paired(tmp_path, monkeypatch):
+    st._snapshot_cached.cache_clear()
+    # Mon 9/21: short 650C 9/25 + synthetic. Tue 9/22: nothing changes except
+    # WEIGHT (must not register). Wed 9/23: carried forward. Thu 9/24: the 650C
+    # expires/rolls into a 660C 10/02 and a new 100-lot put is written.
+    base = [_o('AMDY', 'S1', 'Call', 490.0, '2026-10-16', 7420, 'x'),
+            _o('AMDY', 'S2', 'Put', 490.01, '2026-10-16', -7420, 'x')]
+    _write_q(tmp_path / 'holdings_2026-09-21.csv',
+             base + [_o('AMDY', 'C1', 'Call', 650.0, '2026-09-25', -900, 'x')])
+    tue = base + [_o('AMDY', 'C1', 'Call', 650.0, '2026-09-25', -900, 'x')]
+    tue[0] = {**tue[0], 'Weight': '9.9'}
+    _write_q(tmp_path / 'holdings_2026-09-22.csv', tue)
+    _write_q(tmp_path / 'holdings_2026-09-23.csv',
+             [{**r, 'Refreshed': 'False'} for r in tue])
+    _write_q(tmp_path / 'holdings_2026-09-24.csv',
+             base + [_o('AMDY', 'C2', 'Call', 660.0, '2026-10-02', -900, 'x'),
+                     _o('AMDY', 'P1', 'Put', 500.0, '2026-10-16', -100, 'x')])
+    monkeypatch.setattr(d, 'HISTORY_DIR', str(tmp_path))
+    monkeypatch.setattr(st, 'HISTORY_DIR', str(tmp_path))
+
+    days = st.get_fund_option_activity('amdy', days=10)['days']
+    assert [x['date'] for x in days] == ['2026-09-24', '2026-09-23', '2026-09-22']
+    thu, wed, tue_ = days
+    assert thu['compareDate'] == '2026-09-23'
+    kinds = sorted((t['kind'], t.get('action')) for t in thu['trades'])
+    assert kinds == [('roll', None), ('single', 'open')]
+    assert wed['refreshed'] is False and wed['trades'] == []
+    assert tue_['trades'] == []  # weight moved, contracts didn't
+    st._snapshot_cached.cache_clear()
+
+
+def test_single_kinds():
+    leg = lambda c, p, exp='2026-10-02': {'contracts': c, 'prevContracts': p, 'expiry': exp}
+    assert st._single_kind(leg(-100, 0), '2026-09-24') == 'open'
+    assert st._single_kind(leg(0, -100, '2026-09-18'), '2026-09-24') == 'expired'
+    assert st._single_kind(leg(0, -100), '2026-09-24') == 'close'
+    assert st._single_kind(leg(-150, -100), '2026-09-24') == 'add'
+    assert st._single_kind(leg(-50, -100), '2026-09-24') == 'reduce'
+    assert st._single_kind(leg(50, -100), '2026-09-24') == 'flip'

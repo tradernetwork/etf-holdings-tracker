@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
+from functools import lru_cache
 from itertools import combinations
 
 from .data import (
@@ -302,3 +303,90 @@ def get_option_structures(underlying: str) -> dict | None:
         'pairedPct': round(total_paired / total_changed * 100, 1) if total_changed else None,
         'funds': funds_out,
     }
+
+
+# ─── Per-fund activity timeline ──────────────────────────────────────────────
+# The fund page used to show option "activity" as ADDED/TRIMMED badges driven
+# by WEIGHT changes — which move with price even when no contract trades
+# (KQQQ's synthetic legs read TRIMMED on a day they held exactly 238 contracts
+# both sides). This timeline is built from CONTRACT changes only, dated, and
+# paired into what each change is.
+
+@lru_cache(maxsize=48)
+def _snapshot_cached(path: str, mtime: float) -> tuple[tuple, frozenset]:
+    """(option rows, funds present) of one snapshot, parsed once and cached by
+    (path, mtime) — a rewritten file gets a new mtime and is re-read, so
+    freshness is unchanged. Only option rows are kept, so memory stays small."""
+    rows = _read_csv(path)
+    return (tuple(r for r in rows if (r.get('Option_Type') or '').strip()),
+            frozenset(r.get('ETF Ticker', '') for r in rows))
+
+
+def _snapshot(day: str) -> tuple[tuple, frozenset]:
+    path = os.path.join(HISTORY_DIR, f'holdings_{day}.csv')
+    return _snapshot_cached(path, os.path.getmtime(path))
+
+
+def _single_kind(leg: dict, day: str) -> str:
+    """What a lone contract change is."""
+    cur, prev = leg['contracts'], leg['prevContracts']
+    if not prev:
+        return 'open'
+    if not cur:
+        return 'expired' if leg['expiry'] and leg['expiry'] <= day else 'close'
+    if (cur > 0) != (prev > 0):
+        return 'flip'
+    return 'add' if abs(cur) > abs(prev) else 'reduce'
+
+
+def get_fund_option_activity(fund: str, days: int = 10) -> dict:
+    """The fund's option trades over its last `days` snapshots, newest first.
+
+    Each day is compared with the fund's previous snapshot (skipping files the
+    fund is missing from). Days whose rows were carried forward carry no new
+    information and are listed as `refreshed: false` with no trades.
+    """
+    fund = fund.upper()
+    dates = get_available_dates()
+    out_days = []
+    # A few extra snapshots so days the fund was missing don't shorten the window.
+    present = [d for d in dates[: days + 4] if fund in _snapshot(d)[1]]
+    for day, prev_day in zip(present, present[1:]):
+        if len(out_days) >= days:
+            break
+        cur_rows = [r for r in _snapshot(day)[0] if r.get('ETF Ticker') == fund]
+        prev_rows = [r for r in _snapshot(prev_day)[0] if r.get('ETF Ticker') == fund]
+        refreshed = row_refreshed(cur_rows[0]) if cur_rows else None
+        entry = {'date': day, 'compareDate': prev_day, 'refreshed': refreshed, 'trades': []}
+        if refreshed is False:
+            out_days.append(entry)
+            continue
+
+        def keyed(rows):
+            m = {}
+            for r in rows:
+                leg = _to_leg(r)
+                leg['underlying'] = (r.get('Underlying_Ticker') or '').strip().upper()
+                m[(leg['underlying'],) + _leg_key(leg)] = leg
+            return m
+
+        cur, prev = keyed(cur_rows), keyed(prev_rows)
+        by_und: dict[str, list[dict]] = defaultdict(list)
+        for k in set(cur) | set(prev):
+            c = cur[k]['contracts'] if k in cur else 0.0
+            p = prev[k]['contracts'] if k in prev else 0.0
+            if c == p:
+                continue
+            base = cur.get(k) or prev[k]
+            by_und[k[0]].append({**base, 'contracts': c, 'prevContracts': p, 'change': c - p})
+        for und in sorted(by_und):
+            for t in _pair_trades(by_und[und]):
+                t['underlying'] = und
+                if t['kind'] == 'single':
+                    t['action'] = _single_kind(t['legs'][0], day)
+                t['legs'].sort(key=lambda l: (l['expiry'] or '', l['strike'] or 0))
+                entry['trades'].append(t)
+        entry['trades'].sort(key=lambda t: (-max(abs(l['change']) * (l['strike'] or 0) for l in t['legs'])))
+        out_days.append(entry)
+
+    return {'fund': fund, 'days': out_days}

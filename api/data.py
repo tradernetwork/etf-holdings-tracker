@@ -2015,6 +2015,20 @@ def get_fund_detail(fund: str) -> dict | None:
         'streaks': fund_streaks,
         'flow': flow,
         'optionRolls': option_rolls,
+        # The fund's own holdings date — asOfDate is the snapshot (run) date,
+        # which a frozen or carried-forward fund doesn't actually match.
+        **_fund_freshness(fund_rows),
+    }
+
+
+def _fund_freshness(fund_rows: list[dict]) -> dict:
+    dates = [fd for fd in (row_file_date(r) for r in fund_rows) if fd]
+    holdings_date = max(dates) if dates else None
+    flags = [f for f in (row_refreshed(r) for r in fund_rows) if f is not None]
+    return {
+        'holdingsDate': holdings_date,
+        'stale': is_stale(holdings_date),
+        'refreshed': (all(flags) if flags else None),
     }
 
 

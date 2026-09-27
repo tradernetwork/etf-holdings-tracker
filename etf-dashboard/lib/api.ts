@@ -316,6 +316,12 @@ export interface ApiFundDetail {
         activeWeightDelta?: number;
         sharesDelta: number;
     }[];
+    /** The fund's own holdings date (issuer file). asOfDate is the snapshot date. */
+    holdingsDate?: string | null;
+    /** holdingsDate older than the previous trading day. */
+    stale?: boolean;
+    /** False = today's issuer fetch failed; rows carried forward. */
+    refreshed?: boolean | null;
     optionHoldings: ApiOptionHolding[];
     recentChanges: ApiChangeRecord[];
     streaks: ApiFundStreak[];
@@ -630,6 +636,38 @@ export interface ApiIncomeFundSummary {
     incomeLegVisible: boolean;
 }
 
+/** One leg of a dated option trade — contracts are signed (negative = written). */
+export interface ApiActivityLeg {
+    optionType: "CALL" | "PUT" | null;
+    strike: number | null;
+    expiry: string | null;
+    contracts: number;
+    prevContracts: number;
+    change: number;
+    isFlex: boolean | null;
+    dte: number | null;
+    marketValue: number | null;
+}
+
+export interface ApiOptionTrade {
+    /** Paired by equal |contract change| within fund + underlying. */
+    kind: "roll" | "synthetic" | "spread" | "collar" | "pair" | "single";
+    /** For `single`: what the lone change was. */
+    action?: "open" | "close" | "expired" | "add" | "reduce" | "flip";
+    size: number;
+    underlying: string;
+    legs: ApiActivityLeg[];
+}
+
+export interface ApiOptionActivityDay {
+    date: string;
+    /** The fund's previous snapshot this day was diffed against. */
+    compareDate: string;
+    /** False = rows carried forward (issuer fetch failed) — no trades knowable. */
+    refreshed: boolean | null;
+    trades: ApiOptionTrade[];
+}
+
 /** An option leg inside a brokerage-style position row. */
 export interface ApiPositionLeg {
     /** 'synthetic' = one half of a long-call/short-put synthetic stock pair. */
@@ -697,6 +735,8 @@ export interface ApiIncomeFund extends ApiIncomeFundSummary {
     asOfDate: string;
     /** Optional — absent from API deploys that predate the positions view. */
     positions?: ApiPosition[];
+    /** Dated option trades, newest day first (last 10 snapshots). */
+    optionActivity?: ApiOptionActivityDay[];
     otherPositions?: ApiOtherPosition[];
     positionsSummary?: ApiPositionsSummary;
 }

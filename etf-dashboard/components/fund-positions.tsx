@@ -19,7 +19,7 @@
 // <details>, so it needs no state.
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type {
-    ApiChangeRecord, ApiIncomeFund, ApiPosition, ApiPositionLeg,
+    ApiChangeRecord, ApiIncomeFund, ApiOptionActivityDay, ApiPosition, ApiPositionLeg,
 } from '@/lib/api';
 import { ArrowDown, ArrowUp, ChevronRight, Search, Wallet, X } from 'lucide-react';
 import Link from 'next/link';
@@ -80,6 +80,33 @@ function coverageColor(pct: number): string {
     if (pct >= 90) return 'var(--buy)';
     if (pct > 0) return 'var(--warning)';
     return 'var(--sell)';
+}
+
+// ─── Opened dates ────────────────────────────────────────────────────────────
+// When a leg first appeared, taken from the dated activity timeline (last ten
+// snapshots). Legs older than the window have no date rather than a wrong one.
+
+function legKey(underlying: string, optionType: string | null, strike: number | null, expiry: string | null): string {
+    const t = (optionType ?? '').toUpperCase().startsWith('C') ? 'C' : 'P';
+    return `${underlying.toUpperCase()}|${t}|${strike ?? ''}|${expiry ?? ''}`;
+}
+
+function openedDates(days: ApiOptionActivityDay[] | undefined): Map<string, string> {
+    const m = new Map<string, string>();
+    // Oldest day first so a leg reopened later keeps its latest open date.
+    for (const d of [...(days ?? [])].reverse()) {
+        for (const t of d.trades) {
+            for (const l of t.legs) {
+                if (!l.prevContracts && l.contracts) m.set(legKey(t.underlying, l.optionType, l.strike, l.expiry), d.date);
+            }
+        }
+    }
+    return m;
+}
+
+function fmtOpened(iso: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    return m ? `opened ${Number(m[2])}/${Number(m[3])}` : `opened ${iso}`;
 }
 
 // ─── Derived rows ────────────────────────────────────────────────────────────
@@ -239,7 +266,7 @@ function Upside({ pct }: { pct: number | null }) {
     return <span className={cls}>{pct > 0 ? '+' : ''}{pct.toFixed(1)}%</span>;
 }
 
-function LegRow({ leg, ticker }: { leg: ApiPositionLeg; ticker?: string }) {
+function LegRow({ leg, ticker, opened }: { leg: ApiPositionLeg; ticker?: string; opened?: string }) {
     const symbol = `${ticker ? `${ticker} ` : ''}${fmtExpiry(leg.expiry)} ${leg.strike} ${leg.optionType.toUpperCase().startsWith('C') ? 'C' : 'P'}`;
     return (
         <div className={`${COLS} py-1.5 pl-6 pr-2 text-[11px] ${leg.expired ? 'opacity-50' : ''}`}>
@@ -250,12 +277,14 @@ function LegRow({ leg, ticker }: { leg: ApiPositionLeg; ticker?: string }) {
                 <span className="block text-slate-500 lg:hidden">
                     {[
                         leg.expired ? 'expired' : leg.dte != null ? `${Math.round(leg.dte)} DTE` : null,
+                        opened ? fmtOpened(opened) : null,
                         leg.upsideRoomPct != null
                             ? leg.upsideRoomPct >= 0 ? `${leg.upsideRoomPct.toFixed(1)}% upside room` : `ITM by ${Math.abs(leg.upsideRoomPct).toFixed(1)}%`
                             : null,
                     ].filter(Boolean).join(' · ')}
                 </span>
                 {leg.expired && <span className="hidden lg:inline ml-2 text-slate-500">expired</span>}
+                {opened && <span className="hidden lg:inline ml-2 text-slate-500">{fmtOpened(opened)}</span>}
             </div>
             <div className={`${SHOW.qty} ${NUM} text-slate-400`}>{fmtSigned(leg.contracts)}</div>
             <div className={`${SHOW.price} ${NUM} text-slate-500`}>{fmtPrice(leg.price)}</div>
@@ -273,7 +302,7 @@ function LegRow({ leg, ticker }: { leg: ApiPositionLeg; ticker?: string }) {
     );
 }
 
-function PositionRow({ r }: { r: Row }) {
+function PositionRow({ r, opened }: { r: Row; opened: Map<string, string> }) {
     const { p } = r;
     const synthetic = p.syntheticShares !== 0;
     const qtyNote = synthetic
@@ -319,7 +348,9 @@ function PositionRow({ r }: { r: Row }) {
             </summary>
             {p.legs.length > 0 && (
                 <div className="bg-black/20 border-t border-rule/60">
-                    {p.legs.map((l, i) => <LegRow key={i} leg={l} />)}
+                    {p.legs.map((l, i) => (
+                        <LegRow key={i} leg={l} opened={opened.get(legKey(p.ticker, l.optionType, l.strike, l.expiry))} />
+                    ))}
                 </div>
             )}
         </details>
@@ -362,6 +393,7 @@ export function FundPositions({ income, changes = [] }: {
 
     const positions = income.positions;
     const summary = income.positionsSummary;
+    const opened = useMemo(() => openedDates(income.optionActivity), [income.optionActivity]);
 
     const changeByTicker = useMemo(() => {
         const m = new Map<string, ApiChangeRecord>();
@@ -596,7 +628,7 @@ export function FundPositions({ income, changes = [] }: {
                         </div>
                         {rows.length === 0 ? (
                             <p className="px-2 py-6 text-center text-xs text-slate-500">No positions match these filters.</p>
-                        ) : rows.map(r => <PositionRow key={r.p.ticker} r={r} />)}
+                        ) : rows.map(r => <PositionRow key={r.p.ticker} r={r} opened={opened} />)}
                     </>
                 )}
 
@@ -612,7 +644,10 @@ export function FundPositions({ income, changes = [] }: {
                                     {dte != null && <span className="text-[11px] text-slate-500">{Math.round(dte)} DTE</span>}
                                     <span className="text-[11px] text-slate-600 ml-auto">{legs.length} leg{legs.length === 1 ? '' : 's'}</span>
                                 </div>
-                                {legs.map(({ ticker, leg }, i) => <LegRow key={`${ticker}-${i}`} leg={leg} ticker={ticker} />)}
+                                {legs.map(({ ticker, leg }, i) => (
+                                    <LegRow key={`${ticker}-${i}`} leg={leg} ticker={ticker}
+                                        opened={opened.get(legKey(ticker, leg.optionType, leg.strike, leg.expiry))} />
+                                ))}
                             </div>
                         );
                     })
@@ -626,7 +661,9 @@ export function FundPositions({ income, changes = [] }: {
                         {optionOnly.map(p => (
                             <div key={p.ticker} className="border-b border-rule last:border-b-0">
                                 <div className="px-2 pt-2 font-mono font-bold text-sm text-slate-300">{p.ticker}</div>
-                                {p.legs.map((l, i) => <LegRow key={i} leg={l} />)}
+                                {p.legs.map((l, i) => (
+                                    <LegRow key={i} leg={l} opened={opened.get(legKey(p.ticker, l.optionType, l.strike, l.expiry))} />
+                                ))}
                             </div>
                         ))}
                     </>
