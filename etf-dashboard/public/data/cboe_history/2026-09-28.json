@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-28T19:40:55.604818+00:00",
+  "date": "2026-09-28T20:33:53.758528+00:00",
   "isInitial": false,
   "totals": {
     "allOptionable": 5335,
@@ -8,14 +8,8 @@
   },
   "diff": {
     "optionable": {
-      "new": {
-        "FGC": "FG CMNTYS HOLDINGS INC COM"
-      },
-      "removed": {
-        "DCOR": "DIMENSIONAL ETF TRUST US COR EQU 1 ETF",
-        "DXUV": "DIMENSIONAL ETF TRUST DIMENSIONAL US",
-        "FGNX": "FG NEXUS INC. COM"
-      }
+      "new": {},
+      "removed": {}
     },
     "weeklyEtfs": {
       "new": {},
@@ -26,5 +20,5 @@
       "removed": {}
     }
   },
-  "hasChanges": true
+  "hasChanges": false
 }

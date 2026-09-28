@@ -27,13 +27,13 @@ _Auto-generated from daily holdings. As of **2026-09-28** · 20 holdings · last
 | Clean energy | · | · | · | · | · | · | · | 5 | · | 5 | 5 | 5 |
 | Cloud/AI | · | 5 | · | · | · | · | 10 | 10 | · | · | · | 5 |
 | Space | · | · | · | · | 5 | 9 | 9 | · | · | · | · | 5 |
-| Healthcare/biotech | · | 5 | · | · | 4 | · | 5 | · | · | · | · | · |
 | Rare earth/materials | · | · | · | · | 5 | 4 | 10 | 5 | · | · | · | · |
-| Nuclear/uranium | · | · | 5 | · | 5 | · | 5 | · | · | · | · | · |
-| Fintech | 5 | · | · | · | · | · | · | 5 | · | · | · | · |
-| Quantum | · | · | · | · | · | 9 | · | · | · | · | · | · |
 | Precious metals | · | · | · | · | · | · | · | · | 5 | · | · | · |
+| Nuclear/uranium | · | · | 5 | · | 5 | · | 5 | · | · | · | · | · |
 | Other | · | · | 5 | 5 | 5 | · | · | · | · | · | · | · |
+| Fintech | 5 | · | · | · | · | · | · | 5 | · | · | · | · |
+| Healthcare/biotech | · | 5 | · | · | 4 | · | 5 | · | · | · | · | · |
+| Quantum | · | · | · | · | · | 9 | · | · | · | · | · | · |
 
 ## Roster churn (latest week vs prior sample)
 

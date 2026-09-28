@@ -26,13 +26,13 @@
     "Clean energy",
     "Cloud/AI",
     "Space",
-    "Healthcare/biotech",
     "Rare earth/materials",
-    "Nuclear/uranium",
-    "Fintech",
-    "Quantum",
     "Precious metals",
-    "Other"
+    "Nuclear/uranium",
+    "Other",
+    "Fintech",
+    "Healthcare/biotech",
+    "Quantum"
   ],
   "timeline": [
     {
@@ -171,13 +171,13 @@
     "Clean energy": 5.0,
     "Cloud/AI": 4.9,
     "Space": 4.9,
-    "Healthcare/biotech": 0.0,
     "Rare earth/materials": 0.0,
-    "Nuclear/uranium": 0.0,
-    "Fintech": 0.0,
-    "Quantum": 0.0,
     "Precious metals": 0.0,
-    "Other": 0.0
+    "Nuclear/uranium": 0.0,
+    "Other": 0.0,
+    "Fintech": 0.0,
+    "Healthcare/biotech": 0.0,
+    "Quantum": 0.0
   },
   "churnSincePrior": {
     "added": [
