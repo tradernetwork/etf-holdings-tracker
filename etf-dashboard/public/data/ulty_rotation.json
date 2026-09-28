@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-09-25",
+  "asOf": "2026-09-28",
   "holdings": 27,
   "dates": [
-    "2026-07-10",
     "2026-07-16",
     "2026-07-24",
     "2026-07-31",
@@ -16,7 +15,8 @@
     "2026-09-04",
     "2026-09-11",
     "2026-09-18",
-    "2026-09-25"
+    "2026-09-25",
+    "2026-09-28"
   ],
   "themes": [
     "Technology",
@@ -30,20 +30,6 @@
     "Healthcare"
   ],
   "timeline": [
-    {
-      "date": "2026-07-10",
-      "weights": {
-        "Technology": 47.425044115319395,
-        "Consumer": 8.514691694086336,
-        "Communications": 7.327742810283322,
-        "Materials": 7.021855330844075,
-        "Uncategorized": 6.634843099746616,
-        "Industrials": 12.330347260597199,
-        "Crypto": 2.3847250225253593,
-        "Financials": 4.905761606775324,
-        "Healthcare": 2.061631840420131
-      }
-    },
     {
       "date": "2026-07-16",
       "weights": {
@@ -197,17 +183,31 @@
         "Materials": 8.485781183562553,
         "Crypto": 3.967154741552824
       }
+    },
+    {
+      "date": "2026-09-28",
+      "weights": {
+        "Industrials": 10.443651761565796,
+        "Materials": 8.522030993714772,
+        "Uncategorized": 13.721732186163178,
+        "Crypto": 3.8772434323597267,
+        "Technology": 43.9931900860905,
+        "Communications": 7.070806285916461,
+        "Financials": 4.038406460685901,
+        "Consumer": 4.023369987415992,
+        "Healthcare": 3.423455399467628
+      }
     }
   ],
   "currentThemes": {
-    "Technology": 43.8,
-    "Uncategorized": 13.9,
+    "Technology": 44.0,
+    "Uncategorized": 13.7,
     "Industrials": 10.4,
     "Materials": 8.5,
     "Communications": 7.1,
-    "Financials": 4.1,
+    "Financials": 4.0,
     "Consumer": 4.0,
-    "Crypto": 4.0,
+    "Crypto": 3.9,
     "Healthcare": 3.4
   },
   "churnSincePrior": {
