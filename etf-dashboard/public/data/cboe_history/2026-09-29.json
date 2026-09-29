@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-29T18:07:12.719212+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5336,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "DCOR": "DFA INVT DIMENSIONS GROUP INC U.S. CORE EQTY 1",
+        "DXUV": "DFA INVT DIMENSIONS GROUP INC U.S. VECTOR EQT"
+      },
+      "removed": {
+        "GBTG": "GLOBAL BUSINESS TRAVEL GROUP COM CL A"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "NFE": "NEW FORTRESS ENERGY INC COM CL A"
+      }
+    }
+  },
+  "hasChanges": true
+}

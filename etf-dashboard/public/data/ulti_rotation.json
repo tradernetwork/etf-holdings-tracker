@@ -2,7 +2,7 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-09-28",
+  "asOf": "2026-09-29",
   "holdings": 20,
   "dates": [
     "2026-07-17",
@@ -16,23 +16,23 @@
     "2026-09-11",
     "2026-09-18",
     "2026-09-25",
-    "2026-09-28"
+    "2026-09-29"
   ],
   "themes": [
     "Uncategorized",
     "Crypto financials",
     "Semis/photonics",
     "Bitcoin miners",
-    "Clean energy",
-    "Cloud/AI",
     "Space",
-    "Rare earth/materials",
+    "Cloud/AI",
+    "Clean energy",
     "Precious metals",
-    "Nuclear/uranium",
-    "Other",
-    "Fintech",
     "Healthcare/biotech",
-    "Quantum"
+    "Rare earth/materials",
+    "Fintech",
+    "Other",
+    "Quantum",
+    "Nuclear/uranium"
   ],
   "timeline": [
     {
@@ -151,33 +151,33 @@
       }
     },
     {
-      "date": "2026-09-28",
+      "date": "2026-09-29",
       "weights": {
-        "Semis/photonics": 10.359539208998642,
-        "Clean energy": 4.991658164609481,
-        "Uncategorized": 48.96954319363435,
-        "Crypto financials": 14.733858659951638,
-        "Cloud/AI": 4.948295556192821,
-        "Space": 4.93489062646533,
-        "Bitcoin miners": 9.805202647995376
+        "Semis/photonics": 10.126269059630344,
+        "Uncategorized": 49.17717971779035,
+        "Crypto financials": 15.032050937026977,
+        "Space": 5.066795616341755,
+        "Cloud/AI": 5.029803828778362,
+        "Bitcoin miners": 9.672135612710072,
+        "Clean energy": 4.7285048725805305
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 49.0,
-    "Crypto financials": 14.7,
-    "Semis/photonics": 10.4,
-    "Bitcoin miners": 9.8,
-    "Clean energy": 5.0,
-    "Cloud/AI": 4.9,
-    "Space": 4.9,
-    "Rare earth/materials": 0.0,
+    "Uncategorized": 49.2,
+    "Crypto financials": 15.0,
+    "Semis/photonics": 10.1,
+    "Bitcoin miners": 9.7,
+    "Space": 5.1,
+    "Cloud/AI": 5.0,
+    "Clean energy": 4.7,
     "Precious metals": 0.0,
-    "Nuclear/uranium": 0.0,
-    "Other": 0.0,
-    "Fintech": 0.0,
     "Healthcare/biotech": 0.0,
-    "Quantum": 0.0
+    "Rare earth/materials": 0.0,
+    "Fintech": 0.0,
+    "Other": 0.0,
+    "Quantum": 0.0,
+    "Nuclear/uranium": 0.0
   },
   "churnSincePrior": {
     "added": [
