@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-30T18:02:54.442735+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5335,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 577
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "DBRG": "DIGITALBRIDGE GROUP INC CL A NEW"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "DBRG": "DIGITALBRIDGE GROUP INC CL A NEW"
+      }
+    }
+  },
+  "hasChanges": true
+}
