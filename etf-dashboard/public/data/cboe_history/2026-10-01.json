@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-01T18:28:00.576184+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5335,
+    "weeklyEtfs": 113,
+    "weeklyEquities": 577
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {
+        "CONL": "GRANITESHARES ETF TR 2X LONG COIN ETF",
+        "SNDQ": "Tradr 2X Short SNDK Daily ETF",
+        "XOVR": "ENTREPRENEURSHARES SERIES TRUS ERSH PRI PUB ETF"
+      },
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
