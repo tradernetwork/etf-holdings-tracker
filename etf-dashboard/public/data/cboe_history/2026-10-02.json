@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-02T17:53:18.310650+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5344,
+    "weeklyEtfs": 113,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "GENB": "GENERATE BIOMEDICINES INC COM SHS",
+        "GLND": "GREENLAND ENERGY CO SHS",
+        "GTO": "INVESCO ACTIVELY MANAGED EXCHA TOTAL RETURN",
+        "HOST": "HOST DIGITAL INC COM SHS CL A",
+        "JCAP": "JEFFERSON CAPITAL INC COM",
+        "KARD": "KARDIGAN INC COM",
+        "SSMR": "SUNSHINE SILVER MNG & REFNG CO COMMON STOCK",
+        "TLSI": "TRISALUS LIFE SCIENCES INC COM",
+        "TTRX": "TURN THERAPEUTICS INC COM"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {
+        "GLND": "GREENLAND ENERGY CO SHS"
+      },
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

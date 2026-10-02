@@ -1,43 +1,43 @@
 # ULTI — Theme Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-10-01** · 20 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-10-02** · 17 holdings · last 12 weekly samples._
 
-> ⚠️ **Uncategorized tickers** (add to the map in the tracker): CBRS, CLF, DELL, HPE, MRVL, MSTR, PURR, SMCI, TEM, U
+> ⚠️ **Uncategorized tickers** (add to the map in the tracker): CBRS, CLF, DELL, MRVL, MSTR, PURR, SMCI, TEM
 
 ## Current theme allocation
 
 | Theme | Weight |
 |------|-------:|
-| Uncategorized | 49.6% |
-| Crypto financials | 15.2% |
-| Semis/photonics | 10.5% |
-| Bitcoin miners | 9.4% |
-| Cloud/AI | 5.2% |
+| Uncategorized | 39.0% |
+| Semis/photonics | 10.9% |
+| Crypto financials | 10.0% |
+| Bitcoin miners | 9.0% |
+| Cloud/AI | 5.1% |
 | Clean energy | 5.1% |
-| Space | 5.0% |
+| Space | 4.8% |
 
 ## Theme-weight drift (weekly)
 
-| Theme | 07-17 | 07-21 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-18 | 09-25 | 10-01 |
+| Theme | 07-17 | 07-21 | 07-31 | 08-07 | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-18 | 09-25 | 10-02 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-| Uncategorized | 51 | 73 | 36 | 13 | 4 | 20 | 26 | 26 | 34 | 21 | 15 | 50 |
-| Crypto financials | 5 | 10 | 5 | · | 5 | · | · | · | 20 | 15 | 20 | 15 |
-| Semis/photonics | · | · | · | 5 | 14 | 23 | 10 | 12 | 11 | 20 | 10 | 10 |
+| Uncategorized | 51 | 73 | 36 | 13 | 4 | 20 | 26 | 26 | 34 | 21 | 15 | 39 |
+| Semis/photonics | · | · | · | 5 | 14 | 23 | 10 | 12 | 11 | 20 | 10 | 11 |
+| Crypto financials | 5 | 10 | 5 | · | 5 | · | · | · | 20 | 15 | 20 | 10 |
 | Bitcoin miners | 10 | 6 | 10 | 13 | · | 19 | · | · | 10 | 20 | 19 | 9 |
 | Cloud/AI | · | 5 | · | · | · | · | 10 | 10 | · | · | · | 5 |
 | Clean energy | · | · | · | · | · | · | · | 5 | · | 5 | 5 | 5 |
 | Space | · | · | · | · | 5 | 9 | 9 | · | · | · | · | 5 |
-| Precious metals | · | · | · | · | · | · | · | · | 5 | · | · | · |
-| Fintech | 5 | · | · | · | · | · | · | 5 | · | · | · | · |
-| Healthcare/biotech | · | 5 | · | · | 4 | · | 5 | · | · | · | · | · |
-| Rare earth/materials | · | · | · | · | 5 | 4 | 10 | 5 | · | · | · | · |
 | Quantum | · | · | · | · | · | 9 | · | · | · | · | · | · |
+| Fintech | 5 | · | · | · | · | · | · | 5 | · | · | · | · |
 | Other | · | · | 5 | 5 | 5 | · | · | · | · | · | · | · |
+| Precious metals | · | · | · | · | · | · | · | · | 5 | · | · | · |
+| Rare earth/materials | · | · | · | · | 5 | 4 | 10 | 5 | · | · | · | · |
+| Healthcare/biotech | · | 5 | · | · | 4 | · | 5 | · | · | · | · | · |
 | Nuclear/uranium | · | · | 5 | · | 5 | · | 5 | · | · | · | · | · |
 
 ## Roster churn (latest week vs prior sample)
 
-- **55% of the book turned over** this step.
-- 🟢 **Added:** ASTS, BMNR, CBRS, CLF, CRDO, HPE, MRVL, MSTR, NBIS, SMCI, U
-- 🔴 **Dropped:** CRCL, HOOD, IREN, LITE, MARA
-- ⚪ **Held:** ASST.UQ, BE, CLSK, COIN, DELL, PURR, RIOT, SNDK, TEM
+- **53% of the book turned over** this step.
+- 🟢 **Added:** ASTS, BMNR, CBRS, CLF, CRDO, MRVL, MSTR, NBIS, SMCI
+- 🔴 **Dropped:** ASST.UQ, CRCL, HOOD, IREN, LITE, MARA
+- ⚪ **Held:** BE, CLSK, COIN, DELL, PURR, RIOT, SNDK, TEM
