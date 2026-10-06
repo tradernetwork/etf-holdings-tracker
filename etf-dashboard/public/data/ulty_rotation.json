@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-02",
+  "asOf": "2026-10-06",
   "holdings": 27,
   "dates": [
-    "2026-07-16",
     "2026-07-24",
     "2026-07-31",
     "2026-08-07",
@@ -16,7 +15,8 @@
     "2026-09-11",
     "2026-09-18",
     "2026-09-25",
-    "2026-10-02"
+    "2026-10-02",
+    "2026-10-06"
   ],
   "themes": [
     "Technology",
@@ -30,20 +30,6 @@
     "Crypto"
   ],
   "timeline": [
-    {
-      "date": "2026-07-16",
-      "weights": {
-        "Technology": 45.76272699360604,
-        "Crypto": 2.4960476719760147,
-        "Materials": 7.320517682542828,
-        "Financials": 5.032671508720023,
-        "Industrials": 12.288639379464021,
-        "Uncategorized": 6.6558764700870245,
-        "Consumer": 8.863540162292171,
-        "Communications": 7.531457859988286,
-        "Healthcare": 2.223915683303145
-      }
-    },
     {
       "date": "2026-07-24",
       "weights": {
@@ -197,18 +183,32 @@
         "Financials": 3.8273524148003113,
         "Consumer": 3.9383907653399164
       }
+    },
+    {
+      "date": "2026-10-06",
+      "weights": {
+        "Technology": 44.51556620315467,
+        "Uncategorized": 14.27397141652849,
+        "Crypto": 3.169164256866435,
+        "Materials": 8.252544294482897,
+        "Industrials": 10.943513923944383,
+        "Healthcare": 3.363420470376335,
+        "Consumer": 4.312696297496496,
+        "Communications": 7.182378988345153,
+        "Financials": 3.896890882241804
+      }
     }
   ],
   "currentThemes": {
     "Technology": 44.5,
-    "Uncategorized": 13.6,
-    "Industrials": 10.8,
-    "Materials": 8.2,
-    "Communications": 7.1,
-    "Consumer": 3.9,
-    "Financials": 3.8,
-    "Healthcare": 3.2,
-    "Crypto": 3.1
+    "Uncategorized": 14.3,
+    "Industrials": 10.9,
+    "Materials": 8.3,
+    "Communications": 7.2,
+    "Consumer": 4.3,
+    "Financials": 3.9,
+    "Healthcare": 3.4,
+    "Crypto": 3.2
   },
   "churnSincePrior": {
     "added": [],

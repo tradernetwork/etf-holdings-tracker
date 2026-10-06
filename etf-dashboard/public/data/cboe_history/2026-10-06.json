@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-06T18:23:06.676116+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5341,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 577
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "SKYD": "SKYDANCE CORP COM CL B"
+      },
+      "removed": {
+        "AETH": "BITWISE FUNDS TRUST TRENDWISE ETHER",
+        "LESL": "LESLIES INC COM",
+        "PSKY": "PARAMOUNT SKYDANCE CORP COM CL B",
+        "QRVO": "QORVO INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {
+        "BKLN": "INVESCO EXCHANGE-TRADED FD TR SR LN ETF",
+        "TZA": "DIREXION SHARES ETF TRUST DAILY SMALL CAP",
+        "ZSL": "PROSHARES TR II ULTRA SHORT SILV"
+      }
+    },
+    "weeklyEquities": {
+      "new": {
+        "SKYD": "SKYDANCE CORP COM CL B"
+      },
+      "removed": {
+        "BW": "BABCOCK & WILCOX ENTERPRISES COM",
+        "PSKY": "PARAMOUNT SKYDANCE CORP COM CL B"
+      }
+    }
+  },
+  "hasChanges": true
+}
