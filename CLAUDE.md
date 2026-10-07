@@ -58,7 +58,16 @@ Tools (21 — an AI agent should not see less than a human does on the dashboard
 `get_income_fund_detail`, `get_options_listings`, `get_signal_performance`, `get_global_stats`,
 `get_option_structures`
 
-### Claude Desktop Integration
+### Remote MCP (connect from anywhere)
+
+The same 21 tools are served over streamable HTTP at **`https://api.tickertrace.pro/mcp`**
+— open, no key, read-only. It is `mcp.http_app(path="/mcp", stateless_http=True)` mounted
+last on the FastAPI app in `api/server.py` (REST routes win; only `/mcp` falls through).
+`stateless_http=True` is required: uvicorn runs 2 workers and in-memory MCP sessions
+would break across them. Clients: Claude Desktop/claude.ai custom connector, Claude Code
+(`claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp`), Cursor.
+
+### Claude Desktop Integration (local stdio)
 
 ```json
 {

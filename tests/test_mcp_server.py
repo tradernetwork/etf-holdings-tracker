@@ -187,3 +187,23 @@ def test_get_signal_performance_shape_or_cache_missing():
     # Either the real cache (has totalSignals) or our explicit "not generated
     # yet" error dict — never a crash either way.
     assert "totalSignals" in result or "error" in result
+
+
+def test_remote_mcp_endpoint_mounted_without_shadowing_rest():
+    """/mcp is served by the FastMCP HTTP app mounted last on the REST app;
+    existing REST routes must still win over the catch-all mount."""
+    from fastapi.testclient import TestClient
+    from api.server import app
+
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+        assert client.get("/nope").status_code == 404
+        init = client.post(
+            "/mcp",
+            headers={"Accept": "application/json, text/event-stream"},
+            json={"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                  "params": {"protocolVersion": "2025-03-26", "capabilities": {},
+                             "clientInfo": {"name": "t", "version": "0"}}},
+        )
+        assert init.status_code == 200
+        assert "TickerTrace" in init.text

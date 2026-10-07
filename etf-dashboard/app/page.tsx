@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 7, 2026"
+            tag="feature"
+            title="The MCP server is now live online, so your agent can connect from anywhere"
+            desc="I built the MCP server weeks ago and then forgot it only ran on my own machine. That's fixed. All 21 tools are now at api.tickertrace.pro/mcp, open and read-only like the rest of the API, no key and nothing to install. In Claude Code it's one line: claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp. Claude Desktop, Cursor and anything else that speaks MCP can point at the same URL. Same data the dashboard shows, so your agent no longer sees less than you do."
+          />
+          <ChangelogEntry
             date="September 27, 2026"
             tag="feature"
             title="Option activity now has dates, sizes, and tells you what the trade actually was"

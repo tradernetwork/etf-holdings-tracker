@@ -155,7 +155,15 @@ python -m api.mcp_server
 
 Tools: `get_signals`, `get_changes`, `get_fund_detail`, `get_ticker_detail`, `get_sector_flow`, `get_divergences`, `get_market_summary`.
 
-**Claude Desktop integration** — add to your MCP config:
+**Remote (from anywhere)** — the same tools are live over streamable HTTP, no install, no key:
+
+```bash
+claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp
+```
+
+Or add `https://api.tickertrace.pro/mcp` as a custom connector in Claude / Cursor.
+
+**Claude Desktop integration (local)** — add to your MCP config:
 
 ```json
 {

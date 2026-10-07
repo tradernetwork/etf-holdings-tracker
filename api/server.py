@@ -40,6 +40,7 @@ from . import income
 from . import structures
 from . import auth
 from . import visits
+from .mcp_server import mcp
 # Heavy import paid at server startup, not on first request (review #18)
 from effectiveness import analyze_all_funds, analyze_fund
 
@@ -122,11 +123,18 @@ limiter = Limiter(
 
 
 # ─── Lifespan: one-time startup work ─────────────────────────────
+# Remote MCP endpoint (streamable HTTP) at /mcp. Stateless because uvicorn runs
+# 2 workers and MCP sessions would otherwise live in one worker's memory.
+mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     auth.init_db()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
-    yield
+    # The MCP sub-app needs its own lifespan run (FastAPI doesn't do it for mounts).
+    async with mcp_app.lifespan(_app):
+        yield
     # graceful shutdown — close any pooled connections
     auth.close_all_connections()
     log.info("shutdown_complete")
@@ -766,6 +774,10 @@ def traderdaddy_handoff():
     /api/v1/tradermatrix instead. Returns the same payload.
     """
     return _marketing_handoff_payload()
+
+
+# Mounted last so every FastAPI route above wins; only /mcp falls through to it.
+app.mount("/", mcp_app)
 
 
 if __name__ == "__main__":
