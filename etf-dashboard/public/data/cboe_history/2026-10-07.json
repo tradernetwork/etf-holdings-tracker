@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-07T18:55:03.807265+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5339,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 576
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "LESLQ": "LESLIES INC COM"
+      },
+      "removed": {
+        "BLFS": "BIOLIFE SOLUTIONS INC COM NEW",
+        "SLP": "SIMULATIONS PLUS INC COM",
+        "WBD": "WARNER BROS DISCOVERY INC COM SER A"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "WBD": "WARNER BROS DISCOVERY INC COM SER A"
+      }
+    }
+  },
+  "hasChanges": true
+}
