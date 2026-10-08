@@ -93,7 +93,7 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
         : null;
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 space-y-6 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 space-y-6 font-sans">
             <SiteNav />
 
             <div className="bg-surface border border-rule p-4 rounded-xl shadow-lg">

@@ -109,7 +109,7 @@ export default async function FundProfilePage({
     const category = detail.category ?? (detail.optionsCount > 0 ? 'option-income' : 'active-equity');
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 space-y-6 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 space-y-6 font-sans">
             <SiteNav />
             <FundHeader detail={detail} aum={aum} category={category} />
             {category === 'option-income' ? (

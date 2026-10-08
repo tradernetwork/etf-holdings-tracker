@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export default function StockNotFound() {
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
             <div className="max-w-md w-full text-center bg-surface border border-rule rounded-xl p-8 shadow-lg">
                 <div className="text-5xl font-black font-mono text-rule mb-3">404</div>
                 <h1 className="text-2xl font-bold mb-2 text-white">Stock not found</h1>

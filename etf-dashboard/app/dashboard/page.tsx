@@ -142,7 +142,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
   // empty-state shell rather than crashing the page.
   if (!payload) {
     return (
-      <div className="min-h-screen bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
+      <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold mb-2">Data unavailable</h1>
           <p className="text-slate-400">
@@ -166,7 +166,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
   const divergences: ApiDivergence[] = payload.divergences;
 
   return (
-    <div className="min-h-screen bg-canvas text-foreground p-6 space-y-6 font-sans">
+    <div className="min-h-dvh bg-canvas text-foreground p-6 space-y-6 font-sans">
       <KeyboardSearch />
 
       {/* Shared app navigation */}

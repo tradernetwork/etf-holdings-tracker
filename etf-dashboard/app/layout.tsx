@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { LiveStats } from "@/components/live-stats";
 import { BottomNav } from "@/components/bottom-nav";
+import { SwRegister } from "@/components/sw-register";
 import "./globals.css";
 
 // Google Analytics 4 — wired via the existing Firebase-tied GA property.
@@ -59,6 +60,7 @@ export default function RootLayout({
         {children}
         <BottomNav />
         <LiveStats />
+        <SwRegister />
         <Analytics />
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
       </body>

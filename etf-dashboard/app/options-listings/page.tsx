@@ -334,7 +334,7 @@ export default function OptionsListingsPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans">
             <div className="max-w-7xl mx-auto space-y-6">
 
                 <SiteNav />

@@ -17,6 +17,7 @@ venv/
 !normalized_holdings.csv
 !etf-dashboard/public/data/history/holdings_*.csv
 *.html
+!etf-dashboard/public/offline.html
 
 # SQLite scratch DBs — these are rebuilt by the scraper. Committing the
 # binary just bloats the repo and the API container uses its own DB

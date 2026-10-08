@@ -100,7 +100,7 @@ function WorldChip({ activeWorld }: { activeWorld: World | null }) {
                         key={w}
                         href={meta.basePath}
                         title={meta.blurb}
-                        className="text-[11px] font-bold px-2.5 py-1 rounded-md transition-colors whitespace-nowrap"
+                        className="inline-flex items-center min-h-11 md:min-h-0 text-[11px] font-bold px-2.5 py-1 rounded-md transition-colors whitespace-nowrap"
                         style={on
                             ? { backgroundColor: `${meta.accent}26`, color: meta.accent }
                             : { color: 'var(--subtext)' }}
@@ -124,7 +124,7 @@ function ContextLinks({ links, pathname }: { links: { href: string; label: strin
                     <Link
                         key={l.href}
                         href={l.href}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-md border transition-colors whitespace-nowrap ${isActive
+                        className={`inline-flex items-center min-h-11 md:min-h-0 text-xs font-medium px-2.5 py-1 rounded-md border transition-colors whitespace-nowrap ${isActive
                             ? 'bg-equity/15 border-equity/40 text-equity'
                             : 'bg-surface-elevated border-rule-strong text-slate-400 hover:text-white'}`}
                     >
@@ -158,7 +158,7 @@ function TraderMatrixCTA() {
             target="_blank"
             rel="noopener noreferrer"
             title="We track the moves. TraderMatrix helps you trade them."
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 text-xs font-bold rounded-lg border border-meta/30 bg-gradient-to-r from-meta/10 to-equity/10 text-meta-bright hover:text-white hover:border-meta/60 transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 md:min-h-0 sm:px-3 text-xs font-bold rounded-lg border border-meta/30 bg-gradient-to-r from-meta/10 to-equity/10 text-meta-bright hover:text-white hover:border-meta/60 transition-colors whitespace-nowrap shrink-0"
         >
             <span aria-hidden>🧠</span>
             <span className="hidden lg:inline">Trade it on TraderMatrix →</span>

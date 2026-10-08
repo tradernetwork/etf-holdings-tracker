@@ -163,7 +163,7 @@ export default function EffectivenessPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-canvas text-white font-sans p-6">
+        <div className="min-h-dvh bg-canvas text-white font-sans p-6">
             <div className="max-w-7xl mx-auto mb-6"><SiteNav /></div>
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
