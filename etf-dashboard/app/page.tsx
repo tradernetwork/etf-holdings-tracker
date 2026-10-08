@@ -357,7 +357,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 8, 2026"
-            tag="fix"
+            tag="bugfix"
             title="The dashboard was taking forever to load, and that was my fault"
             desc="The institutional flow and trend cards were taking anywhere from 45 seconds to over a minute to come back, and the whole page waits on them. Turns out the API was re-scanning the history folder once per holding row, about 39,000 times a request, and re-parsing the same big CSVs every time. We now remember what we've already read and only redo the work when a new snapshot actually lands. Those two endpoints went from 10-20 seconds to about one on a cold start, and instant after that. Sorry it took me this long to notice."
           />
