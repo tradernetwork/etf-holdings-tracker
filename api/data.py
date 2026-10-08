@@ -506,7 +506,24 @@ def is_institutional_fund(fund: str) -> bool:
     return get_fund_category(fund) == 'active-equity'
 
 
+@functools.lru_cache(maxsize=5)
+def _read_csv_cached(path: str, mtime_ns: int, size: int) -> tuple[dict, ...]:
+    # mtime/size are part of the key so a rewritten file is re-read, never stale.
+    return tuple(_read_csv_uncached(path))
+
+
 def _read_csv(path: str) -> list[dict]:
+    """Parsed snapshot rows, memoized per (path, mtime, size).
+
+    Parsing a ~4MB holdings CSV dominated request time — one request could
+    parse four of them, and every request re-did it. Rows are shared between
+    callers and treated as read-only; the returned list is a fresh copy.
+    """
+    st = os.stat(path)
+    return list(_read_csv_cached(path, st.st_mtime_ns, st.st_size))
+
+
+def _read_csv_uncached(path: str) -> list[dict]:
     """Read a holdings CSV, filter excluded funds, and dedupe to one row
     per (fund, ticker).
 
@@ -519,9 +536,10 @@ def _read_csv(path: str) -> list[dict]:
     same moment is always a data error, so this is safe to apply globally.
     """
     rows = []
-    for r in csv.DictReader(open(path)):
-        if r.get('ETF Ticker', '') not in EXCLUDED_FUNDS:
-            rows.append(r)
+    with open(path, newline='') as fh:
+        for r in csv.DictReader(fh):
+            if r.get('ETF Ticker', '') not in EXCLUDED_FUNDS:
+                rows.append(r)
 
     # Group by (fund, ticker) and keep the freshest row per group.
     seen: dict[tuple[str, str], dict] = {}
@@ -560,15 +578,25 @@ def _nullable_float(v: str | None) -> float | None:
         return None
 
 
+@functools.lru_cache(maxsize=4)
+def _available_dates(history_dir: str, dir_mtime_ns: int) -> tuple[str, ...]:
+    files = [f for f in os.listdir(history_dir) if f.startswith('holdings_') and f.endswith('.csv')]
+    dates = [f.replace('holdings_', '').replace('.csv', '') for f in files]
+    return tuple(sorted([d for d in dates if _is_trading_day(d)], reverse=True))
+
+
 def get_available_dates() -> list[str]:
     """Return sorted (newest-first) list of *trading-day* dates with history files.
 
     Non-market-day files (weekend scrapes, holiday runs) are filtered out so that
     streaks and week/month lookbacks count real trading days only.
+
+    Memoized on the directory's mtime: this is called per-row from hot paths
+    (get_fund_aum -> get_as_of_date), and the rescan + trading-day filter was
+    ~95% of the cost of the institutional endpoints. A new or removed file
+    bumps the dir mtime, so the cache never goes stale.
     """
-    files = [f for f in os.listdir(HISTORY_DIR) if f.startswith('holdings_') and f.endswith('.csv')]
-    dates = [f.replace('holdings_', '').replace('.csv', '') for f in files]
-    return sorted([d for d in dates if _is_trading_day(d)], reverse=True)
+    return list(_available_dates(HISTORY_DIR, os.stat(HISTORY_DIR).st_mtime_ns))
 
 
 # ─── Row provenance & option-leg fields ──────────────────────────────────────
@@ -1052,7 +1080,17 @@ def _blend_institutional(rows: list[dict], total_aum: float) -> tuple[dict, dict
     return weight, name, sector, funds
 
 
+@functools.lru_cache(maxsize=16)
+def _institutional_flow_cached(as_of: str, period: str, limit: int) -> dict:
+    return _compute_institutional_flow(period, limit)
+
+
 def compute_institutional_flow(period: str = 'daily', limit: int = 25) -> dict:
+    """Memoized per data date — the result only changes when a new snapshot lands."""
+    return _institutional_flow_cached(get_as_of_date(), period, limit)
+
+
+def _compute_institutional_flow(period: str = 'daily', limit: int = 25) -> dict:
     """Cross-fund 'institutions as a whole' flow over a daily/weekly/monthly window.
 
     Blends every stock-picking fund (income funds excluded) into one
@@ -1132,7 +1170,17 @@ def _trend_signal(monthly: float, weekly: float, daily: float) -> str:
     return 'distributing' if daily <= 0 else 'bottoming'
 
 
+@functools.lru_cache(maxsize=16)
+def _institutional_trend_cached(as_of: str, limit: int) -> dict:
+    return _compute_institutional_trend(limit)
+
+
 def compute_institutional_trend(limit: int = 15) -> dict:
+    """Memoized per data date — the result only changes when a new snapshot lands."""
+    return _institutional_trend_cached(get_as_of_date(), limit)
+
+
+def _compute_institutional_trend(limit: int = 15) -> dict:
     """Per-ticker institutional flow across all three horizons at once.
 
     Blends every stock-picking fund into one AUM-weighted book (income funds
