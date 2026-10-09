@@ -44,11 +44,6 @@ export default function PrivacyPage() {
                 </section>
 
                 <section className="space-y-2">
-                    <h2 className="text-xl font-semibold">Accounts</h2>
-                    <p className="text-slate-300">The dashboard and the public API need no account. If you register for an API key, we store the email address you provide and a hashed password, and use them only to run that account.</p>
-                </section>
-
-                <section className="space-y-2">
                     <h2 className="text-xl font-semibold">Links to TraderMatrix and others</h2>
                     <p className="text-slate-300">TickerTrace is part of the TraderMatrix network and links to tradermatrix.pro, sometimes with a referral code, which may earn us a commission at no cost to you. Other sites you reach through links have their own policies. Share buttons for X, Reddit and LinkedIn only open when you tap them.</p>
                 </section>
@@ -65,7 +60,7 @@ export default function PrivacyPage() {
 
                 <section className="space-y-2">
                     <h2 className="text-xl font-semibold">Your choices</h2>
-                    <p className="text-slate-300">You can block analytics with your browser or a content blocker, clear local storage at any time, and ask us to delete any account data we hold. Email <a className="text-equity underline" href="mailto:admin@tradermatrix.pro">admin@tradermatrix.pro</a>.</p>
+                    <p className="text-slate-300">You can block analytics with your browser or a content blocker, clear local storage at any time, and ask us questions about your data. Email <a className="text-equity underline" href="mailto:admin@tradermatrix.pro">admin@tradermatrix.pro</a>.</p>
                 </section>
 
                 <section className="space-y-2">
