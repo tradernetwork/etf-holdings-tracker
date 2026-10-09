@@ -77,7 +77,7 @@ export function LiveStats() {
 
     return (
         <div
-            className="fixed left-3 z-40 pointer-events-auto select-none bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-3"
+            className="hidden md:block fixed left-3 z-40 pointer-events-auto select-none bottom-3"
             aria-label="Live visitor stats"
         >
             <div className="flex items-center gap-2 bg-surface-alt/85 backdrop-blur-md border border-rule rounded-full pl-2 pr-3 py-1 text-[10px] font-mono text-slate-300 shadow-lg shadow-black/30 hover:bg-surface-alt transition-colors">
