@@ -15,6 +15,9 @@ COPY effectiveness.py effectiveness.py
 # Copy CBOE scanner (used by api.server for /api/v1/options-listings)
 COPY cboe_scanner.py cboe_scanner.py
 
+# llms.txt: single source of truth shared with the dashboard, served at /llms.txt
+COPY etf-dashboard/public/llms.txt etf-dashboard/public/llms.txt
+
 # Copy data directory (mounted as volume in production)
 # In production, mount the real data dir to /app/etf-dashboard/public/data
 RUN mkdir -p etf-dashboard/public/data/history

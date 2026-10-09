@@ -1,0 +1,49 @@
+# TickerTrace
+
+> Free, open API and MCP server for daily institutional ETF holdings changes: what ARK, Avantis, YieldMax, Roundhill and other fund families bought and sold, with conviction-scored signals.
+
+TickerTrace scrapes fund-provider websites every day, normalizes the holdings, detects position changes, and scores them. The data is free and open: no API key, no signup, read-only. Signals are based on active weight (a position's weight change after subtracting price-only drift and creation/redemption flows), not raw weight change, so a stock rising in price is not mistaken for a fund buying it. This is a measure of fund activity, not investment advice. Use /api/v1/funds or /api/v1/stats for the current list of tracked funds and providers.
+
+## API
+
+- [Base URL](https://api.tickertrace.pro): all endpoints below are relative to this
+- [OpenAPI spec](https://api.tickertrace.pro/openapi.json): machine-readable schema (also at https://tickertrace.pro/openapi.json)
+- [Interactive docs](https://api.tickertrace.pro/docs): Swagger UI
+- [/api/v1/signals](https://api.tickertrace.pro/api/v1/signals): top buying and selling signals with conviction scores
+- [/api/v1/changes](https://api.tickertrace.pro/api/v1/changes?provider=ARK&direction=buying): filterable daily position changes (provider, fund, direction)
+- [/api/v1/fund/{fund}](https://api.tickertrace.pro/api/v1/fund/ARKK): one fund's top holdings, options and AUM
+- [/api/v1/ticker/{ticker}](https://api.tickertrace.pro/api/v1/ticker/TSLA): cross-fund view of who is buying or selling a ticker
+- [/api/v1/sectors](https://api.tickertrace.pro/api/v1/sectors): sector-level weight flows
+- [/api/v1/divergences](https://api.tickertrace.pro/api/v1/divergences): same ticker, opposite directions across funds
+- [/api/v1/options/{underlying}](https://api.tickertrace.pro/api/v1/options/AMD): one underlying's option legs across funds, grouped into synthetics, spreads, collars and rolls
+- [/api/v1/funds](https://api.tickertrace.pro/api/v1/funds): all tracked funds
+- [/api/v1/stats](https://api.tickertrace.pro/api/v1/stats): global stats, including the fund count and as-of date
+
+Most list endpoints accept `category=active-equity|option-income` to separate stock-pickers from option-income funds. More endpoints (institutional flow, income funds, layering patterns, signal performance, options listings) are in the OpenAPI spec.
+
+## MCP
+
+Remote MCP server (streamable HTTP, open, read-only): https://api.tickertrace.pro/mcp
+
+Claude Code: `claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp`
+
+Also works as a custom connector in Claude Desktop/claude.ai and in Cursor. 21 tools:
+
+- get_signals, get_changes, get_holdings_changes: buying/selling signals and position changes
+- get_fund_detail, get_ticker_detail, get_stock_activity: per-fund, per-ticker and per-stock views
+- get_sector_flow, get_divergences, get_layering_patterns: sector flows and cross-fund patterns
+- get_market_summary, get_briefing, get_global_stats: summaries and stats
+- get_institutional_flow, get_institutional_trend: institutional flow
+- list_all_funds, list_all_tickers: directories
+- get_income_overview, get_income_fund_detail: option-income funds
+- get_options_listings, get_option_structures: options data
+- get_signal_performance: how past signals played out
+
+## Optional
+
+- [GitHub](https://github.com/tradernetwork/etf-holdings-tracker): source code and methodology
+- [Dashboard](https://tickertrace.pro/dashboard): signals and heatmaps in the browser
+- [Changes](https://tickertrace.pro/changes): daily position changes
+- [Funds](https://tickertrace.pro/funds): fund profiles
+- [Income funds](https://tickertrace.pro/income): option-income fund view
+- [TraderMatrix](https://www.tradermatrix.pro/?ref=MPHINANCE): trading agent that consumes this data (referral link)

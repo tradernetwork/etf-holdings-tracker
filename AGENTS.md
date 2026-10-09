@@ -162,12 +162,15 @@ fix: strip ULTI tickers back to actual symbols
 
 **Always use this voice in commit messages.** The format is: `type: short description` + bullet points with context.
 
-## Public API Spec (`api/openapi_public.json`)
+## Public API Spec (`/openapi.json`)
 
-This file is the public-facing OpenAPI/Swagger spec for the data API. **It must ONLY contain data endpoints** (`/api/v1/*`). Never include:
+The spec is generated live by FastAPI at `https://api.tickertrace.pro/openapi.json`
+(proxied same-origin at `https://tickertrace.pro/openapi.json`). There is no committed
+snapshot. **It must ONLY contain public data endpoints** (`/api/v1/*`). Never include:
 
 - Auth endpoints (`/auth/*`)
 - Billing endpoints (`/billing/*`)
-- Internal schemas (Firebase, Stripe, login/register models)
+- Internal/legacy routes (visit tracking, redirects)
 
-If FastAPI auto-generates a full OpenAPI spec, manually curate `openapi_public.json` to only expose the data layer.
+Hide anything non-public with `include_in_schema=False` on the route. Agent-facing
+docs live in `etf-dashboard/public/llms.txt` (served at `/llms.txt` on both domains).

@@ -41,6 +41,8 @@ All endpoints are open — no API key or authentication required.
 | `GET /api/v1/funds` | All tracked funds |
 | `GET /api/v1/stats` | Global stats |
 | `GET /docs` | Interactive Swagger docs |
+| `GET /openapi.json` | OpenAPI spec (also proxied at `https://tickertrace.pro/openapi.json`) |
+| `GET /llms.txt` | Agent-oriented overview, llmstxt.org format (also at `https://tickertrace.pro/llms.txt`). Single source: `etf-dashboard/public/llms.txt`, COPY'd into the API image by the Dockerfile — edit it there only |
 
 ## MCP Server
 
