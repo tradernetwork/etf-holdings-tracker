@@ -158,7 +158,7 @@ function TraderMatrixCTA() {
             target="_blank"
             rel="noopener noreferrer"
             title="We track the moves. TraderMatrix helps you trade them."
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 md:min-h-0 sm:px-3 text-xs font-bold rounded-lg border border-meta/30 bg-gradient-to-r from-meta/10 to-equity/10 text-meta-bright hover:text-white hover:border-meta/60 transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 min-h-11 md:min-h-0 sm:px-3 text-[11px] sm:text-xs font-bold rounded-lg border border-meta/30 bg-gradient-to-r from-meta/10 to-equity/10 text-meta-bright hover:text-white hover:border-meta/60 transition-colors whitespace-nowrap shrink-0"
         >
             <span aria-hidden>🧠</span>
             <span className="hidden lg:inline">Trade it on TraderMatrix →</span>
@@ -182,10 +182,10 @@ export function SiteNav({ world }: { world?: World } = {}) {
                 so it never needs to scroll to stay reachable — the old rail
                 here existed only because the world switcher, five shared
                 links, and the CTA all had to fit in one row on a phone. */}
-            <div className="px-3 sm:px-4 py-2.5 flex items-center gap-2 sm:gap-3">
+            <div className="px-3 sm:px-4 py-2.5 flex items-center gap-1.5 sm:gap-3">
                 <Link
                     href="/dashboard"
-                    className="text-lg font-black tracking-tight text-equity hover:opacity-80 transition-opacity shrink-0"
+                    className="text-base sm:text-lg font-black tracking-tight text-equity hover:opacity-80 transition-opacity shrink-0"
                 >
                     TICKER<span className="text-foreground">TRACE</span>
                 </Link>
@@ -218,25 +218,18 @@ export function SiteNav({ world }: { world?: World } = {}) {
                 <TraderMatrixCTA />
             </div>
 
-            {/* Row 2 — world chip, mobile only (desktop already shows it
-                inline in row 1 — a second copy here would just duplicate
-                it, which is exactly the "extra decision before a
-                destination" the priority note asked to avoid). Rendered as
-                its own row rather than folded into the context row below so
-                neither one shows up empty-but-bordered on a breakpoint it
-                has nothing to say on. */}
-            {showWorldChip && (
-                <div className="md:hidden px-3 sm:px-4 pb-2.5 flex flex-wrap items-center gap-1.5 border-t border-rule/60 pt-2">
-                    <WorldChip activeWorld={activeWorld} />
-                </div>
-            )}
-
-            {/* Row 3 — absorbed sub-routes (Changes/Layering under Signals,
-                New Listings/Scores under Income), both breakpoints. Wraps
-                rather than scrolls: at most two short pills, which fit a
-                375px width without horizontal-scroll discovery. */}
-            {contextLinks.length > 0 && (
+            {/* Row 2 — world chip (mobile only; desktop shows it inline in
+                row 1) and the absorbed sub-routes (Changes/Layering under
+                Signals, New Listings/Scores under Income) share ONE
+                wrapping row. Two stacked bordered rows cost a phone ~60px
+                of first-screen height for a handful of short pills. */}
+            {(showWorldChip || contextLinks.length > 0) && (
                 <div className="px-3 sm:px-4 pb-2.5 flex flex-wrap items-center gap-1.5 border-t border-rule/60 pt-2">
+                    {showWorldChip && (
+                        <div className="md:hidden">
+                            <WorldChip activeWorld={activeWorld} />
+                        </div>
+                    )}
                     <ContextLinks links={contextLinks} pathname={pathname} />
                 </div>
             )}
