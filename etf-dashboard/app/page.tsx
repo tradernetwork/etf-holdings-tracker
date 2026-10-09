@@ -358,6 +358,12 @@ export default function LandingPage() {
           <ChangelogEntry
             date="October 9, 2026"
             tag="feature"
+            title="Our MCP tools finally say what they are"
+            desc="Anthropic's connector portal flagged us for shipping 21 MCP tools with no annotations, which is fair, we forgot. Every tool now has a proper title and is marked read-only, non-destructive and repeatable, because that's all they do: read our own holdings files, no writes, no outside calls. Same tools, same data, just a better label on the box. A test now fails if we add a tool and forget the label, so future us can't skip it either."
+          />
+          <ChangelogEntry
+            date="October 9, 2026"
+            tag="feature"
             title="openapi.json and llms.txt: the robots can find the front door now"
             desc="Two files agents kept looking for and not finding. tickertrace.pro/openapi.json now hands back the API spec, and /llms.txt is a plain-text tour of the endpoints and the MCP server, so an AI tool can wire itself up without us holding its hand. While we were in there the spec learned its own base URL, stopped bragging about a stale list of eight providers, and quit listing our internal visitor-counter routes. Still free, still no key."
           />
