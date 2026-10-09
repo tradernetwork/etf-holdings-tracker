@@ -214,13 +214,15 @@ def test_remote_mcp_endpoint_mounted_without_shadowing_rest():
 def _check_annotations(tools):
     assert len(tools) == 21
     for t in tools:
-        a = t.annotations
-        assert a is not None, f"{t.name} has no annotations"
-        assert a.readOnlyHint is True, t.name
-        assert a.destructiveHint is False, t.name
-        assert a.idempotentHint is True, t.name
-        assert a.openWorldHint is False, t.name
-        assert a.title and a.title.strip(), f"{t.name} has no title"
+        assert t.annotations is not None, f"{t.name} has no annotations"
+        # Wire-format (camelCase) dump: the SDK is renaming the Python attributes
+        # (destructiveHint -> destructive_hint), but the JSON clients see is stable.
+        a = t.annotations.model_dump(by_alias=True)
+        assert a["readOnlyHint"] is True, t.name
+        assert a["destructiveHint"] is False, t.name
+        assert a["idempotentHint"] is True, t.name
+        assert a["openWorldHint"] is False, t.name
+        assert a["title"] and a["title"].strip(), f"{t.name} has no title"
 
 
 def test_every_tool_is_annotated_read_only():
