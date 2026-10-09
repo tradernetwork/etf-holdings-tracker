@@ -2,7 +2,7 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-10-08",
+  "asOf": "2026-10-09",
   "holdings": 16,
   "dates": [
     "2026-07-21",
@@ -16,23 +16,23 @@
     "2026-09-18",
     "2026-09-25",
     "2026-10-02",
-    "2026-10-08"
+    "2026-10-09"
   ],
   "themes": [
     "Bitcoin miners",
     "Uncategorized",
     "Semis/photonics",
     "Cloud/AI",
-    "Clean energy",
     "Crypto financials",
+    "Clean energy",
     "Quantum",
-    "Precious metals",
-    "Fintech",
-    "Nuclear/uranium",
-    "Other",
     "Healthcare/biotech",
+    "Nuclear/uranium",
+    "Rare earth/materials",
+    "Other",
     "Space",
-    "Rare earth/materials"
+    "Fintech",
+    "Precious metals"
   ],
   "timeline": [
     {
@@ -154,33 +154,33 @@
       }
     },
     {
-      "date": "2026-10-08",
+      "date": "2026-10-09",
       "weights": {
-        "Semis/photonics": 14.973131523993374,
-        "Uncategorized": 15.084075715966808,
-        "Clean energy": 5.0502606717687994,
-        "Cloud/AI": 14.843544026624594,
-        "Crypto financials": 4.7796997699436705,
-        "Bitcoin miners": 18.82474306203937,
-        "Quantum": 4.725972266905895
+        "Semis/photonics": 14.926649841887503,
+        "Uncategorized": 15.234480671435023,
+        "Cloud/AI": 14.672287841203493,
+        "Crypto financials": 4.985227784632953,
+        "Clean energy": 4.925564086708337,
+        "Bitcoin miners": 18.569261059605935,
+        "Quantum": 4.696337005575546
       }
     }
   ],
   "currentThemes": {
-    "Bitcoin miners": 18.8,
-    "Uncategorized": 15.1,
-    "Semis/photonics": 15.0,
-    "Cloud/AI": 14.8,
-    "Clean energy": 5.1,
-    "Crypto financials": 4.8,
+    "Bitcoin miners": 18.6,
+    "Uncategorized": 15.2,
+    "Semis/photonics": 14.9,
+    "Cloud/AI": 14.7,
+    "Crypto financials": 5.0,
+    "Clean energy": 4.9,
     "Quantum": 4.7,
-    "Precious metals": 0.0,
-    "Fintech": 0.0,
-    "Nuclear/uranium": 0.0,
-    "Other": 0.0,
     "Healthcare/biotech": 0.0,
+    "Nuclear/uranium": 0.0,
+    "Rare earth/materials": 0.0,
+    "Other": 0.0,
     "Space": 0.0,
-    "Rare earth/materials": 0.0
+    "Fintech": 0.0,
+    "Precious metals": 0.0
   },
   "churnSincePrior": {
     "added": [
