@@ -184,3 +184,28 @@ def test_openapi_has_servers_and_hides_internal_routes():
     for hidden in ("/api/v1/visits/track", "/api/v1/visits/live", "/api/v1/traderdaddy", "/llms.txt"):
         assert hidden not in spec["paths"]
     assert "ARK Invest, Avantis" not in spec["info"]["description"]
+
+
+# ─── Proxy-header hardening ──────────────────────────────────────
+
+def test_forwarded_proto_yields_https_redirect():
+    """uvicorn's ProxyHeadersMiddleware (what --proxy-headers installs) must
+    make the /mcp -> /mcp/ style redirect keep https. Exercised in-process by
+    wrapping the app; the CLI flags themselves are pinned below."""
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    wrapped = TestClient(ProxyHeadersMiddleware(app, trusted_hosts="*"), follow_redirects=False)
+    r = wrapped.post("/mcp/", headers={"X-Forwarded-Proto": "https", "Host": "api.tickertrace.pro"})
+    assert r.status_code in (307, 308)
+    assert r.headers["location"].startswith("https://api.tickertrace.pro/")
+
+
+def test_dockerfile_trusts_proxy_headers_and_compose_binds_loopback():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    cmd = next(l for l in (root / "Dockerfile").read_text().splitlines() if l.startswith("CMD"))
+    assert "--proxy-headers" in cmd and '"--forwarded-allow-ips", "*"' in cmd
+    # Trusting every peer is only safe while the port is loopback-only.
+    compose = (root / "docker-compose.yml").read_text()
+    assert '"127.0.0.1:8100:8100"' in compose
+    assert '- "8100:8100"' not in compose

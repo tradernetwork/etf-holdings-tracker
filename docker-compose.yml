@@ -11,7 +11,10 @@ services:
     container_name: tickertrace-api
     restart: unless-stopped
     ports:
-      - "8100:8100"
+      # Loopback only: Apache (TLS) is the sole client. The Dockerfile trusts
+      # forwarded headers from ANY peer, which is safe only while this stays
+      # bound to 127.0.0.1. Do not publish it on 0.0.0.0.
+      - "127.0.0.1:8100:8100"
     volumes:
       # Mount the real data directory so the API reads live CSVs
       - ./etf-dashboard/public/data:/app/etf-dashboard/public/data:ro

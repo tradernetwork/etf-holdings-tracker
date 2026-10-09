@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 9, 2026"
+            tag="bugfix"
+            title="Fixed a rate limiter that thought everyone was the same person"
+            desc="Embarrassing one. Behind our proxy the API saw every request as coming from one internal address, so all of you were sharing a single rate-limit bucket, and our visitor counts were counting one very busy visitor. Fixed, the API now sees the real client address. Same root cause was bouncing some MCP requests to http:// instead of https://, also fixed. And we noticed the raw API port was answering on the open internet, bypassing HTTPS entirely. It's closed now, only the proper front door works."
+          />
+          <ChangelogEntry
+            date="October 9, 2026"
             tag="feature"
             title="Our MCP tools finally say what they are"
             desc="Anthropic's connector portal flagged us for shipping 21 MCP tools with no annotations, which is fair, we forgot. Every tool now has a proper title and is marked read-only, non-destructive and repeatable, because that's all they do: read our own holdings files, no writes, no outside calls. Same tools, same data, just a better label on the box. A test now fails if we add a tool and forget the label, so future us can't skip it either."

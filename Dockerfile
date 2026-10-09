@@ -34,5 +34,11 @@ EXPOSE 8100
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')" || exit 1
 
-# Run with uvicorn
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "2"]
+# Run with uvicorn.
+# --proxy-headers --forwarded-allow-ips "*": inside Docker, requests arrive from
+# the bridge gateway (172.x), not 127.0.0.1, so uvicorn would ignore Apache's
+# X-Forwarded-For/-Proto (shared rate-limit bucket, http:// redirects). Trusting
+# every peer is safe ONLY because docker-compose.yml publishes the port on
+# 127.0.0.1, making Apache the sole client. Never re-expose 8100 publicly, or
+# anyone could spoof their IP and dodge the rate limiter.
+CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]
