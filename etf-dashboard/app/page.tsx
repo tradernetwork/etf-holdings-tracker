@@ -359,7 +359,7 @@ export default function LandingPage() {
             date="October 9, 2026"
             tag="bugfix"
             title="Fixed a rate limiter that thought everyone was the same person"
-            desc="Embarrassing one. Behind our proxy the API saw every request as coming from one internal address, so all of you were sharing a single rate-limit bucket, and our visitor counts were counting one very busy visitor. Fixed, the API now sees the real client address. Same root cause was bouncing some MCP requests to http:// instead of https://, also fixed. And we noticed the raw API port was answering on the open internet, bypassing HTTPS entirely. It's closed now, only the proper front door works."
+            desc="Embarrassing one. Behind our proxy the API saw every request as coming from one internal address, so all of you were sharing a single rate-limit bucket, and our visitor counts were counting one very busy visitor. Fixed, the API now reads the real client address from our proxy, and only trusts it from the proxy. Same root cause was bouncing some MCP requests to http:// instead of https://, also fixed. And we noticed the raw API port was answering on the open internet, bypassing HTTPS entirely. It's closed now, only the proper front door works."
           />
           <ChangelogEntry
             date="October 9, 2026"

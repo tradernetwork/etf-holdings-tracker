@@ -11,9 +11,10 @@ services:
     container_name: tickertrace-api
     restart: unless-stopped
     ports:
-      # Loopback only: Apache (TLS) is the sole client. The Dockerfile trusts
-      # forwarded headers from ANY peer, which is safe only while this stays
-      # bound to 127.0.0.1. Do not publish it on 0.0.0.0.
+      # Loopback only: Apache (TLS) is the sole client, and it reaches the
+      # container from the Docker bridge gateway, which is the only peer the
+      # Dockerfile trusts for X-Forwarded-* (--forwarded-allow-ips 172.16.0.0/12).
+      # Publishing this on 0.0.0.0 would bypass TLS and Apache.
       - "127.0.0.1:8100:8100"
     volumes:
       # Mount the real data directory so the API reads live CSVs
