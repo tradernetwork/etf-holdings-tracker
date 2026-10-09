@@ -22,6 +22,7 @@ import logging
 from pathlib import Path
 import os
 import re
+import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -133,6 +134,9 @@ mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     auth.init_db()
+    # Build the heavy /signals and /briefing payloads off the event loop so
+    # the first request after a deploy doesn't pay the ~30s cold rebuild.
+    threading.Thread(target=data.warm_snapshot_cache, daemon=True).start()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
     # The MCP sub-app needs its own lifespan run (FastAPI doesn't do it for mounts).
     async with mcp_app.lifespan(_app):

@@ -337,6 +337,13 @@ interface ApiOptions {
     throwOnError?: boolean;
     /** Retry attempts for transient failures (5xx / 429 / network). Default 3. */
     retries?: number;
+    /**
+     * Total time budget in ms across every attempt, backoff included. Default
+     * 8000. Whop keeps the iframe hidden until the document finishes loading,
+     * so an unbounded fetch against a slow API is a blank app — a deadline
+     * turns that into an empty-state card instead.
+     */
+    deadlineMs?: number;
 }
 
 /**
@@ -367,12 +374,23 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
  * Retries transient failures (5xx / 429 / network) with exponential backoff;
  * 4xx responses (including 404) throw immediately without retrying.
  */
-async function rawFetch<T>(path: string, revalidate: number, retries: number): Promise<T> {
+async function rawFetch<T>(
+    path: string,
+    revalidate: number,
+    retries: number,
+    deadlineMs: number,
+): Promise<T> {
     const url = `${API_BASE}${path}`;
+    const deadline = Date.now() + deadlineMs;
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) break;
         try {
-            const res = await fetch(url, { next: { revalidate } });
+            const res = await fetch(url, {
+                next: { revalidate },
+                signal: AbortSignal.timeout(remaining),
+            });
             if (res.ok) return (await res.json()) as T;
             const body = await res.text().catch(() => res.statusText);
             const err = new ApiError(res.status, path, `API ${res.status} on ${path}: ${body}`);
@@ -381,12 +399,15 @@ async function rawFetch<T>(path: string, revalidate: number, retries: number): P
         } catch (e) {
             // A non-retryable ApiError (4xx) must propagate straight away.
             if (e instanceof ApiError && !isRetryable(e.status)) throw e;
-            // Network-level failure (DNS / TLS / connection reset) or a 5xx.
+            // Network-level failure (DNS / TLS / connection reset), a 5xx, or
+            // the deadline firing mid-request.
             lastError = e;
         }
-        if (attempt < retries) await sleep(250 * 2 ** attempt); // 250ms, 500ms, 1s …
+        const backoff = 250 * 2 ** attempt; // 250ms, 500ms, 1s …
+        if (attempt < retries && Date.now() + backoff < deadline) await sleep(backoff);
+        else break;
     }
-    throw lastError;
+    throw lastError ?? new Error(`API deadline (${deadlineMs}ms) exceeded on ${path}`);
 }
 
 /**
@@ -395,9 +416,9 @@ async function rawFetch<T>(path: string, revalidate: number, retries: number): P
  * (dashboard headline payload, optional cards).
  */
 async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<T | null> {
-    const { revalidate = 3600, throwOnError = true, retries = 3 } = opts;
+    const { revalidate = 3600, throwOnError = true, retries = 3, deadlineMs = 8000 } = opts;
     try {
-        return await rawFetch<T>(path, revalidate, retries);
+        return await rawFetch<T>(path, revalidate, retries, deadlineMs);
     } catch (e) {
         if (throwOnError) throw e;
         return null;
@@ -414,9 +435,9 @@ async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<T | nul
  * request, instead of permanently caching a wrong 404.
  */
 async function apiFetchResource<T>(path: string, opts: ApiOptions = {}): Promise<T | null> {
-    const { revalidate = 3600, retries = 3 } = opts;
+    const { revalidate = 3600, retries = 3, deadlineMs = 8000 } = opts;
     try {
-        return await rawFetch<T>(path, revalidate, retries);
+        return await rawFetch<T>(path, revalidate, retries, deadlineMs);
     } catch (e) {
         if (e instanceof ApiError && e.status === 404) return null;
         throw e;
