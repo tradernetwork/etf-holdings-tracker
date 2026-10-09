@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "pro.tickertrace.app",
+      "sha256_cert_fingerprints": [
+        "83:78:2F:63:38:71:F4:92:AE:FB:3E:0A:68:47:94:5F:B8:BF:A0:C3:06:11:22:3B:9D:D4:10:2C:56:F9:A3:A9"
+      ]
+    }
+  }
+]
