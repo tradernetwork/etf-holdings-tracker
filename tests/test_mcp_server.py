@@ -207,3 +207,48 @@ def test_remote_mcp_endpoint_mounted_without_shadowing_rest():
         )
         assert init.status_code == 200
         assert "TickerTrace" in init.text
+
+
+# ─── Tool annotations ────────────────────────────────────────────
+
+def _check_annotations(tools):
+    assert len(tools) == 21
+    for t in tools:
+        a = t.annotations
+        assert a is not None, f"{t.name} has no annotations"
+        assert a.readOnlyHint is True, t.name
+        assert a.destructiveHint is False, t.name
+        assert a.idempotentHint is True, t.name
+        assert a.openWorldHint is False, t.name
+        assert a.title and a.title.strip(), f"{t.name} has no title"
+
+
+def test_every_tool_is_annotated_read_only():
+    import asyncio
+    from fastmcp import Client
+
+    async def _list():
+        async with Client(mcp.mcp) as c:
+            return await c.list_tools()
+
+    _check_annotations(asyncio.run(_list()))
+
+
+def test_remote_http_path_exposes_annotations():
+    from fastapi.testclient import TestClient
+    from api.server import app
+
+    headers = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
+    with TestClient(app) as c:
+        r = c.post("/mcp/", headers=headers, json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+    assert r.status_code == 200, r.text
+    body = r.text
+    if body.lstrip().startswith("event:") or "data:" in body:
+        import json
+        body = next(l[5:] for l in body.splitlines() if l.startswith("data:"))
+    tools = __import__("json").loads(body)["result"]["tools"]
+    assert len(tools) == 21
+    for t in tools:
+        a = t["annotations"]
+        assert a["readOnlyHint"] is True and a["destructiveHint"] is False, t["name"]
+        assert a["title"], t["name"]

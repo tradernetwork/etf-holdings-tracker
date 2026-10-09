@@ -69,6 +69,8 @@ last on the FastAPI app in `api/server.py` (REST routes win; only `/mcp` falls t
 would break across them. Clients: Claude Desktop/claude.ai custom connector, Claude Code
 (`claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp`), Cursor.
 
+All tools carry MCP annotations (`title`, `readOnlyHint=True`, `destructiveHint=False`, `idempotentHint=True`, `openWorldHint=False`) via the shared `_read_only()` helper in `api/mcp_server.py`; `tests/test_mcp_server.py` fails if a new tool ships unannotated, locally or over `/mcp`.
+
 ### Claude Desktop Integration (local stdio)
 
 ```json

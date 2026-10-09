@@ -37,6 +37,7 @@ directly rather than round-tripping over HTTP to the public REST API.
 """
 
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from . import data
 from . import income
 from . import structures
@@ -44,7 +45,20 @@ from . import structures
 mcp = FastMCP("TickerTrace")
 
 
-@mcp.tool()
+def _read_only(title: str) -> ToolAnnotations:
+    """Annotations shared by every tool: they only read pre-built local
+    holdings files (no writes, no external services). tests/test_mcp_server.py
+    fails if a new tool ships without them."""
+    return ToolAnnotations(
+        title=title,
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
+
+
+@mcp.tool(annotations=_read_only("Top Buy/Sell Signals"))
 def get_signals() -> dict:
     """
     Get today's top institutional buying and selling signals.
@@ -54,7 +68,7 @@ def get_signals() -> dict:
     return data.get_signals()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Daily Position Changes"))
 def get_changes(provider: str = "", fund: str = "", direction: str = "") -> dict:
     """
     Get all daily position changes across tracked ETFs.
@@ -88,7 +102,7 @@ def get_changes(provider: str = "", fund: str = "", direction: str = "") -> dict
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Fund Holdings Detail"))
 def get_fund_detail(fund: str) -> dict:
     """
     Get full detail for a specific ETF fund.
@@ -103,7 +117,7 @@ def get_fund_detail(fund: str) -> dict:
     return detail or {"error": f"Fund '{fund.upper()}' not found"}
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Ticker Cross-Fund Detail"))
 def get_ticker_detail(ticker: str) -> dict:
     """
     Get cross-fund detail for a specific stock ticker.
@@ -119,7 +133,7 @@ def get_ticker_detail(ticker: str) -> dict:
     return detail or {"error": f"Ticker '{ticker.upper()}' not found"}
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Sector Flow"))
 def get_sector_flow() -> dict:
     """
     Get sector-level weight changes.
@@ -131,7 +145,7 @@ def get_sector_flow() -> dict:
     return data.get_sector_flow()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Cross-Fund Divergences"))
 def get_divergences() -> list:
     """
     Get cross-fund divergences — tickers where different funds disagree.
@@ -144,7 +158,7 @@ def get_divergences() -> list:
     return data.get_divergences()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Layering Patterns"))
 def get_layering_patterns(window_days: int = 7, min_funds: int = 3, limit: int = 20) -> dict:
     """
     Get cross-fund "layering" patterns — tickers where multiple institutional
@@ -166,7 +180,7 @@ def get_layering_patterns(window_days: int = 7, min_funds: int = 3, limit: int =
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Market Summary"))
 def get_market_summary() -> dict:
     """
     Get a complete market summary: stats, top signals, sector flow, and divergences.
@@ -175,7 +189,7 @@ def get_market_summary() -> dict:
     return data.get_full_payload()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Pre-Market Briefing"))
 def get_briefing() -> dict:
     """
     Get the pre-market institutional briefing.
@@ -185,7 +199,7 @@ def get_briefing() -> dict:
     return data.get_briefing()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Institutional Flow"))
 def get_institutional_flow(period: str = "daily", limit: int = 25) -> dict:
     """
     Get aggregate institutional accumulation and distribution flow.
@@ -203,7 +217,7 @@ def get_institutional_flow(period: str = "daily", limit: int = 25) -> dict:
     return data.compute_institutional_flow(period=period, limit=limit)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Institutional Trend"))
 def get_institutional_trend(limit: int = 15) -> dict:
     """
     Get per-ticker institutional accumulation/distribution trend across all
@@ -218,7 +232,7 @@ def get_institutional_trend(limit: int = 15) -> dict:
     return data.compute_institutional_trend(limit=limit)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Holdings Changes Over a Window"))
 def get_holdings_changes(
     provider: str = "",
     fund: str = "",
@@ -277,7 +291,7 @@ def get_holdings_changes(
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Stock Activity"))
 def get_stock_activity(ticker: str) -> dict:
     """
     Get complete institutional activity for a single stock: current fund
@@ -294,7 +308,7 @@ def get_stock_activity(ticker: str) -> dict:
     return detail or {"error": f"Ticker '{ticker.upper()}' not found"}
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("List Tracked Funds"))
 def list_all_funds(category: str = "") -> dict:
     """
     List all tracked institutional funds, enriched with holdings counts,
@@ -313,7 +327,7 @@ def list_all_funds(category: str = "") -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("List Held Tickers"))
 def list_all_tickers(limit: int = 100, sort: str = "funds", category: str = "") -> dict:
     """
     List the most widely-held underlying tickers across all tracked funds.
@@ -331,7 +345,7 @@ def list_all_tickers(limit: int = 100, sort: str = "funds", category: str = "") 
     return {"count": len(tickers), "asOfDate": data.get_as_of_date(), "tickers": tickers}
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Option-Income Funds Overview"))
 def get_income_overview() -> dict:
     """
     Get coverage and structural classification for all option-income funds.
@@ -345,7 +359,7 @@ def get_income_overview() -> dict:
     return income.get_income_overview()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Option-Income Fund Detail"))
 def get_income_fund_detail(fund: str) -> dict:
     """
     Get an option-income fund's full book — one row per underlying, not per
@@ -364,7 +378,7 @@ def get_income_fund_detail(fund: str) -> dict:
     return book or {"error": f"'{fund.upper()}' is not a tracked option-income fund"}
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("CBOE Options Listings"))
 def get_options_listings() -> dict:
     """
     Get the CBOE Options Scanner daily diff of CBOE's published option
@@ -378,7 +392,7 @@ def get_options_listings() -> dict:
     return cboe_scanner.read_options_listings()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Signal Backtest Performance"))
 def get_signal_performance() -> dict:
     """
     Get historical backtest performance for TickerTrace conviction signals:
@@ -397,7 +411,7 @@ def get_signal_performance() -> dict:
     return cached
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Global Stats"))
 def get_global_stats() -> dict:
     """
     Get global tracking stats: funds tracked, unique underlyings, options
@@ -407,7 +421,7 @@ def get_global_stats() -> dict:
 
 
 
-@mcp.tool()
+@mcp.tool(annotations=_read_only("Option Structures"))
 def get_option_structures(underlying: str) -> dict:
     """
     Get every tracked fund's option legs on one underlying, grouped into

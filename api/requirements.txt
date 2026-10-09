@@ -1,5 +1,5 @@
 fastapi>=0.115.0
-fastmcp>=2.0.0
+fastmcp>=2.2.7
 uvicorn[standard]>=0.34.0
 bcrypt>=4.0.0
 slowapi>=0.1.9
