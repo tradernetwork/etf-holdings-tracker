@@ -359,7 +359,7 @@ export default function LandingPage() {
             date="October 8, 2026"
             tag="feature"
             title="TickerTrace is now installable, and an Android app is on the way"
-            desc="We finally finished the phone story. Add TickerTrace to your home screen and it opens like a real app, with an offline screen instead of a dead browser tab when you lose signal. While we were in there we fixed a pile of tap targets that were too small for thumbs and a TraderMatrix button that ran off the edge of narrow phones. The live-visitors pill is now desktop only, because a "0 live" badge on your phone helps nobody. The Google Play listing is next. Data still never gets cached, so you will not see yesterday's holdings pretending to be today's."
+            desc="We finally finished the phone story. Add TickerTrace to your home screen and it opens like a real app, with an offline screen instead of a dead browser tab when you lose signal. While we were in there we fixed a pile of tap targets that were too small for thumbs and a TraderMatrix button that ran off the edge of narrow phones. The live-visitors pill is now desktop only, because a 0 live badge on your phone helps nobody. The Google Play listing is next. Data still never gets cached, so you will not see yesterday's holdings pretending to be today's."
           />
           <ChangelogEntry
             date="October 8, 2026"
