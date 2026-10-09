@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 9, 2026"
+            tag="feature"
+            title="openapi.json and llms.txt: the robots can find the front door now"
+            desc="Two files agents kept looking for and not finding. tickertrace.pro/openapi.json now hands back the API spec, and /llms.txt is a plain-text tour of the endpoints and the MCP server, so an AI tool can wire itself up without us holding its hand. While we were in there the spec learned its own base URL, stopped bragging about a stale list of eight providers, and quit listing our internal visitor-counter routes. Still free, still no key."
+          />
+          <ChangelogEntry
             date="October 8, 2026"
             tag="feature"
             title="TickerTrace is now installable, and an Android app is on the way"

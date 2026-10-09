@@ -165,3 +165,22 @@ def test_active_weight_denominator_unaffected_by_category_filter():
                 f"{c['fund']}/{c['ticker']} active weight changed under a "
                 f"{category} filter — the filter is being applied too early"
             )
+
+
+# ─── Agent discoverability: llms.txt + OpenAPI spec ──────────────
+
+def test_llms_txt_served_as_plain_text():
+    r = client.get("/llms.txt")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/plain")
+    assert r.text.startswith("# TickerTrace")
+    assert "https://api.tickertrace.pro/mcp" in r.text
+
+
+def test_openapi_has_servers_and_hides_internal_routes():
+    spec = client.get("/openapi.json").json()
+    assert spec["servers"] == [{"url": "https://api.tickertrace.pro"}]
+    assert "/api/v1/signals" in spec["paths"]
+    for hidden in ("/api/v1/visits/track", "/api/v1/visits/live", "/api/v1/traderdaddy", "/llms.txt"):
+        assert hidden not in spec["paths"]
+    assert "ARK Invest, Avantis" not in spec["info"]["description"]

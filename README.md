@@ -3,7 +3,7 @@
 > Daily ETF holdings intelligence — what institutions bought, sold, and changed since yesterday. No 90-day 13F delay.
 
 **Live at:** [tickertrace.pro](https://tickertrace.pro)
-**API:** [api.tickertrace.pro/docs](https://api.tickertrace.pro/docs) — fully open, no key required
+**API:** [api.tickertrace.pro/docs](https://api.tickertrace.pro/docs) — fully open, no key required · [openapi.json](https://api.tickertrace.pro/openapi.json) · [llms.txt](https://tickertrace.pro/llms.txt)
 
 ---
 

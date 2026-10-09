@@ -19,6 +19,7 @@ Env vars (all optional):
 """
 
 import logging
+from pathlib import Path
 import os
 import re
 import time
@@ -29,6 +30,7 @@ from typing import Optional
 import structlog
 from fastapi import FastAPI, HTTPException, Query, Request, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -145,12 +147,17 @@ app = FastAPI(
     description=(
         "**Free, open API** for institutional ETF activity — daily holdings "
         "changes, conviction scores, sector flow, and cross-fund divergences.\n\n"
-        "Track what ARK Invest, Avantis, YieldMax, Kurv, REX Shares, NestYield, "
-        "Roundhill, and Corgi Funds are buying and selling before everyone else.\n\n"
+        "Track what institutional ETF managers are buying and selling. See "
+        "`/api/v1/funds` and `/api/v1/stats` for the current list of tracked "
+        "funds and providers.\n\n"
+        "AI agents: this API is also available as a remote MCP server at "
+        "`https://api.tickertrace.pro/mcp` (open, read-only), and an agent-oriented "
+        "overview lives at `/llms.txt`.\n\n"
         "Pair with [TraderMatrix.Pro](https://www.tradermatrix.pro/?ref=MPHINANCE) "
         "if you want a trading agent that uses this data."
     ),
     version="2.0.0",
+    servers=[{"url": "https://api.tickertrace.pro"}],
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -577,7 +584,7 @@ class TrackBody(BaseModel):
     path: str = ""
 
 
-@app.post("/api/v1/visits/track", tags=["public"])
+@app.post("/api/v1/visits/track", tags=["public"], include_in_schema=False)
 @limiter.limit("60/minute")
 def track_visit(request: Request, body: TrackBody | None = None):
     """Record a pageview. Fire-and-forget from the browser; never returns
@@ -593,7 +600,7 @@ def track_visit(request: Request, body: TrackBody | None = None):
     return {"ok": True}
 
 
-@app.get("/api/v1/visits/live", tags=["public"])
+@app.get("/api/v1/visits/live", tags=["public"], include_in_schema=False)
 @limiter.limit("120/minute")
 def get_live_visits(request: Request):
     """Public visitor counts — used by the footer pill on every page and
@@ -766,7 +773,7 @@ def tradermatrix_handoff():
     return _marketing_handoff_payload()
 
 
-@app.get("/api/v1/traderdaddy", tags=["marketing"], deprecated=True)
+@app.get("/api/v1/traderdaddy", tags=["marketing"], deprecated=True, include_in_schema=False)
 def traderdaddy_handoff():
     """
     Deprecated alias for /api/v1/tradermatrix, retained for back-compat.
@@ -774,6 +781,21 @@ def traderdaddy_handoff():
     /api/v1/tradermatrix instead. Returns the same payload.
     """
     return _marketing_handoff_payload()
+
+
+# ─── llms.txt (llmstxt.org) ──────────────────────────────────────
+# Single source of truth is the dashboard's public/llms.txt, baked into the
+# image by the Dockerfile (the data mount only covers public/data).
+_LLMS_TXT_PATH = Path(__file__).resolve().parent.parent / "etf-dashboard" / "public" / "llms.txt"
+
+
+@app.get("/llms.txt", include_in_schema=False)
+def llms_txt():
+    try:
+        text = _LLMS_TXT_PATH.read_text(encoding="utf-8")
+    except OSError:
+        raise HTTPException(status_code=404, detail="llms.txt not available")
+    return PlainTextResponse(text, media_type="text/plain; charset=utf-8")
 
 
 # Mounted last so every FastAPI route above wins; only /mcp falls through to it.
