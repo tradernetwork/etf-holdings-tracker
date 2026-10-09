@@ -1,11 +1,13 @@
-import { getLatestHoldings, getDailyDiff, getLatestHoldingsDate } from '@/lib/holdings';
 import { DataTable } from './data-table';
 import { columns } from './columns';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { SiteNav } from '@/components/site-nav';
+import { parseHoldingsQuery, queryHoldings } from '@/lib/holdings-query';
 
-export const revalidate = 3600; // 1 hour ISR
+// Server-paginated: reads searchParams, so it renders per request and only
+// ever ships one page of rows (the full book was 20+ MB and broke the build).
+export const dynamic = 'force-dynamic';
 
 function formatDate(iso: string): string {
     return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
@@ -13,46 +15,13 @@ function formatDate(iso: string): string {
     });
 }
 
-export default function HoldingsPage() {
-    const data = getLatestHoldings();
-    const diff = getDailyDiff();
-    const asOfDate = getLatestHoldingsDate();
-
-    // Build a lookup map: "FUND|TICKER" → { weightDelta, sharesDelta }.
-    // The displayed "Δ Weight" uses activeWeightDelta (price drift removed) so a
-    // position whose weight only moved because its price moved doesn't read as a
-    // trade. sharesDelta is the true share change — the honest companion signal.
-    const changeMap = new Map<string, { weightDelta: number; sharesDelta: number }>();
-    if (diff) {
-        for (const c of [...diff.newPositions, ...diff.removedPositions, ...diff.changedPositions]) {
-            const key = `${c.fund}|${c.ticker}`;
-            changeMap.set(key, {
-                weightDelta: c.activeWeightDelta,
-                sharesDelta: c.currentShares - c.previousShares,
-            });
-        }
-    }
-
-    // Enrich holdings with deltas
-    const enriched = data.map(h => {
-        const key = `${h['ETF Ticker']}|${h.Ticker}`;
-        const change = changeMap.get(key);
-        return {
-            ...h,
-            weightDelta: change?.weightDelta ?? 0,
-            sharesDelta: change?.sharesDelta ?? 0,
-        };
-    });
-
-    const changedCount = enriched.filter(h => h.weightDelta !== 0).length;
-
-    // Exclude cash-like entries that aren't real positions
-    const EXCLUDED_TICKERS = new Set(['CASH', 'OTHER', '', 'USD', 'MARGIN', 'TBILL']);
-    const filtered = enriched.filter(h =>
-        !EXCLUDED_TICKERS.has(String(h.Ticker || '').toUpperCase()) &&
-        !String(h.Name || '').toLowerCase().includes('cash') &&
-        !String(h.Name || '').toLowerCase().includes('treasury bill')
-    );
+export default async function HoldingsPage({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const result = queryHoldings(parseHoldingsQuery(await searchParams));
+    const { asOfDate, activeCount, changedCount } = result;
 
     return (
         <div className="min-h-screen bg-canvas text-foreground p-6 font-sans">
@@ -68,7 +37,7 @@ export default function HoldingsPage() {
                         </h1>
                         <p className="text-sm text-muted-foreground mt-1">
                             {asOfDate && <span className="font-mono">{formatDate(asOfDate)} · </span>}
-                            {filtered.length.toLocaleString()} active positions across all tracked funds
+                            {activeCount.toLocaleString()} active positions across all tracked funds
                             {changedCount > 0 && (
                                 <span className="text-equity ml-2">· {changedCount} changed today</span>
                             )}
@@ -77,7 +46,7 @@ export default function HoldingsPage() {
                 </div>
 
                 <div className="bg-surface border border-rule rounded-xl overflow-hidden shadow-xl p-4">
-                    <DataTable columns={columns} data={filtered} />
+                    <DataTable columns={columns} result={result} />
                 </div>
             </div>
         </div>
