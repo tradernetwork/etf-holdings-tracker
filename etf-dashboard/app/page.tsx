@@ -358,6 +358,12 @@ export default function LandingPage() {
           <ChangelogEntry
             date="October 8, 2026"
             tag="bugfix"
+            title="The holdings page was 20 MB, and it broke our deploys"
+            desc="The Full Holdings Database was sending the entire book to your browser on every load, 20 MB and growing every night, until Vercel finally refused to build it. That quietly froze the site on an older version for a couple of days. Sorry. Now the server does the searching, sorting and paging and you only download the page you are looking at, around 280 KB. Filters and sorts live in the URL so you can share a view, and Export CSV still gives you everything that matches."
+          />
+          <ChangelogEntry
+            date="October 8, 2026"
+            tag="bugfix"
             title="The dashboard was taking forever to load, and that was my fault"
             desc="The institutional flow and trend cards were taking anywhere from 45 seconds to over a minute to come back, and the whole page waits on them. Turns out the API was re-scanning the history folder once per holding row, about 39,000 times a request, and re-parsing the same big CSVs every time. We now remember what we've already read and only redo the work when a new snapshot actually lands. Those two endpoints went from 10-20 seconds to about one on a cold start, and instant after that. Sorry it took me this long to notice."
           />

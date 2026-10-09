@@ -3,15 +3,13 @@
 import * as React from "react"
 import {
     ColumnDef,
-    ColumnFiltersState,
     SortingState,
     flexRender,
     getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import type { HoldingsResult } from "@/lib/holdings-query"
 
 import {
     Table,
@@ -28,75 +26,70 @@ import { Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRigh
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
-    data: TData[]
+    result: HoldingsResult
 }
 
+/**
+ * Server-driven table: filtering, sorting and paging all happen in
+ * lib/holdings-query.ts and are expressed as URL params, so the client only
+ * ever holds one page of rows and every view is a shareable link.
+ */
 export function DataTable<TData, TValue>({
     columns,
-    data,
+    result,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [searchQuery, setSearchQuery] = React.useState('')
+    const router = useRouter()
+    const pathname = usePathname()
+    const sp = useSearchParams()
+    const { query, rows: data, total, funds: uniqueFunds } = result
+    const [searchQuery, setSearchQuery] = React.useState(query.q)
+    const pageCount = Math.max(1, Math.ceil(total / query.size))
 
-    const searchFiltered = React.useMemo(() => {
-        const q = searchQuery.trim().toLowerCase()
-        if (!q) return data
-        return data.filter((row: any) => {
-            const ticker = String(row['Ticker'] ?? '').toLowerCase()
-            const name = String(row['Name'] ?? '').toLowerCase()
-            return ticker.includes(q) || name.includes(q)
-        })
-    }, [data, searchQuery])
+    const navigate = React.useCallback((patch: Record<string, string | number | undefined>, resetPage = true) => {
+        const next = new URLSearchParams(sp.toString())
+        for (const [k, v] of Object.entries(patch)) {
+            if (v === undefined || v === "" || v === "ALL") next.delete(k)
+            else next.set(k, String(v))
+        }
+        if (resetPage) next.delete("page")
+        const qs = next.toString()
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    }, [sp, router, pathname])
+
+    // Debounce typing so each keystroke is not a server round-trip.
+    React.useEffect(() => {
+        if (searchQuery === query.q) return
+        const t = setTimeout(() => navigate({ q: searchQuery.trim() || undefined }), 300)
+        return () => clearTimeout(t)
+    }, [searchQuery, query.q, navigate])
+
+    const sorting: SortingState = query.sort ? [{ id: query.sort, desc: query.dir === "desc" }] : []
 
     const table = useReactTable({
-        data: searchFiltered,
+        data: data as TData[],
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(),
-        state: {
-            sorting,
-            columnFilters,
-        },
-        initialState: {
-            pagination: {
-                pageSize: 50,
-            },
+        manualPagination: true,
+        manualSorting: true,
+        manualFiltering: true,
+        pageCount,
+        state: { sorting, pagination: { pageIndex: query.page - 1, pageSize: query.size } },
+        onSortingChange: (updater) => {
+            const next = typeof updater === "function" ? updater(sorting) : updater
+            const first = next[0]
+            navigate(first ? { sort: first.id, dir: first.desc ? "desc" : "asc" } : { sort: undefined, dir: undefined })
         },
     })
 
-    const uniqueFunds = React.useMemo(() => {
-        const funds = new Set<string>()
-        data.forEach((row: any) => {
-            if (row['ETF Ticker']) funds.add(row['ETF Ticker'])
-        })
-        return Array.from(funds).sort()
-    }, [data])
+    const exportHref = React.useMemo(() => {
+        const next = new URLSearchParams(sp.toString())
+        next.delete("page")
+        next.delete("size")
+        const qs = next.toString()
+        return qs ? `/holdings/export?${qs}` : "/holdings/export"
+    }, [sp])
 
-    const exportCsv = () => {
-        const rows = table.getFilteredRowModel().rows
-        const csvContent = [
-            columns.map(c => (c as any).accessorKey).join(","),
-            ...rows.map(r => columns.map(c => {
-                let val = r.getValue((c as any).accessorKey)
-                return typeof val === "string" ? `"${val.replace(/"/g, '""')}"` : val
-            }).join(","))
-        ].join("\n")
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement("a")
-        const url = URL.createObjectURL(blob)
-        link.setAttribute("href", url)
-        link.setAttribute("download", `holdings_export_${new Date().toISOString().slice(0, 10)}.csv`)
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-    }
+    const goToPage = (n: number) => navigate({ page: Math.min(Math.max(n, 1), pageCount) }, false)
 
     return (
         <div>
@@ -113,8 +106,8 @@ export function DataTable<TData, TValue>({
                     </div>
 
                     <Select
-                        value={(table.getColumn("ETF Ticker")?.getFilterValue() as string) ?? "ALL"}
-                        onValueChange={(val) => table.getColumn("ETF Ticker")?.setFilterValue(val === "ALL" ? undefined : val)}
+                        value={query.fund || "ALL"}
+                        onValueChange={(val) => navigate({ fund: val })}
                     >
                         <SelectTrigger className="w-full sm:w-[180px] bg-surface-alt border-surface-elevated text-slate-200">
                             <SelectValue placeholder="All Funds" />
@@ -128,12 +121,8 @@ export function DataTable<TData, TValue>({
                     </Select>
 
                     <Select
-                        value={(table.getColumn("Option_Type")?.getFilterValue() as string) ?? "ALL"}
-                        onValueChange={(val) => {
-                            if (val === "ALL") table.getColumn("Option_Type")?.setFilterValue(undefined)
-                            else if (val === "STOCK") table.getColumn("Option_Type")?.setFilterValue("") // Hacky: stocks have empty type
-                            else table.getColumn("Option_Type")?.setFilterValue(val)
-                        }}
+                        value={query.type}
+                        onValueChange={(val) => navigate({ type: val })}
                     >
                         <SelectTrigger className="w-full sm:w-[180px] bg-surface-alt border-surface-elevated text-slate-200">
                             <SelectValue placeholder="Asset Type" />
@@ -147,8 +136,8 @@ export function DataTable<TData, TValue>({
                     </Select>
                 </div>
 
-                <Button variant={"outline"} onClick={exportCsv} className="bg-surface-alt border-surface-elevated text-slate-300 hover:bg-surface-elevated hover:text-white">
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                <Button asChild variant={"outline"} className="bg-surface-alt border-surface-elevated text-slate-300 hover:bg-surface-elevated hover:text-white">
+                    <a href={exportHref} download><Download className="mr-2 h-4 w-4" /> Export CSV</a>
                 </Button>
             </div>
             <div className="rounded-md border border-rule overflow-x-auto">
@@ -198,19 +187,17 @@ export function DataTable<TData, TValue>({
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 py-4">
                 <div className="flex-1 text-sm text-slate-500 text-center sm:text-left">
-                    Showing {table.getFilteredRowModel().rows.length} results
+                    Showing {total.toLocaleString()} results
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:gap-x-8">
                     <div className="flex items-center space-x-2">
                         <p className="text-sm font-medium text-slate-400">Rows per page</p>
                         <Select
-                            value={`${table.getState().pagination.pageSize}`}
-                            onValueChange={(value) => {
-                                table.setPageSize(Number(value))
-                            }}
+                            value={`${query.size}`}
+                            onValueChange={(value) => navigate({ size: Number(value) === 50 ? undefined : Number(value) })}
                         >
                             <SelectTrigger className="h-8 w-[70px] bg-surface-alt border-surface-elevated text-slate-200">
-                                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                                <SelectValue placeholder={query.size} />
                             </SelectTrigger>
                             <SelectContent side="top" className="bg-surface-alt border-surface-elevated text-slate-200">
                                 {[10, 20, 30, 40, 50, 100].map((pageSize) => (
@@ -222,15 +209,15 @@ export function DataTable<TData, TValue>({
                         </Select>
                     </div>
                     <div className="flex w-[100px] items-center justify-center text-sm font-medium text-slate-400">
-                        Page {table.getState().pagination.pageIndex + 1} of{" "}
-                        {table.getPageCount() || 1}
+                        Page {query.page} of{" "}
+                        {pageCount}
                     </div>
                     <div className="flex items-center space-x-2">
                         <Button
                             variant="outline"
                             className="h-8 w-8 p-0 bg-surface-alt border-surface-elevated text-slate-300 pointer-events-auto"
-                            onClick={() => table.setPageIndex(0)}
-                            disabled={!table.getCanPreviousPage()}
+                            onClick={() => goToPage(1)}
+                            disabled={query.page <= 1}
                         >
                             <span className="sr-only">Go to first page</span>
                             <ChevronsLeft className="h-4 w-4" />
@@ -238,8 +225,8 @@ export function DataTable<TData, TValue>({
                         <Button
                             variant="outline"
                             className="h-8 w-8 p-0 bg-surface-alt border-surface-elevated text-slate-300 pointer-events-auto"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
+                            onClick={() => goToPage(query.page - 1)}
+                            disabled={query.page <= 1}
                         >
                             <span className="sr-only">Go to previous page</span>
                             <ChevronLeft className="h-4 w-4" />
@@ -247,8 +234,8 @@ export function DataTable<TData, TValue>({
                         <Button
                             variant="outline"
                             className="h-8 w-8 p-0 bg-surface-alt border-surface-elevated text-slate-300 pointer-events-auto"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
+                            onClick={() => goToPage(query.page + 1)}
+                            disabled={query.page >= pageCount}
                         >
                             <span className="sr-only">Go to next page</span>
                             <ChevronRight className="h-4 w-4" />
@@ -256,8 +243,8 @@ export function DataTable<TData, TValue>({
                         <Button
                             variant="outline"
                             className="h-8 w-8 p-0 bg-surface-alt border-surface-elevated text-slate-300 pointer-events-auto"
-                            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                            disabled={!table.getCanNextPage()}
+                            onClick={() => goToPage(pageCount)}
+                            disabled={query.page >= pageCount}
                         >
                             <span className="sr-only">Go to last page</span>
                             <ChevronsRight className="h-4 w-4" />
