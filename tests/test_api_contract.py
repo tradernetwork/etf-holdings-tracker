@@ -184,3 +184,58 @@ def test_openapi_has_servers_and_hides_internal_routes():
     for hidden in ("/api/v1/visits/track", "/api/v1/visits/live", "/api/v1/traderdaddy", "/llms.txt"):
         assert hidden not in spec["paths"]
     assert "ARK Invest, Avantis" not in spec["info"]["description"]
+
+
+# ─── Proxy-header hardening ──────────────────────────────────────
+
+DOCKER_BRIDGE = "172.16.0.0/12"
+
+
+def test_forwarded_proto_yields_https_redirect():
+    """uvicorn's ProxyHeadersMiddleware (what --proxy-headers installs) must
+    make the /mcp/ redirect keep https when the peer is the Docker gateway.
+    Exercised in-process by wrapping the app; the CLI flags are pinned below."""
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    wrapped = TestClient(
+        ProxyHeadersMiddleware(app, trusted_hosts=DOCKER_BRIDGE),
+        client=("172.18.0.1", 50000),
+        follow_redirects=False,
+    )
+    r = wrapped.post("/mcp/", headers={"X-Forwarded-Proto": "https", "Host": "api.tickertrace.pro"})
+    assert r.status_code in (307, 308)
+    assert r.headers["location"].startswith("https://api.tickertrace.pro/")
+
+
+def _seen_client(peer: str, xff: str) -> str:
+    """Which address slowapi's get_remote_address sees for a given peer + XFF."""
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Route
+    from slowapi.util import get_remote_address
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    probe = Starlette(routes=[Route("/", lambda request: PlainTextResponse(get_remote_address(request)))])
+    c = TestClient(ProxyHeadersMiddleware(probe, trusted_hosts=DOCKER_BRIDGE), client=(peer, 50000))
+    return c.get("/", headers={"X-Forwarded-For": xff}).text
+
+
+def test_xff_from_docker_gateway_uses_rightmost_untrusted_hop():
+    # Apache appended 203.0.113.9; the client prepended a spoofed 6.6.6.6.
+    assert _seen_client("172.18.0.1", "6.6.6.6, 203.0.113.9") == "203.0.113.9"
+
+
+def test_xff_from_untrusted_peer_is_ignored():
+    assert _seen_client("8.8.8.8", "6.6.6.6") == "8.8.8.8"
+
+
+def test_dockerfile_trusts_only_docker_bridge_and_compose_binds_loopback():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    cmd = next(l for l in (root / "Dockerfile").read_text().splitlines() if l.startswith("CMD"))
+    assert "--proxy-headers" in cmd
+    assert f'"--forwarded-allow-ips", "{DOCKER_BRIDGE}"' in cmd
+    assert '"*"' not in cmd  # "*" would let clients spoof the rate-limit key
+    compose = (root / "docker-compose.yml").read_text()
+    assert '"127.0.0.1:8100:8100"' in compose
+    assert '- "8100:8100"' not in compose

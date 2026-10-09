@@ -34,5 +34,14 @@ EXPOSE 8100
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')" || exit 1
 
-# Run with uvicorn
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "2"]
+# Run with uvicorn.
+# --proxy-headers --forwarded-allow-ips 172.16.0.0/12: inside Docker, requests
+# arrive from the bridge gateway (172.x), not 127.0.0.1, so by default uvicorn
+# ignored Apache's X-Forwarded-For/-Proto (shared rate-limit bucket, http://
+# redirects). Trust model: ONLY peers on the Docker bridge range are trusted,
+# i.e. Apache reaching us through the loopback-published port. uvicorn then
+# takes the rightmost untrusted X-Forwarded-For hop, which is the address Apache
+# appended; anything a client prepends to the header is ignored. Do NOT widen
+# this to "*" (a client could then spoof its rate-limit key) and do not
+# publish 8100 beyond 127.0.0.1 in docker-compose.yml.
+CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12"]

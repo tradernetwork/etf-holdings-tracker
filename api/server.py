@@ -240,7 +240,7 @@ def health():
 
 @app.get("/api/v1/signals", tags=["public"])
 @limiter.limit("60/minute")
-def get_signals(request: Request, category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def get_signals(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
     """
     Full signal payload — conviction-scored buys/sells, daily changes,
     sector flow, divergences. Fully open, no API key required.
@@ -266,7 +266,7 @@ def get_stats(request: Request):
 
 @app.get("/api/v1/sectors", tags=["public"])
 @limiter.limit("120/minute")
-def get_sectors(request: Request, category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def get_sectors(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
     """Sector-level inflows / outflows."""
     return data.get_sector_flow(category=category)
 
@@ -278,9 +278,9 @@ def get_changes(
     provider: Optional[str] = Query(None),
     fund: Optional[str] = Query(None),
     direction: Optional[str] = Query(None),
-    period: str = Query("daily", regex="^(daily|weekly|monthly)$"),
+    period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     limit: int = Query(50, ge=1, le=5000),
-    category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
 ):
     """Position changes over a window. Filterable by provider, fund, direction.
 
@@ -330,7 +330,7 @@ def get_changes(
 @limiter.limit("60/minute")
 def get_institutional(
     request: Request,
-    period: str = Query("daily", regex="^(daily|weekly|monthly)$"),
+    period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     limit: int = Query(25, ge=1, le=100),
 ):
     """Institutions-as-a-whole flow over a daily/weekly/monthly window.
@@ -422,7 +422,7 @@ def get_stock(request: Request, ticker: str):
 
 @app.get("/api/v1/divergences", tags=["public"])
 @limiter.limit("60/minute")
-def get_divergences(request: Request, category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def get_divergences(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
     """Cross-fund divergences — same ticker, opposite directions.
 
     Each entry carries `crossCategory`: true when the buying and selling sides
@@ -465,7 +465,7 @@ def get_briefing(request: Request):
 
 @app.get("/api/v1/activity", tags=["public"])
 @limiter.limit("60/minute")
-def get_activity(request: Request, period: str = Query("daily", regex="^(daily|weekly|monthly)$")):
+def get_activity(request: Request, period: str = Query("daily", pattern="^(daily|weekly|monthly)$")):
     """
     Bucket changes into accumulating, reducing, and optionsActivity over a
     daily, weekly (~7d) or monthly (~30d) window. Includes option records
@@ -486,7 +486,7 @@ def get_all_holdings(request: Request):
 
 @app.get("/api/v1/funds", tags=["public"])
 @limiter.limit("120/minute")
-def list_funds(request: Request, category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def list_funds(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
     """List all tracked funds, enriched with holdings counts and top holding.
 
     Backward-compatible superset of the old shape (fund/provider/category/aum
@@ -567,8 +567,8 @@ def option_structures(request: Request, underlying: str):
 def list_tickers(
     request: Request,
     limit: int = Query(100, ge=1, le=1000),
-    sort: str = Query("funds", regex="^(funds|weight)$"),
-    category: Optional[str] = Query(None, regex="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
+    sort: str = Query("funds", pattern="^(funds|weight)$"),
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
 ):
     """Most widely-held underlying tickers across all funds — the /stocks index.
 
