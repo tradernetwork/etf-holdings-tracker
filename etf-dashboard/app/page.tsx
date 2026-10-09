@@ -12,7 +12,7 @@ export const revalidate = 86400; // daily revalidation for landing page
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-canvas text-white font-sans overflow-x-hidden">
+    <div className="min-h-dvh bg-canvas text-white font-sans overflow-x-hidden">
       {/* Referral tracker — invisible, captures ?ref= param */}
       <ReferralTracker />
 
@@ -355,6 +355,12 @@ export default function LandingPage() {
         </p>
 
         <div className="max-w-2xl mx-auto space-y-4">
+          <ChangelogEntry
+            date="October 8, 2026"
+            tag="feature"
+            title="TickerTrace is now installable, and an Android app is on the way"
+            desc="We finally finished the phone story. Add TickerTrace to your home screen and it opens like a real app, with an offline screen instead of a dead browser tab when you lose signal. While we were in there we fixed a pile of tap targets that were too small for thumbs and a live-visitors pill that was hiding behind the bottom nav. The Google Play listing is next. Data still never gets cached, so you will not see yesterday's holdings pretending to be today's."
+          />
           <ChangelogEntry
             date="October 8, 2026"
             tag="bugfix"

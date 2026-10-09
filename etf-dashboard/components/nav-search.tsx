@@ -63,7 +63,7 @@ export function NavSearch() {
                 onClick={() => setOpen(o => !o)}
                 aria-label="Search a ticker"
                 aria-expanded={open}
-                className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-rule-strong bg-surface-alt text-slate-400 hover:text-white hover:border-equity/50 transition-colors"
+                className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-lg border border-rule-strong bg-surface-alt text-slate-400 hover:text-white hover:border-equity/50 transition-colors"
             >
                 <Search className="h-4 w-4" />
             </button>
@@ -87,13 +87,13 @@ export function NavSearch() {
                             name="q"
                             placeholder="Search any ticker..."
                             autoComplete="off"
-                            className="w-full bg-surface-alt border border-rule rounded-lg pl-10 pr-8 py-2 text-sm text-white placeholder-slate-500 font-mono uppercase focus:outline-none focus:border-equity/50 focus:ring-1 focus:ring-equity/20 transition-colors"
+                            className="w-full bg-surface-alt border border-rule rounded-lg pl-10 pr-10 py-2.5 text-base sm:text-sm text-white placeholder-slate-500 font-mono uppercase focus:outline-none focus:border-equity/50 focus:ring-1 focus:ring-equity/20 transition-colors"
                         />
                         <button
                             type="button"
                             onClick={() => setOpen(false)}
                             aria-label="Close search"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 p-3 text-slate-500 hover:text-white transition-colors"
                         >
                             <X className="h-4 w-4" />
                         </button>

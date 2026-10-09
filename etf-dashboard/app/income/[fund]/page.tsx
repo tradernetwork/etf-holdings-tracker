@@ -170,7 +170,7 @@ export default async function IncomeFundPage({ params }: { params: Promise<{ fun
     const s = detail.sleeves;
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-4 sm:p-6 space-y-4 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-4 sm:p-6 space-y-4 font-sans">
             <SiteNav world="option-income" />
 
             {/* ── Header: what kind of fund is this ───────────────────────── */}

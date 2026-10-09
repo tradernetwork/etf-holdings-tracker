@@ -89,7 +89,7 @@
    * naming them here is what makes `bg-surface-alt` / `bg-surface-elevated`
    * real Tailwind utilities without touching shadcn's own variables.
    */
-  --canvas: #0a0f1e;          /* outermost page background (min-h-screen wrappers) */
+  --canvas: #0a0f1e;          /* outermost page background (min-h-dvh wrappers) */
   --surface: #111827;         /* raised panel / card background — the common case */
   --surface-alt: #0f172a;     /* secondary panel / table-head background */
   --surface-elevated: #1e293b;/* chip / lighter card background */

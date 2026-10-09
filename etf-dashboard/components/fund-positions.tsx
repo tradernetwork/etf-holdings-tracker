@@ -363,7 +363,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
             type="button"
             onClick={onClick}
             aria-pressed={active}
-            className={`px-2.5 py-1 rounded-full text-[11px] border transition-colors min-h-[28px] ${active
+            className={`px-2.5 py-1 rounded-full text-[11px] border transition-colors min-h-11 sm:min-h-[28px] ${active
                 ? 'border-equity/60 bg-equity/15 text-equity'
                 : 'border-rule text-slate-400 hover:text-slate-200 hover:border-slate-500'}`}
         >
@@ -568,7 +568,7 @@ export function FundPositions({ income, changes = [] }: {
                                         type="button"
                                         onClick={() => update({ group: g === 'stock' ? null : g })}
                                         aria-pressed={group === g}
-                                        className={`px-2.5 py-1.5 min-h-[28px] ${group === g ? 'bg-equity/15 text-equity' : 'text-slate-400 hover:text-slate-200'}`}
+                                        className={`px-2.5 py-1.5 min-h-11 sm:min-h-[28px] ${group === g ? 'bg-equity/15 text-equity' : 'text-slate-400 hover:text-slate-200'}`}
                                     >
                                         By {g}
                                     </button>

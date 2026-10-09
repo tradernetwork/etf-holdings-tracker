@@ -24,7 +24,7 @@ export default function FundError({
     }, [error]);
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans flex items-center justify-center">
             <div className="max-w-md text-center bg-surface border border-rule rounded-xl p-8 shadow-lg">
                 <h1 className="text-2xl font-bold mb-2 text-white">Couldn&apos;t load this fund</h1>
                 <p className="text-slate-400 text-sm mb-6">

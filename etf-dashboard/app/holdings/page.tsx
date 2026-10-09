@@ -24,7 +24,7 @@ export default async function HoldingsPage({
     const { asOfDate, activeCount, changedCount } = result;
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-6 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans">
             <div className="max-w-[1600px] mx-auto space-y-4">
                 <SiteNav />
                 <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-white mb-2 transition-colors">

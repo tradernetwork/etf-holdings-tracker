@@ -214,7 +214,7 @@ export default async function EquityPage() {
         .slice(0, 8);
 
     return (
-        <div className="min-h-screen bg-canvas text-foreground p-4 sm:p-6 space-y-4 font-sans">
+        <div className="min-h-dvh bg-canvas text-foreground p-4 sm:p-6 space-y-4 font-sans">
             <SiteNav world="active-equity" />
 
             <div className="bg-surface border border-rule p-4 rounded-xl shadow-lg">
