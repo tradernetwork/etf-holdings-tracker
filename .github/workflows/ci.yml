@@ -62,3 +62,57 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  mobile-check:
+    name: mobile (tsc + jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx jest
+
+      # Advisory: expo-doctor also queries Expo's servers, so a network blip
+      # should not block unrelated PRs. tsc + jest above are the gate.
+      - name: expo-doctor
+        continue-on-error: true
+        run: npx --yes expo-doctor
+
+  dashboard-unit:
+    name: dashboard unit tests (node --test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: etf-dashboard
+    steps:
+      - uses: actions/checkout@v5
+
+      # Node 22+: `node --test` runs the .ts tests directly (type stripping), unlike the Node 20 build job.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: etf-dashboard/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test

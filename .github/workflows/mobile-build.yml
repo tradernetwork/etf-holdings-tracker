@@ -1,0 +1,54 @@
+name: Mobile build (Android, manual)
+
+# Manual only. Pattern from tradernetwork/vero's build.yml, minus the tag
+# trigger and --auto-submit: nothing is submitted to Google Play from CI yet.
+# Needs the EXPO_TOKEN repo secret.
+#
+# Credentials: `production` uses EAS-hosted credentials (upload the Play key once with `eas credentials`),
+# so it only works after that. `preview` uses LOCAL credentials (mobile/credentials.json, git-ignored,
+# written by mobile/scripts/write-local-credentials.sh), which CI does not have: run preview builds from
+# the machine that holds the key. `development` needs neither.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile
+        type: choice
+        options: [preview, production, development]
+        default: development
+
+# EAS free tier builds one at a time; never queue two runs at once.
+concurrency:
+  group: mobile-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # --no-wait: EAS builds on its own servers; this job just queues it.
+      # Progress and the artifact are on expo.dev.
+      - name: Queue Android build
+        run: eas build --profile "${{ inputs.profile }}" --platform android --non-interactive --no-wait

@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local signing credentials (passwords + keystore path): never commit
+credentials.json
+*.keystore
+*.jks
