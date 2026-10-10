@@ -15,6 +15,12 @@ Two independent checks against the live API's /health:
          green and the fix was not live. Fresh data proves nothing about
          whether the code serving it is current.
 
+  FUNDS  any fund whose own holdings are more than MAX_FUND_LAG business days
+         behind `asOfDate`. The scraper carries a failing fund forward so the
+         run stays green and global `asOfDate` stays current; on 2026-09-27 all
+         six ARK funds went stale that way for two weeks with every check
+         above passing.
+
 Usage:
     python3 scripts/check_freshness.py [API_BASE]
     # default API_BASE = https://api.tickertrace.pro
@@ -30,6 +36,7 @@ MAX_BUSINESS_DAY_LAG = 1   # alert when the live DATA is >1 business day behind
 MAX_COMMITS_BEHIND = 5     # alert when the deployed CODE is >5 commits behind main.
                            # The box syncs every 15 min and the nightly scrape commits
                            # on its own, so being 1-2 behind is normal transient lag.
+MAX_FUND_LAG = 3           # alert when a fund's own holdings are >3 business days behind
 REPO = "tradernetwork/etf-holdings-tracker"
 
 def business_days_between(start: datetime.date, end: datetime.date) -> int:
@@ -40,6 +47,33 @@ def business_days_between(start: datetime.date, end: datetime.date) -> int:
         if d.weekday() < 5:  # Mon–Fri
             days += 1
     return days
+
+def stale_funds(api_base: str, asof: datetime.date, max_lag: int = MAX_FUND_LAG) -> list[tuple[str, str, int]]:
+    """(fund, holdingsDate, lag) for funds carried forward more than `max_lag`
+    business days. Inconclusive lookups are skipped, never counted as stale."""
+    try:
+        with urllib.request.urlopen(f"{api_base}/api/v1/funds", timeout=20) as resp:
+            funds = json.load(resp)
+        funds = funds["funds"] if isinstance(funds, dict) else funds
+    except Exception as e:
+        print(f"::warning::Could not list funds for the per-fund check: {e}")
+        return []
+    out = []
+    for f in funds:
+        if not f.get("stale"):
+            continue
+        name = f["fund"]
+        try:
+            with urllib.request.urlopen(f"{api_base}/api/v1/fund/{name}", timeout=20) as resp:
+                held = json.load(resp).get("holdingsDate")
+            lag = business_days_between(datetime.date.fromisoformat(held), asof)
+        except Exception as e:
+            print(f"::warning::Could not read holdingsDate for stale fund {name}: {e}")
+            continue
+        if lag > max_lag:
+            out.append((name, held, lag))
+    return out
+
 
 def main() -> int:
     url = f"{API_BASE}/health"
@@ -67,6 +101,17 @@ def main() -> int:
         failed = True
     else:
         print("✅ Data is fresh.")
+
+    stale = stale_funds(API_BASE, asof)
+    if stale:
+        listing = ", ".join(f"{n} (holdings {d}, {lag} bd behind)" for n, d, lag in stale)
+        print(f"::error::STALE FUNDS — {len(stale)} fund(s) carried forward >{MAX_FUND_LAG} "
+              f"business days while the global asOfDate is current: {listing}. "
+              f"The scraper's per-fund fetch is failing silently; read the scrape run's "
+              f"'Funds not refreshed' warning and 'Error processing' log lines.")
+        failed = True
+    else:
+        print("✅ No fund stuck on old holdings.")
 
     if check_code_drift(payload.get("commit")):
         failed = True

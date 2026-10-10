@@ -520,7 +520,11 @@ def looks_like_holdings_csv(lines: list[str]) -> bool:
     head = lines[0]
     if head.lstrip().startswith('<'):
         return False
-    header_keywords = ['Ticker', 'Name', 'Date', 'Symbol', 'Weight', 'Quantity', 'Account']
+    # Case-insensitive: ARK publishes a lowercase header ("date,fund,company,
+    # ticker,...,weight (%)"), which a case-sensitive match rejected as
+    # "not a holdings CSV" — all six ARK funds then carried forward silently.
+    header_keywords = ['ticker', 'name', 'date', 'symbol', 'weight', 'quantity', 'account']
+    head = head.lower()
     return head.count(',') >= 2 and any(kw in head for kw in header_keywords)
 
 

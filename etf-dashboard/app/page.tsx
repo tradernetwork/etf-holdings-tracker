@@ -358,6 +358,8 @@ export default function LandingPage() {
           <ChangelogEntry
             date="October 10, 2026"
             tag="bugfix"
+            title="ARK was frozen for two weeks and we didn't notice"
+            desc="Since September 25 all six ARK funds (ARKK, ARKQ, ARKW, ARKG, ARKF, ARKX) were showing old holdings. ARK's file was fine. We were the problem: a check we added looked for a capitalized column header and ARK's is lowercase, so the scraper decided the file wasn't a holdings file and quietly reused the old one. The nightly job stayed green the whole time, which is the embarrassing part. Fixed, and ARK refreshes on the next scrape. The daily freshness check now also fails if any fund sits on holdings more than three business days old, so this can't hide behind a healthy overall date again. We can't backfill the missing days, since ARK only publishes the latest file."
             title="Materials and MATERIALS are the same sector, who knew"
             desc="Avantis sends sector names in ALL CAPS and First Trust sends them in Title Case, so for months the Changes page showed two Materials chips, two Utilities chips, two Real Estate chips, and sector flow was quietly splitting each one in half. I fixed it at the source, in the API, so every sector now has exactly one spelling and the numbers add up. A few odd labels from the crypto and pipeline funds (Software, Propane, that kind of thing) got folded into their proper sectors too. Past days are fixed as well, nothing had to be re-scraped."
           />
