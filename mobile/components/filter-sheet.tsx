@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { type ReactNode } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, fonts, MIN_TAP, radii, spacing } from "@/lib/theme";
+import { fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
+import { useStyles, useTheme } from "@/lib/theme-context";
 
 /**
  * Bottom sheet built on React Native's Modal. Chosen over @gorhom/bottom-sheet
@@ -27,6 +28,8 @@ export function FilterSheet({
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const c = useTheme();
+  const styles = useStyles(makeStyles);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close filters" />
@@ -35,7 +38,7 @@ export function FilterSheet({
         <View style={styles.head}>
           <Text style={styles.title}>{title}</Text>
           <Pressable onPress={onReset} accessibilityRole="button" style={styles.reset}>
-            <Text style={{ color: colors.accent, fontFamily: fonts.bodyBold }}>Reset</Text>
+            <Text style={{ color: c.accent, fontFamily: fonts.bodyBold }}>Reset</Text>
           </Pressable>
         </View>
         <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: spacing.lg, paddingBottom: spacing.md }}>
@@ -60,6 +63,8 @@ export function OptionGroup<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const c = useTheme();
+  const styles = useStyles(makeStyles);
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={styles.groupLabel}>{label.toUpperCase()}</Text>
@@ -73,8 +78,8 @@ export function OptionGroup<T extends string>({
             accessibilityState={{ selected: on }}
             style={styles.option}
           >
-            <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={20} color={on ? colors.accent : colors.textMuted} />
-            <Text style={[styles.optionText, on && { color: colors.textPrimary }]}>{o.label}</Text>
+            <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={20} color={on ? c.accent : c.textMuted} />
+            <Text style={[styles.optionText, on && { color: c.textPrimary }]}>{o.label}</Text>
             {o.hint ? <Text style={styles.optionHint}>{o.hint}</Text> : null}
           </Pressable>
         );
@@ -83,26 +88,27 @@ export function OptionGroup<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)" },
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: c.overlay },
   sheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopLeftRadius: radii.card + 6,
     borderTopRightRadius: radii.card + 6,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: spacing.lg,
     maxHeight: "80%",
   },
-  handle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, marginTop: spacing.sm },
+  handle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginTop: spacing.sm },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: spacing.sm },
-  title: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 18 },
+  title: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 18 },
   reset: { minHeight: MIN_TAP, justifyContent: "center", paddingLeft: spacing.md },
-  groupLabel: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 11, letterSpacing: 0.8 },
+  groupLabel: { color: c.textMuted, fontFamily: fonts.bodyMedium, fontSize: 11, letterSpacing: 0.8 },
   option: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: MIN_TAP },
-  optionText: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 15, flex: 1 },
-  optionHint: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12 },
-  apply: { minHeight: MIN_TAP + 4, borderRadius: radii.pill, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center", marginTop: spacing.sm },
-  applyText: { color: "#04122B", fontFamily: fonts.bodyBold, fontSize: 15 },
-});
+  optionText: { color: c.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 15, flex: 1 },
+  optionHint: { color: c.textMuted, fontFamily: fonts.body, fontSize: 12 },
+  apply: { minHeight: MIN_TAP + 4, borderRadius: radii.pill, backgroundColor: c.accent, alignItems: "center", justifyContent: "center", marginTop: spacing.sm },
+  applyText: { color: c.onAccent, fontFamily: fonts.bodyBold, fontSize: 15 },
+  });

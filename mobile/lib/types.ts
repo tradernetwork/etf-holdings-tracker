@@ -30,6 +30,8 @@ export interface Signal {
   /** Sum of active-weight deltas across funds, percentage points. */
   weightDelta: number;
   convictionScore: number;
+  /** Consecutive sessions in this direction, when the API has one. */
+  streak?: number | null;
   funds: string[];
   fundCount: number;
   providerCount: number;
@@ -45,6 +47,8 @@ export interface Change {
   activeWeightDelta: number;
   /** Raw weight change (includes price drift). Transparency only. */
   weightDelta: number;
+  /** Reported share-count change. */
+  sharesDelta?: number | null;
   currentWeight: number;
   previousWeight: number;
   type: ChangeType;

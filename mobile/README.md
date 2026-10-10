@@ -7,6 +7,7 @@ and a count of funds not yet updated).
 
 - Expo SDK 57 (current stable), React Native 0.86, expo-router 57, TypeScript strict. Package: `pro.tickertrace.app`.
 - Screens: Today, Ticker/[symbol], Fund/[fund], Explore (+ Filters sheet), Following (empty state), per `APP_DESIGN_SPEC`. Pure logic lives in `lib/format.ts` and `lib/derive.ts` with Jest tests (`npm test`).
+- Themes: two complete palettes in `lib/theme.ts` (`terminal` default, `paper`), chosen in Settings (gear on Today) and remembered via AsyncStorage. Every colour comes from the active palette; no raw hex in screens.
 - Filters sheet is RN `Modal` (no @gorhom/bottom-sheet: that needs reanimated + gesture-handler native modules and extra web setup; a picker needs none of it, and Modal behaves the same on Android and the web export).
 - Dollars use the API's `aumUsd`/`positionUsd`/`activeFlowUsd` when present (API PR #142) and otherwise `weight x AUM`, labelled "est.".
 - Data: `lib/api.ts` (typed client, retry/backoff) + `lib/queries.ts` (TanStack Query).

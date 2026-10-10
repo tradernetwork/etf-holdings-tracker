@@ -15,7 +15,8 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStateProvider } from "@/lib/app-state";
-import { colors, fonts } from "@/lib/theme";
+import { fonts } from "@/lib/theme";
+import { ThemeProvider, useTheme } from "@/lib/theme-context";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,27 +40,38 @@ export default function RootLayout() {
   }, [ready]);
   if (!ready) return null;
 
+  return (
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AppStateProvider>
+            <ThemedStack />
+          </AppStateProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function ThemedStack() {
+  const c = useTheme();
   const detail = {
     headerShown: true,
     title: "",
-    headerStyle: { backgroundColor: colors.canvas },
-    headerTintColor: colors.textPrimary,
+    headerStyle: { backgroundColor: c.canvas },
+    headerTintColor: c.textPrimary,
     headerShadowVisible: false,
     headerBackButtonDisplayMode: "minimal" as const,
     headerTitleStyle: { fontFamily: fonts.bodyBold },
   };
-
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AppStateProvider>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
-            <Stack.Screen name="ticker/[symbol]" options={detail} />
-            <Stack.Screen name="fund/[fund]" options={detail} />
-          </Stack>
-        </AppStateProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <>
+      <StatusBar style={c.statusBar} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.canvas } }}>
+        <Stack.Screen name="ticker/[symbol]" options={detail} />
+        <Stack.Screen name="fund/[fund]" options={detail} />
+        <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
+      </Stack>
+    </>
   );
 }

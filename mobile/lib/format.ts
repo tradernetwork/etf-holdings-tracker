@@ -96,6 +96,8 @@ export function cleanName(raw: string | null | undefined): string {
   s = s.replace(/\s+(COMMON STOCK|COMMON SHARES?|ORDINARY SHARES?|ORD SHS|ORD|SHS|CAPITAL STOCK|NPV)\b.*$/i, "");
   s = s.replace(/\s+(SPONSORED )?(ADR|GDR)\b.*$/i, "");
   s = s.replace(/\s+(CLASS|CL)\s+[A-Z0-9]\b/gi, "");
+  s = s.replace(/\s*-\s*(?:class|cl)\s+[A-Z0-9]$/i, ""); // "Inc -class A", "Inc-cl A"
+  s = s.replace(/\s+-\s*[A-C]?$/, ""); // dangling "Inc - A" / "Inc -"
   s = s.replace(new RegExp(`\\s+(${CURRENCIES})\\s*[\\d.,]*\\s*$`, "i"), "");
   s = s.replace(/\s+[\d.]+$/, "");
   s = s.replace(/\b(Inc|Corp|Ltd|Co|Plc|INC|CORP|LTD|CO|PLC)\s+[A-C]$/, "$1"); // trailing share-class letter
@@ -164,4 +166,11 @@ export function freshnessLabel(input: {
   const d = formatShortDate(input.date);
   if (input.stale) return { stale: true, text: d ? `Older disclosure · ${d}` : "Older disclosure" };
   return { stale: false, text: d ? `As of ${d}` : "" };
+}
+
+/** Signed share count with thousands separators: 209486 -> "+209,486", -7502 -> "−7,502". */
+export function formatShares(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  const body = Math.abs(Math.round(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${value < 0 ? MINUS : value > 0 ? "+" : ""}${body}`;
 }

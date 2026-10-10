@@ -2,15 +2,17 @@
  * Pure view-model helpers: turn API payloads into what the screens render.
  * Kept free of React so they can be unit tested.
  */
-import { resolveUsd, sectorLabel } from "./format";
+import { formatPp, formatShares, resolveUsd, sectorLabel } from "./format";
 import type {
   Change,
   Category,
   CategoryChoice,
+  Divergence,
   FundSummary,
   LayeringPattern,
   SectorFlowRow,
   Signal,
+  SignalsResponse,
 } from "./types";
 
 export const sumActive = (s: Signal): number => s.fundDetails.reduce((a, d) => a + d.activeWeightDelta, 0);
@@ -121,3 +123,102 @@ export const changesForFund = (changes: Change[], fund: string): Change[] =>
   changes
     .filter((c) => c.fund === fund && !c.isOption)
     .sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
+
+// ---- Home hero + evidence -------------------------------------------------------
+
+/**
+ * One plain-English line under an evidence card, explaining why the active-weight
+ * figure can differ from what the raw numbers suggest.
+ */
+export function evidenceNote(c: Change): string {
+  if (c.activeWeightDelta < 0 && c.weightDelta > 0) {
+    return `Raw weight rose ${formatPp(c.weightDelta)}. Price drift can hide a relative reduction.`;
+  }
+  if (c.sharesDelta === 0) return "Reported share count unchanged. Active weight removes price drift.";
+  if (c.sharesDelta != null) {
+    return `Reported share change: ${formatShares(c.sharesDelta)}. Active weight removes price drift.`;
+  }
+  return "Active weight removes price drift from the raw weight change.";
+}
+
+export interface HeroSide {
+  fund: string;
+  delta: number;
+}
+export interface HeroStory {
+  ticker: string;
+  name: string;
+  sector: string;
+  /** True when funds trade this name in opposite directions. */
+  countercase: boolean;
+  added: HeroSide[];
+  reduced: HeroSide[];
+  /** Consecutive sessions in the headline direction, if the API reports it. */
+  streak: { days: number; direction: "buying" | "selling" } | null;
+}
+
+/**
+ * The top story for the Home hero: the strongest divergence if there is one
+ * (a name one fund added while another reduced it), otherwise the top buy.
+ * Everything shown is taken from the payloads; nothing is invented.
+ */
+export function pickHero(divergences: Divergence[] | undefined, signals: SignalsResponse | undefined): HeroStory | null {
+  const all = [...(signals?.signals.buying ?? []), ...(signals?.signals.selling ?? [])];
+  const sig = (t: string) => all.find((s) => s.ticker === t);
+  const sectorFor = (t: string) =>
+    sig(t)?.sector || signals?.changes.find((c) => c.ticker === t && c.sector)?.sector || "";
+
+  const d = divergences?.find((x) => x.buyingFunds.length > 0 && x.sellingFunds.length > 0);
+  if (d) {
+    const s = sig(d.ticker);
+    return {
+      ticker: d.ticker,
+      name: d.name,
+      sector: sectorFor(d.ticker),
+      countercase: true,
+      added: d.buyingFunds.slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      reduced: d.sellingFunds.slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      streak: s?.streak ? { days: s.streak, direction: s.direction } : null,
+    };
+  }
+  const top = signals?.signals.buying[0];
+  if (!top) return null;
+  const rows = top.fundDetails.map((f) => ({ fund: f.fund, delta: f.activeWeightDelta }));
+  return {
+    ticker: top.ticker,
+    name: top.name,
+    sector: top.sector,
+    countercase: false,
+    added: rows.filter((r) => r.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 2),
+    reduced: rows.filter((r) => r.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 1),
+    streak: top.streak ? { days: top.streak, direction: top.direction } : null,
+  };
+}
+
+export interface WorthRow {
+  ticker: string;
+  title: string;
+  sub: string;
+  delta: number;
+}
+
+/** "Also worth a look": the next strongest moves after the hero, buys and sells interleaved. */
+export function alsoWorthLook(signals: SignalsResponse | undefined, excludeTicker: string | undefined, limit = 4): WorthRow[] {
+  const buys = (signals?.signals.buying ?? []).filter((s) => s.ticker !== excludeTicker);
+  const sells = (signals?.signals.selling ?? []).filter((s) => s.ticker !== excludeTicker);
+  const picked: Signal[] = [];
+  for (let i = 0; picked.length < limit && (i < buys.length || i < sells.length); i++) {
+    if (buys[i]) picked.push(buys[i]);
+    if (picked.length < limit && sells[i]) picked.push(sells[i]);
+  }
+  return picked.map((s) => {
+    const entrant = s.fundDetails.find((f) => f.type === "NEW");
+    const up = s.direction === "buying";
+    return {
+      ticker: s.ticker,
+      title: entrant ? "A new position" : up ? "Allocation increased" : "Allocation reduced",
+      sub: entrant ? `${entrant.fund} entered ${s.ticker}` : `${s.fundCount} ${s.fundCount === 1 ? "fund" : "funds"} · ${s.providerCount} ${s.providerCount === 1 ? "provider" : "providers"}`,
+      delta: sumActive(s),
+    };
+  });
+}

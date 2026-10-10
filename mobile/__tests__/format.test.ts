@@ -1,6 +1,7 @@
 import {
   cleanName,
   formatPp,
+  formatShares,
   formatShortDate,
   formatUsd,
   formatUsdValue,
@@ -86,6 +87,10 @@ describe("cleanName", () => {
     ["SOMEBANK ORD SHS", "Somebank"],
     ["BANK OF AMERICA CORP", "Bank of America Corp"],
     ["Nutanix Inc A", "Nutanix Inc"],
+    ["Coinbase Global Inc -class A", "Coinbase Global Inc"],
+    ["Robinhood Markets Inc - A", "Robinhood Markets Inc"],
+    ["Shopify Inc -", "Shopify Inc"],
+    ["Tempus AI Inc-cl A", "Tempus AI Inc"],
   ];
   it.each(cases)("%s -> %s", (raw, expected) => {
     expect(cleanName(raw)).toBe(expected);
@@ -124,5 +129,14 @@ describe("dates and freshness", () => {
   });
   it("labels fresh funds with their source date", () => {
     expect(freshnessLabel({ stale: false, date: "2026-10-09" })).toEqual({ stale: false, text: "As of Oct 9" });
+  });
+});
+
+describe("formatShares", () => {
+  it("adds separators and signs", () => {
+    expect(formatShares(209486)).toBe("+209,486");
+    expect(formatShares(-7502)).toBe("\u22127,502");
+    expect(formatShares(0)).toBe("0");
+    expect(formatShares(null)).toBe("—");
   });
 });

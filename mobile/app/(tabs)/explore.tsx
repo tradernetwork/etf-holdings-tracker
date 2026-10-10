@@ -6,7 +6,8 @@ import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { Card, ErrorNote, FreshnessLabel, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { formatUsd, freshnessLabel, fundAumUsd } from "@/lib/format";
 import { useFunds } from "@/lib/queries";
-import { colors, fonts, MIN_TAP, radii, spacing } from "@/lib/theme";
+import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
+import { useStyles, useTheme } from "@/lib/theme-context";
 import type { FundSummary } from "@/lib/types";
 
 type CategoryFilter = "all" | "active-equity" | "option-income";
@@ -18,6 +19,8 @@ const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
 const TICKER_SHAPE = /^[A-Za-z][A-Za-z0-9.\-]{0,9}$/;
 
 export default function Explore() {
+  const c = useTheme();
+  const styles = useStyles(makeStyles);
   const funds = useFunds();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
@@ -57,12 +60,12 @@ export default function Explore() {
 
       <View style={styles.searchRow}>
         <View style={styles.search}>
-          <Ionicons name="search" size={18} color={colors.textMuted} />
+          <Ionicons name="search" size={18} color={c.textMuted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Ticker or fund"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             autoCapitalize="characters"
             autoCorrect={false}
             returnKeyType="search"
@@ -71,13 +74,13 @@ export default function Explore() {
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} accessibilityLabel="Clear search" hitSlop={10}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              <Ionicons name="close-circle" size={18} color={c.textMuted} />
             </Pressable>
           )}
         </View>
-        <Pressable onPress={() => setSheet(true)} accessibilityRole="button" style={[styles.filterBtn, activeFilters > 0 && { borderColor: colors.accent }]}>
-          <Ionicons name="options-outline" size={18} color={activeFilters > 0 ? colors.accent : colors.textSecondary} />
-          <Text style={[styles.filterText, activeFilters > 0 && { color: colors.accent }]}>
+        <Pressable onPress={() => setSheet(true)} accessibilityRole="button" style={[styles.filterBtn, activeFilters > 0 && { borderColor: c.accent }]}>
+          <Ionicons name="options-outline" size={18} color={activeFilters > 0 ? c.accent : c.textSecondary} />
+          <Text style={[styles.filterText, activeFilters > 0 && { color: c.accent }]}>
             Filters{activeFilters > 0 ? ` (${activeFilters})` : ""}
           </Text>
         </Pressable>
@@ -86,11 +89,11 @@ export default function Explore() {
       {tickerQuery && (
         <Tappable onPress={() => router.push(`/ticker/${encodeURIComponent(tickerQuery)}`)}>
           <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
-            <Ionicons name="trending-up" size={20} color={colors.accent} />
-            <Text style={{ color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15, flex: 1 }}>
+            <Ionicons name="trending-up" size={20} color={c.accent} />
+            <Text style={{ color: c.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15, flex: 1 }}>
               Look up ticker <Mono bold>{tickerQuery}</Mono>
             </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </Card>
         </Tappable>
       )}
@@ -140,20 +143,21 @@ export default function Explore() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 24 },
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+  title: { color: c.textPrimary, ...display, fontSize: 30 },
   searchRow: { flexDirection: "row", gap: spacing.sm },
   search: {
     flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: MIN_TAP,
-    backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: radii.pill, paddingHorizontal: spacing.md,
+    backgroundColor: c.card, borderColor: c.border, borderWidth: 1, borderRadius: radii.pill, paddingHorizontal: spacing.md,
   },
-  input: { flex: 1, color: colors.textPrimary, fontFamily: fonts.body, fontSize: 15, paddingVertical: 0, minHeight: MIN_TAP },
+  input: { flex: 1, color: c.textPrimary, fontFamily: fonts.body, fontSize: 15, paddingVertical: 0, minHeight: MIN_TAP },
   filterBtn: {
     flexDirection: "row", alignItems: "center", gap: 6, minHeight: MIN_TAP, paddingHorizontal: spacing.md,
-    backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: radii.pill,
+    backgroundColor: c.card, borderColor: c.border, borderWidth: 1, borderRadius: radii.pill,
   },
-  filterText: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13 },
-  hint: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11 },
-  provider: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 0.8, marginTop: spacing.sm },
+  filterText: { color: c.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13 },
+  hint: { color: c.textMuted, fontFamily: fonts.body, fontSize: 11 },
+  provider: { color: c.textMuted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 0.8, marginTop: spacing.sm },
   fundRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm },
-});
+  });

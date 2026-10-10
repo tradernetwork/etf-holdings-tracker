@@ -1,12 +1,15 @@
 import {
   addReduceCounts,
   changesForFund,
+  alsoWorthLook,
   consensusCards,
+  evidenceNote,
+  pickHero,
   convictionFractions,
   mergeSectorFlow,
   splitEvidence,
 } from "../lib/derive";
-import type { Change, FundSummary, LayeringPattern, Signal } from "../lib/types";
+import type { Change, Divergence, FundSummary, LayeringPattern, Signal, SignalsResponse } from "../lib/types";
 
 const ch = (o: Partial<Change>): Change => ({
   fund: "AAA", ticker: "X", name: "X", sector: "", activeWeightDelta: 0, weightDelta: 0,
@@ -85,5 +88,54 @@ describe("consensusCards", () => {
       funds, "all",
     );
     expect(cards[0]).toMatchObject({ usd: 11e6, estimated: false });
+  });
+});
+
+describe("evidenceNote", () => {
+  it("explains a reduction hidden by price drift", () => {
+    const n = evidenceNote(ch({ activeWeightDelta: -0.0104, weightDelta: 0.0616, sharesDelta: 7502 }));
+    expect(n).toBe("Raw weight rose +0.06 pp. Price drift can hide a relative reduction.");
+  });
+  it("otherwise reports the share change", () => {
+    expect(evidenceNote(ch({ activeWeightDelta: 0.5959, weightDelta: 0.6271, sharesDelta: 209486 }))).toBe(
+      "Reported share change: +209,486. Active weight removes price drift.",
+    );
+  });
+});
+
+test("evidenceNote handles an unchanged share count", () => {
+  expect(evidenceNote(ch({ activeWeightDelta: 0.001, weightDelta: 0.002, sharesDelta: 0 }))).toBe(
+    "Reported share count unchanged. Active weight removes price drift.",
+  );
+});
+
+describe("pickHero / alsoWorthLook", () => {
+  const sig = (ticker: string, direction: "buying" | "selling", delta: number, extra: Partial<Signal> = {}): Signal =>
+    ({ ticker, name: ticker, sector: "Tech", direction, weightDelta: delta, convictionScore: 1, funds: ["F"], fundCount: 1,
+       providerCount: 1, fundDetails: [{ fund: "F", activeWeightDelta: delta, type: "CHANGED" }], ...extra }) as Signal;
+  const resp = (buying: Signal[], selling: Signal[]): SignalsResponse =>
+    ({ asOfDate: "2026-10-09", category: null, stats: {} as never, signals: { buying, selling }, changes: [] });
+
+  it("prefers a divergence and carries the streak", () => {
+    const div = [{ ticker: "AAPL", name: "Apple", buyingFunds: [{ fund: "CGGO", weightDelta: 0.596 }], sellingFunds: [{ fund: "AVUS", weightDelta: -0.01 }] }] as Divergence[];
+    const hero = pickHero(div, resp([sig("AAPL", "buying", 0.6, { streak: 2 }), sig("DE", "buying", 0.3)], []));
+    expect(hero).toMatchObject({ ticker: "AAPL", countercase: true, streak: { days: 2, direction: "buying" } });
+    expect(hero?.added[0]).toEqual({ fund: "CGGO", delta: 0.596 });
+    expect(hero?.reduced[0]).toEqual({ fund: "AVUS", delta: -0.01 });
+  });
+  it("falls back to the top buy when there is no divergence", () => {
+    const hero = pickHero([], resp([sig("DE", "buying", 0.3)], []));
+    expect(hero).toMatchObject({ ticker: "DE", countercase: false, reduced: [] });
+    expect(pickHero([], resp([], []))).toBeNull();
+  });
+  it("lists the next moves, skipping the hero, buys and sells interleaved", () => {
+    const rows = alsoWorthLook(
+      resp([sig("AAPL", "buying", 0.6), sig("DE", "buying", 0.3, { fundDetails: [{ fund: "CGGO", activeWeightDelta: 0.3, type: "NEW" }] as never })],
+           [sig("NVDA", "selling", -0.5)]),
+      "AAPL",
+    );
+    expect(rows.map((r) => r.ticker)).toEqual(["DE", "NVDA"]);
+    expect(rows[0]).toMatchObject({ title: "A new position", sub: "CGGO entered DE" });
+    expect(rows[1].title).toBe("Allocation reduced");
   });
 });
