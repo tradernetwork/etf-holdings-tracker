@@ -2,6 +2,7 @@ import {
   addReduceCounts,
   changesForFund,
   alsoWorthLook,
+  catchUpOf,
   consensusCards,
   evidenceNote,
   pickHero,
@@ -12,6 +13,9 @@ import {
   mergeSectorFlow,
   splitEvidence,
 } from "../lib/derive";
+import { formatPp, formatUsd, resolveUsd } from "../lib/format";
+import { isSignificant } from "../lib/significance";
+import { deltaColor, terminal } from "../lib/theme";
 import type { Change, Divergence, FundSummary, LayeringPattern, Signal, SignalsResponse } from "../lib/types";
 
 const ch = (o: Partial<Change>): Change => ({
@@ -188,5 +192,44 @@ describe("follow moves", () => {
   });
   it("returns nothing when nothing is meaningful", () => {
     expect(tickerFollowMoves([ch({ fund: "CMAG", activeWeightDelta: 0.001 })])).toEqual({ moves: [], more: 0 });
+  });
+});
+
+describe("null deltas (catch-up fund, API #144)", () => {
+  const nul = (o: Partial<Change> = {}): Change =>
+    ch({ fund: "ARKK", activeWeightDelta: null, weightDelta: null, sharesDelta: null, ...o });
+
+  it("are never significant and never counted as a move", () => {
+    expect(isSignificant("ARKK", null)).toBe(false);
+    expect(isSignificant("AVUV", undefined)).toBe(false);
+    const r = tickerEvidence([nul(), nul({ fund: "ARKQ" }), ch({ fund: "CGGO", activeWeightDelta: 0.6 })]);
+    expect(r.added.map((c) => c.fund)).toEqual(["CGGO"]);
+    expect(r.reduced).toEqual([]);
+    expect(r.minor).toEqual([]);
+  });
+  it("are excluded from counts, fund changes and follow moves, without throwing", () => {
+    expect(addReduceCounts([nul(), ch({ activeWeightDelta: 0.1 })])).toEqual({ added: 1, reduced: 0 });
+    expect(changesForFund([nul({ ticker: "TSLA" })], "ARKK")).toEqual([]);
+    expect(fundFollowMoves([nul({ ticker: "TSLA" })], "ARKK")).toEqual({ moves: [], more: 0 });
+    expect(tickerFollowMoves([nul()])).toEqual({ moves: [], more: 0 });
+  });
+  it("show as an em dash and a muted colour", () => {
+    expect(formatPp(null)).toBe("—");
+    expect(formatUsd(null)).toBe("—");
+    expect(deltaColor(null, terminal)).toBe(terminal.textMuted);
+    expect(resolveUsd({ apiUsd: null, weightPercent: null, aumBillions: 8 })).toEqual({ usd: null, estimated: false });
+  });
+  it("evidenceNote explains a catch-up row instead of crashing", () => {
+    expect(evidenceNote(nul())).toMatch(/catch-up/);
+  });
+  it("catchUpOf prefers the fund-level flag and also accepts catchUpSince alone", () => {
+    expect(catchUpOf({ catchUp: true, catchUpSince: "2026-09-25" })).toEqual({ active: true, since: "2026-09-25" });
+    expect(catchUpOf({ catchUpSince: "2026-09-25" })).toEqual({ active: true, since: "2026-09-25" });
+    expect(catchUpOf({ catchUp: true })).toEqual({ active: true, since: null });
+    expect(catchUpOf({})).toEqual({ active: false, since: null });
+  });
+  it("a catch-up fund's topHoldings with null deltas still parse as holdings", () => {
+    const top = { ticker: "TSLA", name: "Tesla", weight: 9.17, sector: "", weightDelta: null, sharesDelta: null, activeWeightDelta: null };
+    expect(formatPp(top.activeWeightDelta)).toBe("—");
   });
 });

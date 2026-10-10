@@ -5,7 +5,7 @@ import { MinorAdjustments } from "@/components/minor-adjustments";
 import { Badge, Card, ErrorNote, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, ThinBar, Tappable } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useAppState } from "@/lib/app-state";
-import { changesForFund } from "@/lib/derive";
+import { catchUpOf, changesForFund } from "@/lib/derive";
 import { partitionSignificant } from "@/lib/significance";
 import { cleanName, formatPp, formatShortDate, formatUsd, formatUsdValue, formatWeight, fundAumUsd, resolveUsd } from "@/lib/format";
 import { useFund } from "@/lib/queries";
@@ -44,6 +44,7 @@ export default function FundScreen() {
   const top = f.topHoldings.slice(0, HOLDINGS_SHOWN);
   const maxW = Math.max(0.0001, ...top.map((h) => h.weight));
   const income = f.category === "option-income";
+  const catchUp = catchUpOf(f);
 
   return (
     <Screen topInset={false}>
@@ -76,11 +77,11 @@ export default function FundScreen() {
         </View>
       </View>
 
-      {f.catchUpSince ? (
+      {catchUp.active ? (
         <View style={styles.warn}>
           <Ionicons name="time-outline" size={20} color={c.warnText} style={{ marginTop: 1 }} />
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={styles.warnTitle}>Catch-up since {formatShortDate(f.catchUpSince)}</Text>
+            <Text style={styles.warnTitle}>{catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"}</Text>
             <Text style={styles.warnBody}>This fund&apos;s previous file was carried forward, so its latest diff spans several days and is not shown as a one-day change.</Text>
           </View>
         </View>
@@ -99,7 +100,7 @@ export default function FundScreen() {
         </View>
       )}
 
-      {!f.stale && !f.catchUpSince && (
+      {!f.stale && !catchUp.active && (
         <>
           <SectionHeader title="Today's changes" right={<Hint>active weight</Hint>} />
           {changes.length === 0 ? (

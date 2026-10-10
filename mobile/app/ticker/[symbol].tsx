@@ -12,7 +12,7 @@ import { cleanName, formatPp, formatUsdValue, formatWeight, freshnessLabel, reso
 import { useTicker } from "@/lib/queries";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
-import type { Change } from "@/lib/types";
+import type { Moved } from "@/lib/types";
 
 const HOLDERS_COLLAPSED = 8;
 const EVIDENCE_PER_SIDE = 3;
@@ -125,7 +125,7 @@ export default function TickerScreen() {
   );
 }
 
-function EvidenceCard({ change, provider, aumBillions }: { change: Change; provider?: string; aumBillions: number | null }) {
+function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provider?: string; aumBillions: number | null }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const up = change.activeWeightDelta > 0;

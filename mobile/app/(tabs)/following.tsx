@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Badge, Card, FreshnessLabel, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
-import { fundFollowMoves, tickerFollowMoves, type FollowMove } from "@/lib/derive";
+import { catchUpOf, fundFollowMoves, tickerFollowMoves, type FollowMove } from "@/lib/derive";
 import { type Follow } from "@/lib/follows";
 import { formatPp, formatShortDate, freshnessLabel } from "@/lib/format";
 import { optInStatus } from "@/lib/notify";
@@ -102,16 +102,16 @@ function FundFollow({ symbol }: { symbol: string }) {
   const q = useFund(symbol);
   const f = q.data;
   const fresh = f ? freshnessLabel({ stale: f.stale, date: f.holdingsDate }) : null;
-  const catchUp = f?.catchUpSince;
-  const { moves, more } = f && !f.stale && !catchUp ? fundFollowMoves(f.recentChanges, f.fund) : { moves: [], more: 0 };
+  const catchUp = f ? catchUpOf(f) : null;
+  const { moves, more } = f && !f.stale && !catchUp?.active ? fundFollowMoves(f.recentChanges, f.fund) : { moves: [], more: 0 };
   return (
     <Shell symbol={symbol} kind="fund" right={fresh ? <FreshnessLabel freshness={fresh} /> : undefined}>
       {q.isLoading ? (
         <Loading />
       ) : q.isError || !f ? (
         <Note>Couldn&apos;t load {symbol} right now.</Note>
-      ) : catchUp ? (
-        <Note>Catch-up since {formatShortDate(catchUp)}: this isn&apos;t a one-day change, so no moves are shown.</Note>
+      ) : catchUp?.active ? (
+        <Note>{catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"}: this isn&apos;t a one-day change, so no moves are shown.</Note>
       ) : f.stale ? (
         <Note>Older disclosure · {formatShortDate(f.holdingsDate)}. Quiet data is not proof of no trades.</Note>
       ) : moves.length > 0 ? (

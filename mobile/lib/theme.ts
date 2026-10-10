@@ -121,4 +121,4 @@ export const display = {
 } as const;
 
 /** Colour for a signed delta: up, down, or muted at exactly zero. */
-export const deltaColor = (v: number, c: Palette): string => (v > 0 ? c.buy : v < 0 ? c.sell : c.textMuted);
+export const deltaColor = (v: number | null | undefined, c: Palette): string => (v != null && v > 0 ? c.buy : v != null && v < 0 ? c.sell : c.textMuted);
