@@ -40,6 +40,7 @@ import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { isTradingDay } from './marketHours';
+import { catchUpFunds } from './catch-up';
 
 export interface Holding {
     Date: string;
@@ -59,6 +60,10 @@ export interface Holding {
     Moneyness?: number;
     Sector?: string;
     Country?: string;
+    /** false = carried forward by the scraper (issuer fetch failed); absent in older files. */
+    Refreshed?: boolean | string | null;
+    /** The date the row's data is really from. */
+    Source_Date?: string;
 }
 
 export type ChangeType = 'NEW' | 'REMOVED' | 'CHANGED';
@@ -89,6 +94,13 @@ export interface HoldingsDiff {
     newPositions: ChangeRecord[];
     removedPositions: ChangeRecord[];
     changedPositions: ChangeRecord[];
+    /**
+     * Funds whose previous rows were all carried forward while today's are fresh:
+     * their day-over-day diff would be a multi-week catch-up, so they are left
+     * OUT of the lists above. fund -> last real disclosure date (the "since" date).
+     * Mirrors `_catch_up_funds` in api/data.py.
+     */
+    catchUpFunds: Record<string, string | null>;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'public', 'data');
@@ -298,8 +310,16 @@ function activeWeightDeltas(current: Holding[], previous: Holding[]): Map<string
     return active;
 }
 
-function computeDiff(current: Holding[], previous: Holding[]): HoldingsDiff | null {
-    if (!previous || previous.length === 0) return null;
+function computeDiff(currentAll: Holding[], previousAll: Holding[]): HoldingsDiff | null {
+    if (!previousAll || previousAll.length === 0) return null;
+
+    // A fund coming back from carried-forward rows would report its whole gap as
+    // one day's trades. Drop it from BOTH sides before anything is computed
+    // (including the per-fund renormalization in activeWeightDeltas), exactly as
+    // api/data.py does, and report it separately so the UI can say why.
+    const catchUp = catchUpFunds(currentAll, previousAll);
+    const current = catchUp.size ? currentAll.filter(h => !catchUp.has(h['ETF Ticker'])) : currentAll;
+    const previous = catchUp.size ? previousAll.filter(h => !catchUp.has(h['ETF Ticker'])) : previousAll;
 
     const currentMap = new Map<string, Holding>();
     const previousMap = new Map<string, Holding>();
@@ -400,7 +420,7 @@ function computeDiff(current: Holding[], previous: Holding[]): HoldingsDiff | nu
     removedPositions.sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
     changedPositions.sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
 
-    return { newPositions, removedPositions, changedPositions };
+    return { newPositions, removedPositions, changedPositions, catchUpFunds: Object.fromEntries(catchUp) };
 }
 
 // ─── Public diff API ─────────────────────────────────────────────────────────

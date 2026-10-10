@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { SiteNav } from '@/components/site-nav';
 import { parseHoldingsQuery, queryHoldings } from '@/lib/holdings-query';
+import { catchUpLabel } from '@/lib/catch-up';
 
 // Server-paginated: reads searchParams, so it renders per request and only
 // ever ships one page of rows (the full book was 20+ MB and broke the build).
@@ -21,7 +22,10 @@ export default async function HoldingsPage({
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
     const result = queryHoldings(parseHoldingsQuery(await searchParams));
-    const { asOfDate, activeCount, changedCount } = result;
+    const { asOfDate, activeCount, changedCount, catchUp } = result;
+    // Group catch-up funds by their since-date so the note stays one short line.
+    const catchUpGroups = new Map<string, string[]>();
+    for (const c of catchUp) catchUpGroups.set(c.since ?? '', [...(catchUpGroups.get(c.since ?? '') ?? []), c.fund]);
 
     return (
         <div className="min-h-dvh bg-canvas text-foreground p-6 font-sans">
@@ -42,6 +46,11 @@ export default async function HoldingsPage({
                                 <span className="text-equity ml-2">· {changedCount} changed today</span>
                             )}
                         </p>
+                        {[...catchUpGroups].map(([since, funds]) => (
+                            <p key={since} className="text-xs text-amber-400/90 mt-1">
+                                {funds.join(', ')}: {catchUpLabel(since)}. Their previous file was carried forward, so Δ Weight and Δ Shares show — instead of weeks of trades as one day.
+                            </p>
+                        ))}
                     </div>
                 </div>
 

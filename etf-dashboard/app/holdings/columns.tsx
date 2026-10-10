@@ -4,6 +4,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { catchUpLabel } from "@/lib/catch-up"
+
+const catchUpTitle = (since: string) => `${catchUpLabel(since)}: the previous file was carried forward, so this is not a one-day change`
 
 type SortableHeaderProps = {
     column: any
@@ -107,6 +110,8 @@ export const columns: ColumnDef<any>[] = [
         header: ({ column }) => <SortableHeader column={column} label="Δ Shares" align="right" />,
         cell: ({ row }) => {
             const delta = row.getValue("sharesDelta") as number
+            const since = (row.original as { catchUpSince?: string }).catchUpSince
+            if (since !== undefined) return <div className="text-right font-mono text-slate-700" title={catchUpTitle(since)}>—</div>
             if (!delta || delta === 0) return <div className="text-right font-mono text-slate-700">—</div>
             const color = delta > 0 ? "text-buy" : "text-sell"
             return (
@@ -132,6 +137,8 @@ export const columns: ColumnDef<any>[] = [
         header: ({ column }) => <SortableHeader column={column} label="Δ Weight" align="right" />,
         cell: ({ row }) => {
             const delta = row.getValue("weightDelta") as number
+            const since = (row.original as { catchUpSince?: string }).catchUpSince
+            if (since !== undefined) return <div className="text-right font-mono text-slate-700" title={catchUpTitle(since)}>—</div>
             if (!delta || delta === 0) return <div className="text-right font-mono text-slate-700">—</div>
             const color = delta > 0 ? "text-buy" : "text-sell"
             return (

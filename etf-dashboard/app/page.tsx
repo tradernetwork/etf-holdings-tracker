@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 10, 2026"
+            tag="bugfix"
+            title="Holdings page won't pretend two weeks of ARK trades happened in one day"
+            desc="ARK's issuer file went quiet after Sep 25 and we carried those positions forward while we fixed it. When ARK comes back, the naive math would show every trade since then as a single day's move. The Holdings page now spots that, leaves ARK's Δ Weight and Δ Shares as a dash, and says 'catch-up since Sep 25' instead of making up a number. Everyone else's rows are untouched. Same guard the API already has, now on the page too."
+          />
+          <ChangelogEntry
+            date="October 10, 2026"
             tag="feature"
             title="The API finally puts a dollar sign on fund sizes"
             desc="We added explicit dollar AUM and estimated position/active-flow values, because apparently 48.9 could mean millions or billions if we never label it. Income funds now use the same AUM as every other endpoint; BLOX had been living off an old lookup table. The briefing can separate stock-pickers from income overlays. Missing sectors keep only curated labels, and unknown AUM stays unknown. Existing fields still work."
