@@ -69,6 +69,7 @@ from api.data import (
     HISTORY_DIR,
     _clean_ticker,
     _read_csv,
+    catch_up_funds_between,
     _safe_float,
     get_available_dates,
 )
@@ -119,12 +120,19 @@ def generate_all_signals(history_dir: str = HISTORY_DIR) -> list[dict]:
 
     signals: list[dict] = []
     prev_map: dict[tuple[str, str], float] | None = None
+    prev_rows: list[dict] | None = None
     for date in dates:
         rows = _read_csv(os.path.join(history_dir, f'holdings_{date}.csv'))
         curr_map = _holding_weight_map(rows)
         if prev_map is not None:
+            # A fund coming back from carried-forward rows (ARK: 2026-09-25 ->
+            # first fresh scrape) shows its whole gap as one day. That is not a
+            # day's signal and must never seed a forward-return window.
+            catch_up = catch_up_funds_between(rows, prev_rows)
             keys = set(prev_map.keys()) | set(curr_map.keys())
             for key in keys:
+                if key[0] in catch_up:
+                    continue
                 prev_w = prev_map.get(key, 0.0)
                 curr_w = curr_map.get(key, 0.0)
                 delta = curr_w - prev_w
@@ -140,6 +148,7 @@ def generate_all_signals(history_dir: str = HISTORY_DIR) -> list[dict]:
                     'weightDelta': delta,
                 })
         prev_map = curr_map
+        prev_rows = rows
     return signals
 
 

@@ -87,3 +87,48 @@ def test_still_stale_fund_is_not_a_catch_up(history):
     history([snap('2026-10-08', stale, {'AAA': 2.0}, ark_fresh=False),
              snap('2026-10-09', stale, {'AAA': 2.0}, ark_fresh=False)])
     assert data.get_catch_up_funds() == {}
+
+
+# ─── Paths that diff snapshots on their own ──────────────────────
+
+def _inst(monkeypatch):
+    monkeypatch.setattr(data, 'get_fund_aum', lambda f: 1.0)
+    monkeypatch.setattr(data, 'is_institutional_fund', lambda f: True)
+    data._institutional_flow_cached.cache_clear()
+    data._institutional_trend_cached.cache_clear()
+
+
+def _flow_delta(period, ticker):
+    d = data._compute_institutional_flow(period, 100)
+    return {r['ticker']: r['weightDelta'] for r in d['buying'] + d['selling']}.get(ticker, 0.0)
+
+
+def test_institutional_flow_drops_catch_up_fund(history, monkeypatch):
+    _inst(monkeypatch)
+    history(gap_then_fresh())
+    # ARK's TSLA 10 -> 4 and NEW +6 are the gap; they must not move the blend.
+    assert _flow_delta('daily', 'TSLA') == 0.0
+    assert _flow_delta('daily', 'NEW') == 0.0
+    # Healthy fund unchanged: AVUV AAA 2 -> 3 = +1pp of its book, 1/2 of total AUM.
+    assert _flow_delta('daily', 'AAA') == pytest.approx(0.5)
+
+
+def test_institutional_trend_drops_catch_up_fund_per_horizon(history, monkeypatch):
+    _inst(monkeypatch)
+    history(gap_then_fresh())
+    rows = {r['ticker']: r for r in data._compute_institutional_trend(100)['tickers']}
+    assert 'TSLA' not in rows and 'NEW' not in rows     # ARK-only tickers: no daily/weekly/monthly
+    assert rows['AAA']['daily'] == pytest.approx(0.5)
+
+
+def test_signal_performance_emits_nothing_for_catch_up_step(tmp_path):
+    from api import signal_performance as sp
+    d = tmp_path / 'h'; d.mkdir()
+    for day, rows in gap_then_fresh() + [snap('2026-10-13', {'TSLA': 3.0, 'COIN': 9.0, 'NEW': 6.0}, {'AAA': 3.0})]:
+        with (d / f'holdings_{day}.csv').open('w', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS, restval=''); w.writeheader(); w.writerows(rows)
+    sigs = sp.generate_all_signals(str(d))
+    ark = [(s['date'], s['ticker']) for s in sigs if s['fund'] == 'ARKK']
+    assert not [a for a in ark if a[0] == '2026-10-12']       # the gap day emits nothing
+    assert ('2026-10-13', 'TSLA') in ark                        # the next real day does
+    assert ('2026-10-12', 'AAA') in [(s['date'], s['ticker']) for s in sigs if s['fund'] == 'AVUV']

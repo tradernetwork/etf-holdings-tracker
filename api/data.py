@@ -895,6 +895,15 @@ def _without_funds(m: dict, funds) -> dict:
     return {k: v for k, v in m.items() if v['fund'] not in funds} if funds else m
 
 
+def catch_up_funds_between(curr_rows: list[dict], prev_rows: list[dict]) -> dict[str, str | None]:
+    """`_catch_up_funds` for callers that hold raw rows, not built maps."""
+    return _catch_up_funds(_build_map(curr_rows), _build_map(prev_rows))
+
+
+def drop_funds_from_rows(rows: list[dict], funds) -> list[dict]:
+    return [r for r in rows if r.get('ETF Ticker', '') not in funds] if funds else rows
+
+
 def get_catch_up_funds() -> dict[str, str | None]:
     """Funds whose latest daily change is a catch-up (see `_catch_up_funds`):
     fund -> `sinceDate`, the last real disclosure the delta would span."""
@@ -1245,8 +1254,13 @@ def _compute_institutional_flow(period: str = 'daily', limit: int = 25) -> dict:
     if total_aum <= 0:
         return empty
 
-    new_w, name, sector, funds_now = _blend_institutional(latest, total_aum)
-    old_w, _, _, _ = _blend_institutional(older, total_aum)
+    # A fund returning from carried-forward rows would add its whole gap to
+    # this window; drop it from BOTH sides. The denominator stays put so every
+    # other ticker's number is unchanged.
+    catch_up = catch_up_funds_between(latest, older)
+    new_w, name, sector, funds_now = _blend_institutional(
+        drop_funds_from_rows(latest, catch_up), total_aum)
+    old_w, _, _, _ = _blend_institutional(drop_funds_from_rows(older, catch_up), total_aum)
 
     rows: list[dict] = []
     for ticker in set(new_w) | set(old_w):
@@ -1328,16 +1342,29 @@ def _compute_institutional_trend(limit: int = 15) -> dict:
     cur_w, name, sector, funds_now = _blend_institutional(latest, total_aum)
     prev = get_previous_holdings()
     wk = _snapshot_for_lookback(7)
-    prev_w = _blend_institutional(prev, total_aum)[0] if prev else {}
-    wk_w = _blend_institutional(wk, total_aum)[0] if wk else {}
-    mo_w = _blend_institutional(mo, total_aum)[0]
+    # Each horizon compares today against its own start snapshot. If a fund's
+    # rows at that start were carried forward (a stale stretch ending today),
+    # the delta is the whole gap, so the fund is dropped from both sides of
+    # THAT horizon (see _catch_up_funds). Denominator unchanged.
+    def _horizon(older):
+        if not older:
+            return cur_w, {}
+        drop = catch_up_funds_between(latest, older)
+        if not drop:
+            return cur_w, _blend_institutional(older, total_aum)[0]
+        return (_blend_institutional(drop_funds_from_rows(latest, drop), total_aum)[0],
+                _blend_institutional(drop_funds_from_rows(older, drop), total_aum)[0])
+
+    cur_d, prev_w = _horizon(prev)
+    cur_wk, wk_w = _horizon(wk)
+    cur_mo, mo_w = _horizon(mo)
 
     rows = []
     for t in set(cur_w) | set(mo_w):
         cur = cur_w.get(t, 0.0)
-        daily = cur - prev_w.get(t, 0.0)
-        weekly = cur - wk_w.get(t, 0.0)
-        monthly = cur - mo_w.get(t, 0.0)
+        daily = (cur_d.get(t, 0.0) if prev else cur) - prev_w.get(t, 0.0)
+        weekly = (cur_wk.get(t, 0.0) if wk else cur) - wk_w.get(t, 0.0)
+        monthly = cur_mo.get(t, 0.0) - mo_w.get(t, 0.0)
         if round(monthly, 4) == 0 and round(weekly, 4) == 0 and round(daily, 4) == 0:
             continue
         rows.append({
