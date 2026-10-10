@@ -22,6 +22,13 @@ npm run doctor          # expo-doctor
 
 Needs Node >= 22. `EXPO_PUBLIC_API_URL` overrides the API base (default `https://api.tickertrace.pro`).
 
+### Web preview
+
+`npm run export:web-preview` writes a react-native-web static export (single page, base path
+`/previews/app`, override with `EXPO_BASE_URL`; output dir `OUT`, default `/tmp/tt-mobile-web`). Serve it from the
+same origin as the API (the API's CORS allowlist doesn't include arbitrary origins). Preview only; the
+shipping target is Android.
+
 ### API types
 
 `lib/generated/api-types.ts` is generated from the live spec (`npm run gen:api`) and is used to

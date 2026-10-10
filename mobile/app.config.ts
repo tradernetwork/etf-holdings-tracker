@@ -30,6 +30,10 @@ const config: ExpoConfig = {
     // even if a transitive dependency tries to add it.
     blockedPermissions: ["com.google.android.gms.permission.AD_ID"],
   },
+  // Web is for previews only (react-native-web). Single-page output; set
+  // EXPO_BASE_URL (e.g. /previews/app) when hosting under a sub-path.
+  web: { bundler: "metro", output: "single", backgroundColor: BG },
+  experiments: process.env.EXPO_BASE_URL ? { baseUrl: process.env.EXPO_BASE_URL } : {},
   plugins: [
     "expo-router",
     [

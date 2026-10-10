@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
+    "@expo/vector-icons": "^15.0.2",
     "@tanstack/react-query": "^5.104.1",
     "expo": "~57.0.27",
     "expo-constants": "~57.0.21",
@@ -29,7 +30,8 @@
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
-    "gen:api": "npx -y openapi-typescript@7 https://api.tickertrace.pro/openapi.json -o lib/generated/api-types.ts"
+    "gen:api": "npx -y openapi-typescript@7 https://api.tickertrace.pro/openapi.json -o lib/generated/api-types.ts",
+    "export:web-preview": "EXPO_BASE_URL=/previews/app expo export --platform web --output-dir \"${OUT:-/tmp/tt-mobile-web}\""
   },
   "private": true
 }

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/lib/theme";
@@ -21,9 +22,18 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Today" }} />
-      <Tabs.Screen name="following" options={{ title: "Following" }} />
-      <Tabs.Screen name="explore" options={{ title: "Explore" }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: "Today", tabBarIcon: ({ color, size }) => <Ionicons name="flash" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="following"
+        options={{ title: "Following", tabBarIcon: ({ color, size }) => <Ionicons name="star" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{ title: "Explore", tabBarIcon: ({ color, size }) => <Ionicons name="compass" size={size} color={color} /> }}
+      />
     </Tabs>
   );
 }
