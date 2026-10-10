@@ -76,3 +76,8 @@ firebase-debug.log
 
 # Anonymous notification worker lock (runtime state)
 api/data/notifications.lock
+
+# Android signing material (Play upload key etc.) and the local EAS credentials file: never commit
+*.keystore
+*.jks
+mobile/credentials.json

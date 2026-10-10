@@ -14,6 +14,10 @@
       "distribution": "internal",
       "autoIncrement": true,
       "channel": "preview",
+      // First test APK only: sign with the existing Play upload key kept OUTSIDE the repo.
+      // Generate the git-ignored credentials.json with scripts/write-local-credentials.sh and run the
+      // build from that machine (CI has no such file). Production uses EAS-hosted credentials.
+      "credentialsSource": "local",
       "android": { "buildType": "apk" },
       "env": { "EXPO_PUBLIC_API_URL": "https://api.tickertrace.pro" }
     },

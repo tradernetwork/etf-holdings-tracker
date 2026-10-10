@@ -48,14 +48,20 @@ handlers return dicts), so body shapes are hand-written in `lib/types.ts`. Re-ru
 - **Not included yet**: auth (the API is open), offline write queue, charts (vero's Skia chart), push, analytics.
   No ad SDKs, ever (see `.claude/agents/funnel-guard.md`); the AD_ID permission is blocked in `app.config.ts`.
 
+## EAS project, updates and signing
+
+- The app is linked to the EAS project `788fe7b7-8733-4492-a5a4-1ba03cd8fb0c` (owner `tradernetwork`, set in `app.config.ts`). `expo-updates` is installed with `updates.url` pointing at it; `runtimeVersion` is `{ policy: "appVersion" }` and every build profile in `eas.json` has its own `channel` (`development` / `preview` / `production`).
+- **Preview builds** (first test APK) sign with the existing Play **upload key**, which lives OUTSIDE the repo at `~/secrets/tickertrace-play/` (`signing.keystore` + `signing-key-info.txt`). Run `mobile/scripts/write-local-credentials.sh` once on the machine that holds the key: it writes `mobile/credentials.json` (mode 600, git-ignored; never echoes a value) in the [EAS local-credentials format](https://docs.expo.dev/app-signing/local-credentials/), then `eas build --profile preview --platform android` from that machine. `credentialsSource: "local"` is set on the **preview profile only**; CI has no such file, so don't run `preview` in the build workflow. (Whether EAS accepts this PKCS12 keystore is unverified until a build is run.)
+- **Production** uses EAS-hosted credentials: upload the key once with `eas credentials` (Android → production → Keystore), then builds and `eas submit` need no local files. Never commit `credentials.json`, `*.keystore` or `*.jks` (all git-ignored).
+- CI: `.github/workflows/ci.yml` runs `mobile-check` (tsc + jest, expo-doctor advisory) and `dashboard-unit` (`npm test` for the website's node:test suite); `.github/workflows/mobile-build.yml` is a manual `workflow_dispatch` EAS build (needs the `EXPO_TOKEN` secret; no auto-submit).
+
 ## Release blockers (nothing here can ship until these exist)
 
-1. **Play upload keystore for `pro.tickertrace.app`**: the existing Play listing is signed by whoever uploaded the TWA. The owner must locate that upload key (or request an upload-key reset in Play Console) and give it to EAS (`eas credentials`).
-2. **Expo project**: run `eas init` as the owner to create the project; then set `extra.eas.projectId` in `app.config.ts`, and add `expo-updates` + `updates.url` if OTA updates are wanted (see the TODOs there). Not done in this PR on purpose.
-3. **`EXPO_TOKEN`** GitHub repo secret, for the manual EAS build workflow (`mobile-build.yml`, `workflow_dispatch` only). That workflow and the `mobile-check` CI job are not in the shell PR; they need a token with the `workflow` scope to push.
-4. **Google Play service account** JSON (Play Console API access) configured in EAS for `eas submit`. Not wired into CI; submission is manual for now.
-5. **Icon assets**: `assets/icon.png` is the dashboard's 512px icon (Play wants a 512px store icon; Expo recommends 1024px for the app icon). Provide a 1024px master and proper adaptive foreground/monochrome layers.
-6. After cutover, `assetlinks.json` (Digital Asset Links for the TWA) is no longer needed and can be removed from the dashboard.
+1. **Play upload key in EAS for production**: preview APKs use the local key (see above); production builds need the same upload key uploaded to EAS with `eas credentials`, or an upload-key reset in Play Console if the key can't be used.
+2. **`EXPO_TOKEN`** GitHub repo secret, for the manual EAS build workflow (`mobile-build.yml`, `workflow_dispatch` only).
+3. **Google Play service account** JSON (Play Console API access) configured in EAS for `eas submit`. Not wired into CI; submission is manual for now.
+4. **Icon assets**: `assets/icon.png` is the dashboard's 512px icon (Play wants a 512px store icon; Expo recommends 1024px for the app icon). Provide a 1024px master and proper adaptive foreground/monochrome layers.
+5. After cutover, `assetlinks.json` (Digital Asset Links for the TWA) is no longer needed and can be removed from the dashboard.
 
 ## Agent skills
 

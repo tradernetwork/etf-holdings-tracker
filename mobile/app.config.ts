@@ -11,6 +11,8 @@ const config: ExpoConfig = {
   slug: "tickertrace",
   scheme: "tickertrace",
   version: "0.1.0",
+  // Expo account that owns the EAS project (linked with `eas init`).
+  owner: "tradernetwork",
   // Binary-pinned: an OTA update only reaches builds with the same app version.
   runtimeVersion: { policy: "appVersion" },
   // Portrait phones are the target, but we deliberately do NOT lock
@@ -53,13 +55,14 @@ const config: ExpoConfig = {
   ],
   extra: {
     eas: {
-      // TODO: set after `eas init` / `eas project:init` (needs the owner's Expo
-      // account). Intentionally unset: do not create the project from CI.
-      // projectId: "<uuid>",
+      projectId: "788fe7b7-8733-4492-a5a4-1ba03cd8fb0c",
     },
   },
-  // TODO: add `updates: { url: "https://u.expo.dev/<projectId>" }` together with
-  // the expo-updates package once the EAS project exists (see mobile/README.md).
+  // Over-the-air JS updates. Binary-pinned by runtimeVersion (appVersion policy, above); each
+  // eas.json build profile sets its own `channel`.
+  updates: {
+    url: "https://u.expo.dev/788fe7b7-8733-4492-a5a4-1ba03cd8fb0c",
+  },
 };
 
 export default config;
