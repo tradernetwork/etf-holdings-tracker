@@ -14,12 +14,14 @@ import { router, Stack } from "expo-router";
 import { Pressable } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
+import { Platform } from "react-native";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStateProvider } from "@/lib/app-state";
 import { OptInSheet } from "@/components/optin-sheet";
 import { fonts } from "@/lib/theme";
-import { ThemeProvider, useTheme } from "@/lib/theme-context";
+import { ThemeProvider, useTheme, useThemeHydrated } from "@/lib/theme-context";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -38,9 +40,6 @@ export default function RootLayout() {
   });
   const ready = loaded || !!fontError; // a font failure must not strand the app on the splash screen
 
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync().catch(() => {});
-  }, [ready]);
   if (!ready) return null;
 
   return (
@@ -58,6 +57,25 @@ export default function RootLayout() {
 
 function ThemedStack() {
   const c = useTheme();
+  const hydrated = useThemeHydrated();
+
+  // Keep the native window/root background and the Android navigation-bar icons in step with the
+  // active look, so there is no white flash on Paper and no dark flash on Terminal.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(c.canvas).catch(() => {});
+    if (Platform.OS === "android") {
+      import("expo-navigation-bar")
+        .then((NB) => NB.setStyle(c.statusBar === "light" ? "light" : "dark")) // light buttons on a dark bar
+        .catch(() => {});
+    }
+  }, [c.canvas, c.statusBar]);
+
+  // Hold the splash until the saved preference is known: the first real frame is already the right look.
+  useEffect(() => {
+    if (hydrated) SplashScreen.hideAsync().catch(() => {});
+  }, [hydrated]);
+  if (!hydrated) return null;
+
   const detail = {
     headerShown: true,
     title: "",

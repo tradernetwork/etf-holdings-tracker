@@ -6,6 +6,24 @@
  * nothing imports raw hex. Colour is always paired with a sign or a word.
  */
 export type ThemeName = "terminal" | "paper";
+/** What the user picks. "auto" follows the phone's light/dark setting. */
+export type ThemePreference = "auto" | ThemeName;
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = "auto";
+
+/**
+ * Parse the stored preference. Nothing stored (a new install) or anything unrecognised
+ * means Auto. The two legacy values from before Auto existed ("terminal", "paper")
+ * are kept as EXPLICIT choices, so nobody who picked a look has it changed under them.
+ */
+export function parseThemePreference(raw: string | null | undefined): ThemePreference {
+  return raw === "terminal" || raw === "paper" || raw === "auto" ? raw : DEFAULT_THEME_PREFERENCE;
+}
+
+/** The look to render: an explicit choice wins; Auto maps phone dark -> terminal, phone light -> paper. */
+export function resolveTheme(pref: ThemePreference, scheme: string | null | undefined): ThemeName {
+  if (pref !== "auto") return pref;
+  return scheme === "light" ? "paper" : "terminal"; // unknown scheme: the dark look, as before
+}
 
 export interface Palette {
   name: ThemeName;

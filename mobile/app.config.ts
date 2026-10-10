@@ -1,8 +1,10 @@
 import type { ExpoConfig } from "expo/config";
 
-// Dark-first: TickerTrace has one look (the dashboard's navy canvas), so the
-// app is locked to dark rather than following the system scheme.
-const BG = "#0a0f1e";
+// Two looks, chosen in Settings: Terminal (dark navy) and Paper (warm light). The default is
+// Auto, which follows the phone, so the app must report the system scheme ("automatic").
+// BG is only the native root/splash colour; the app re-sets it from the active palette at runtime.
+const BG = "#080D18"; // Terminal canvas
+const BG_PAPER = "#F6F5EF"; // Paper canvas
 
 const config: ExpoConfig = {
   name: "TickerTrace",
@@ -16,7 +18,7 @@ const config: ExpoConfig = {
   // should get the same app. Revisit once real screens exist.
   orientation: "default",
   icon: "./assets/icon.png",
-  userInterfaceStyle: "dark",
+  userInterfaceStyle: "automatic",
   backgroundColor: BG,
   ios: { supportsTablet: true },
   android: {
@@ -40,7 +42,13 @@ const config: ExpoConfig = {
     "expo-notifications",
     [
       "expo-splash-screen",
-      { image: "./assets/icon.png", imageWidth: 200, backgroundColor: BG },
+      {
+        image: "./assets/icon.png",
+        imageWidth: 200,
+        // Splash matches the phone: light by default (Paper), dark when the phone is dark (Terminal).
+        backgroundColor: BG_PAPER,
+        dark: { image: "./assets/icon.png", backgroundColor: BG },
+      },
     ],
   ],
   extra: {
