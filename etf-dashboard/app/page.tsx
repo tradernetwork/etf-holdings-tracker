@@ -364,6 +364,12 @@ export default function LandingPage() {
           <ChangelogEntry
             date="October 10, 2026"
             tag="bugfix"
+            title="ARK is coming back, and we won't pretend it all happened on Monday"
+            desc="With ARK's feed fixed, the next scrape will see ARK's holdings jump from September 25 straight to the present. If we diffed those like any other day, you'd get two and a half weeks of ARK trading presented as one morning's moves: fake sell-offs, fake streaks, fake divergences. So when a fund returns from a stale stretch we now hold back its first daily, weekly and streak numbers instead of inventing a one-day story, and flag it as catching up (catchUp and catchUpSince on /funds and /signals say 'since Sep 25'). Normal daily changes resume the day after. Longer windows that really do span the gap, like the 30-day view, still show it, because that's honestly what happened."
+          />
+          <ChangelogEntry
+            date="October 10, 2026"
+            tag="bugfix"
             title="ARK was frozen for two weeks and we didn't notice"
             desc="Since September 25 all six ARK funds (ARKK, ARKQ, ARKW, ARKG, ARKF, ARKX) were showing old holdings. ARK's file was fine. We were the problem: a check we added looked for a capitalized column header and ARK's is lowercase, so the scraper decided the file wasn't a holdings file and quietly reused the old one. The nightly job stayed green the whole time, which is the embarrassing part. Fixed, and ARK refreshes on the next scrape. The daily freshness check now also fails if any fund sits on holdings more than three business days old, so this can't hide behind a healthy overall date again. We can't backfill the missing days, since ARK only publishes the latest file."
           />
