@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 10, 2026"
+            tag="feature"
+            title="The API finally puts a dollar sign on fund sizes"
+            desc="We added explicit dollar AUM and estimated position/active-flow values, because apparently 48.9 could mean millions or billions if we never label it. Income funds now use the same AUM as every other endpoint; BLOX had been living off an old lookup table. The briefing can separate stock-pickers from income overlays, and blank sectors borrow a matching label from another fund when the evidence agrees. Existing fields still work."
+          />
+          <ChangelogEntry
+            date="October 10, 2026"
             tag="bugfix"
             title="Materials and MATERIALS are the same sector, who knew"
             desc="Avantis sends sector names in ALL CAPS and First Trust sends them in Title Case, so for months the Changes page showed two Materials chips, two Utilities chips, two Real Estate chips, and sector flow was quietly splitting each one in half. I fixed it at the source, in the API, so every sector now has exactly one spelling and the numbers add up. A few odd labels from the crypto and pipeline funds (Software, Propane, that kind of thing) got folded into their proper sectors too. Past days are fixed as well, nothing had to be re-scraped."

@@ -21,6 +21,20 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 
 Most list endpoints accept `category=active-equity|option-income` to separate stock-pickers from option-income funds. More endpoints (institutional flow, income funds, layering patterns, signal performance, options listings) are in the OpenAPI spec.
 
+## Dollar estimates and category-filtered briefings
+
+Existing `aum` and `consensusAum` values are in billions of USD. Additive
+`aumUsd` and `consensusAumUsd` use whole US dollars. `positionUsd` is an
+estimated signed position value (weight percent × latest fund AUM / 100),
+not underlying option notional. `activeFlowUsd` is estimated signed active
+allocation flow, not execution proceeds. Missing AUM produces null estimates.
+Layering entries use latest AUM with their historical entry weights;
+`positionUsdTotal` totals these estimates and is null if any AUM is missing.
+
+- `/api/v1/briefing?category=active-equity`: filter before conviction scoring;
+  omit category for the historical mixed-funds behavior. Use active-equity for
+  stock conviction and option-income for overlay activity.
+
 ## MCP
 
 Remote MCP server (streamable HTTP, open, read-only): https://api.tickertrace.pro/mcp

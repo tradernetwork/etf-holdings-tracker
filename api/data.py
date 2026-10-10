@@ -9,6 +9,7 @@ authoritative source of truth; `etf-dashboard/lib/holdings.ts` is deprecated
 
 import csv
 import functools
+import math
 import os
 import re
 from collections import defaultdict
@@ -455,10 +456,9 @@ def _derive_fund_aum_map() -> dict[str, float]:
     return derived
 
 
-@functools.lru_cache(maxsize=None)
-def _fund_aum_map(as_of_date: str) -> dict[str, float]:
-    """Cache key is the data's as-of date, not `self`/args beyond that — the
-    map only needs recomputing when the snapshot changes, never per call."""
+@functools.lru_cache(maxsize=8)
+def _fund_aum_map(as_of_date: str, snapshot_key: tuple | None = None) -> dict[str, float]:
+    """Memoize derived AUM by date and file signature (including corrections)."""
     return _derive_fund_aum_map()
 
 
@@ -466,10 +466,34 @@ def get_fund_aum(fund: str) -> float:
     """AUM for `fund` in $B, derived from the latest holdings snapshot.
 
     See the precedence note above _derive_fund_aum_map. Cached via
-    functools.lru_cache keyed on get_as_of_date() so it recomputes only when
-    the data date changes, not on every call.
+    functools.lru_cache keyed on snapshot date/path/mtime/size so it recomputes
+    on a new date or same-day correction, not on every call.
     """
-    return _fund_aum_map(get_as_of_date()).get(fund, FUND_AUM.get(fund, 0.0))
+    as_of = get_as_of_date()
+    path = os.path.join(HISTORY_DIR, f'holdings_{as_of}.csv')
+    if os.path.exists(path):
+        st = os.stat(path)
+        key = (path, st.st_mtime_ns, st.st_size)
+    else:
+        key = None
+    return _fund_aum_map(as_of, key).get(fund, FUND_AUM.get(fund, 0.0))
+
+
+def get_fund_aum_usd(fund: str) -> int | None:
+    """Whole USD from the shared AUM resolver; missing/nonpositive AUM is unknown."""
+    aum = get_fund_aum(fund)
+    return round(aum * 1e9) if aum and math.isfinite(aum) and aum > 0 else None
+
+
+def estimate_position_usd(fund: str, weight: float) -> int | None:
+    """Estimated signed value: percentage-point weight × fund AUM in USD."""
+    aum = get_fund_aum_usd(fund)
+    return round(weight / 100 * aum) if aum is not None else None
+
+
+def _sum_known(values: list[int | None]) -> int | None:
+    """Don't publish a deceptively complete aggregate when any AUM is missing."""
+    return sum(values) if all(v is not None for v in values) else None
 
 
 # ─── Fund categories ─────────────────────────────────────────────
@@ -594,6 +618,18 @@ def _read_csv_uncached(path: str) -> list[dict]:
         # Empty / missing dates sort last, so a real date beats nothing.
         if r.get('holding_date', '') > existing.get('holding_date', ''):
             seen[key] = r
+    # Infer missing sectors only from unambiguous equity labels in this snapshot.
+    # International ticker collisions can disagree; leave those blanks alone.
+    labels: dict[str, set[str]] = defaultdict(set)
+    for r in seen.values():
+        if r.get('Sector') and not r.get('Option_Type'):
+            labels[_clean_ticker(r.get('Ticker', ''))].add(r['Sector'])
+    for r in seen.values():
+        if not r.get('Sector') and not r.get('Option_Type'):
+            ticker = _clean_ticker(r.get('Ticker', ''))
+            candidates = labels.get(ticker, set())
+            r['Sector'] = (_SECTOR_FALLBACK.get(ticker, '') or
+                           (next(iter(candidates)) if len(candidates) == 1 else ''))
     return list(seen.values())
 
 
@@ -995,6 +1031,8 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             'isOption': is_option,
             'fundCategory': get_fund_category(c['fund']),
         }
+        rec['positionUsd'] = estimate_position_usd(c['fund'], c['weight'])
+        rec['activeFlowUsd'] = estimate_position_usd(c['fund'], round(active_delta, 4))
         if include_options and is_option:
             rec['optionDetails'] = {
                 'type': c.get('option_type', ''),
@@ -1452,6 +1490,7 @@ def _signals_from(changes: list[dict], streaks: dict[tuple[str, str], int] | Non
             # dollar-exposure estimates) read AUM straight off the signal
             # instead of re-deriving it client-side.
             'aum': get_fund_aum(c['fund']),
+            'aumUsd': get_fund_aum_usd(c['fund']),
         })
 
     signals: list[dict] = []
@@ -1813,7 +1852,9 @@ def compute_layering_patterns(window_days: int = 5, min_funds: int = 3,
         seq = [{
             'fund': f, 'provider': FUND_PROVIDERS.get(f, f),
             'entryDate': ev['date'], 'weight': ev['weight'],
-            'aum': get_fund_aum(f), 'daysIntoLayering': ev['idx'] - first_idx,
+            'positionUsd': estimate_position_usd(f, ev['weight']),
+            'aum': get_fund_aum(f), 'aumUsd': get_fund_aum_usd(f),
+            'daysIntoLayering': ev['idx'] - first_idx,
         } for f, ev in best]
         # Cross-FAMILY layering (independent shops agreeing) is the strong
         # signal, so distinct providers carry more weight than raw fund count.
@@ -1822,6 +1863,8 @@ def compute_layering_patterns(window_days: int = 5, min_funds: int = 3,
             'ticker': ticker, 'name': meta['name'], 'sector': meta['sector'],
             'distinctFunds': len(funds), 'distinctProviders': len(providers),
             'providers': providers, 'consensusAum': consensus_aum,
+            'consensusAumUsd': _sum_known([e['aumUsd'] for e in seq]),
+            'positionUsdTotal': _sum_known([e['positionUsd'] for e in seq]),
             'firstEntry': best[0][1]['date'], 'lastEntry': best[-1][1]['date'],
             'entrySequence': seq, '_raw': raw,
         })
@@ -1852,10 +1895,10 @@ def get_activity(period: str = 'daily', *, category: str | None = None) -> dict:
     return _activity_from(_filter_by_category(changes, category))
 
 
-def get_briefing() -> dict:
+def get_briefing(*, category: str | None = None) -> dict:
     """Pre-market briefing — top moves, multi-provider convergence, streaks, options."""
-    changes = compute_daily_changes_with_options()
-    streaks = _compute_streaks()
+    changes = _filter_by_category(compute_daily_changes_with_options(), category)
+    streaks = _filter_streaks_by_category(_compute_streaks(), category)
     signals = _signals_from([c for c in changes if not c.get('isOption')], streaks)
     activity = _activity_from(changes)
     return _briefing_from(signals, activity, streaks)
@@ -1893,6 +1936,7 @@ def get_all_holdings() -> dict:
             'name': r.get('Name', ''),
             'sector': r.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
             'weight': weight,
+            'positionUsd': estimate_position_usd(fund, weight),
             'shares': shares,
             'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
             'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
@@ -1950,6 +1994,7 @@ def get_fund_detail(fund: str) -> dict | None:
                 'ticker': ticker,
                 'name': r.get('Name', ''),
                 'weight': weight,
+                'positionUsd': estimate_position_usd(fund, weight),
                 'shares': shares,
                 'sector': r.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
                 'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
@@ -1966,6 +2011,7 @@ def get_fund_detail(fund: str) -> dict | None:
             'ticker': _clean_ticker(r.get('Ticker', '')),
             'name': r.get('Name', ''),
             'weight': _safe_float(r.get('Weight', '0')),
+            'positionUsd': estimate_position_usd(fund, _safe_float(r.get('Weight', '0'))),
             'shares': _safe_float(r.get('Share Quantity', '0')),
             'optionType': r.get('Option_Type', ''),
             'underlying': r.get('Underlying_Ticker', ''),
@@ -2094,6 +2140,7 @@ def get_fund_detail(fund: str) -> dict | None:
         'provider': FUND_PROVIDERS.get(fund, fund),
         'category': get_fund_category(fund),
         'aum': get_fund_aum(fund),
+        'aumUsd': get_fund_aum_usd(fund),
         'asOfDate': get_as_of_date(),
         'holdingsCount': len(equities),
         'optionsCount': len(options),
@@ -2149,11 +2196,13 @@ def get_ticker_detail(ticker: str) -> dict | None:
             'fund': fund,
             'provider': FUND_PROVIDERS.get(fund, fund),
             'weight': _safe_float(r.get('Weight', '0')),
+            'positionUsd': estimate_position_usd(fund, _safe_float(r.get('Weight', '0'))),
             'shares': _safe_float(r.get('Share Quantity', '0')),
             'isOption': is_option,
             # $B, from get_fund_aum() — added so /api/v1/ticker/{t} can drive
             # dollar-exposure estimates without a separate client-side lookup.
             'aum': get_fund_aum(fund),
+            'aumUsd': get_fund_aum_usd(fund),
             'fileDate': file_date,
             'stale': is_stale(file_date, as_of),
             'refreshed': row_refreshed(r),
@@ -2340,6 +2389,7 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             'provider': FUND_PROVIDERS.get(fund, 'Other'),
             'category': get_fund_category(fund),
             'aum': get_fund_aum(fund),
+            'aumUsd': get_fund_aum_usd(fund),
             'holdingsCount': d['holdings'],
             'optionsCount': d['options'],
             'topHolding': d['top'],

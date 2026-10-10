@@ -42,6 +42,7 @@ from . import income
 from . import structures
 from . import auth
 from . import visits
+from .response_schemas import install_response_schemas
 from .mcp_server import mcp
 # Heavy import paid at server startup, not on first request (review #18)
 from effectiveness import analyze_all_funds, analyze_fund
@@ -455,12 +456,12 @@ def get_layering_patterns(
 
 @app.get("/api/v1/briefing", tags=["public"])
 @limiter.limit("60/minute")
-def get_briefing(request: Request):
+def get_briefing(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction.")):
     """
     Pre-market briefing — top buys, top sells, multi-provider convergence,
     active streaks, and notable new option positions.
     """
-    return data.get_briefing()
+    return data.get_briefing(category=category)
 
 
 @app.get("/api/v1/activity", tags=["public"])
@@ -800,6 +801,10 @@ def llms_txt():
 
 # Mounted last so every FastAPI route above wins; only /mcp falls through to it.
 app.mount("/", mcp_app)
+
+
+# Document additive dictionary fields without changing runtime response shaping.
+install_response_schemas(app)
 
 
 if __name__ == "__main__":
