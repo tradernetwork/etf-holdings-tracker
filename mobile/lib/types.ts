@@ -43,12 +43,12 @@ export interface Change {
   ticker: string;
   name: string;
   sector: string;
-  /** Active-weight change, percentage points. Drives direction and size. */
-  activeWeightDelta: number;
-  /** Raw weight change (includes price drift). Transparency only. */
-  weightDelta: number;
+  /** Active-weight change, percentage points. Drives direction and size. null on a catch-up fund (API #144): never significant. */
+  activeWeightDelta: number | null;
+  /** Raw weight change (includes price drift). Transparency only. null on a catch-up fund. */
+  weightDelta: number | null;
   /** Reported share-count change. */
-  sharesDelta?: number | null;
+  sharesDelta?: number | null; // null on a catch-up fund
   currentWeight: number;
   previousWeight: number;
   type: ChangeType;
@@ -57,6 +57,10 @@ export interface Change {
   positionUsd?: number | null;
   activeFlowUsd?: number | null;
 }
+
+/** A change whose active delta is known (non-null). Catch-up funds' rows are not. */
+export type Moved = Change & { activeWeightDelta: number };
+export const hasDelta = (c: Change): c is Moved => c.activeWeightDelta != null;
 
 export interface Stats {
   asOfDate: string;
@@ -167,6 +171,9 @@ export interface FundTopHolding {
   name: string;
   weight: number;
   sector: string;
+  weightDelta?: number | null;
+  sharesDelta?: number | null;
+  /** null on a catch-up fund. */
   activeWeightDelta?: number | null;
   positionUsd?: number | null;
 }
@@ -179,6 +186,10 @@ export interface FundResponse {
   asOfDate: string;
   holdingsDate: string;
   stale: boolean;
+  /** True when the latest diff spans a gap (API #144): its deltas are null, not a one-day change. */
+  catchUp?: boolean;
+  /** Last real disclosure date the diff spans from. */
+  catchUpSince?: string | null;
   holdingsCount: number;
   optionsCount: number;
   totalWeight: number;

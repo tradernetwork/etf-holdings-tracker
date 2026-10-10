@@ -36,6 +36,8 @@ const config: ExpoConfig = {
   experiments: process.env.EXPO_BASE_URL ? { baseUrl: process.env.EXPO_BASE_URL } : {},
   plugins: [
     "expo-router",
+    // Local/push notifications (daily digest). Android 13+ POST_NOTIFICATIONS is requested at runtime, after an explicit opt-in.
+    "expo-notifications",
     [
       "expo-splash-screen",
       { image: "./assets/icon.png", imageWidth: 200, backgroundColor: BG },

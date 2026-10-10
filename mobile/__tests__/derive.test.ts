@@ -2,14 +2,21 @@ import {
   addReduceCounts,
   changesForFund,
   alsoWorthLook,
+  catchUpOf,
   consensusCards,
   evidenceNote,
   pickHero,
   tickerEvidence,
+  tickerFollowMoves,
+  fundFollowMoves,
   convictionFractions,
   mergeSectorFlow,
   splitEvidence,
 } from "../lib/derive";
+import { formatPp, formatUsd, resolveUsd } from "../lib/format";
+import type { FundResponse } from "../lib/types";
+import { isSignificant } from "../lib/significance";
+import { deltaColor, terminal } from "../lib/theme";
 import type { Change, Divergence, FundSummary, LayeringPattern, Signal, SignalsResponse } from "../lib/types";
 
 const ch = (o: Partial<Change>): Change => ({
@@ -161,4 +168,100 @@ test("tickerEvidence applies the API's per-fund significance thresholds", () => 
   expect(r.added.map((c) => c.fund)).toEqual(["CGGO", "ARKK"]);
   expect(r.reduced.map((c) => c.fund)).toEqual(["AVUS"]);
   expect(r.minor).toHaveLength(3);
+});
+
+describe("follow moves", () => {
+  it("ticker follow lists significant fund moves only, biggest first, with an overflow count", () => {
+    const { moves, more } = tickerFollowMoves([
+      ch({ fund: "CGGO", activeWeightDelta: 0.6, type: "CHANGED" }),
+      ch({ fund: "AVUS", activeWeightDelta: -0.0104 }),
+      ch({ fund: "CMAG", activeWeightDelta: 0.001 }), // noise
+      ch({ fund: "ARKK", activeWeightDelta: 0.3, type: "NEW" }),
+      ch({ fund: "X1", activeWeightDelta: -0.2 }),
+      ch({ fund: "X2", activeWeightDelta: 0.05 }),
+    ]);
+    expect(moves.map((m) => [m.who, m.verb])).toEqual([["CGGO", "added"], ["ARKK", "opened"], ["X1", "trimmed"]]);
+    expect(more).toBe(2);
+  });
+  it("fund follow ignores other funds, options and noise", () => {
+    const { moves } = fundFollowMoves(
+      [ch({ fund: "ARKK", ticker: "TSLA", activeWeightDelta: -0.5, type: "REMOVED" }), ch({ fund: "OTHER", ticker: "X", activeWeightDelta: 9 }),
+       ch({ fund: "ARKK", ticker: "OPT", isOption: true, activeWeightDelta: 9 }), ch({ fund: "ARKK", ticker: "Z", activeWeightDelta: 0.001 })],
+      "ARKK",
+    );
+    expect(moves).toEqual([{ who: "TSLA", verb: "closed", delta: -0.5 }]);
+  });
+  it("returns nothing when nothing is meaningful", () => {
+    expect(tickerFollowMoves([ch({ fund: "CMAG", activeWeightDelta: 0.001 })])).toEqual({ moves: [], more: 0 });
+  });
+});
+
+describe("null deltas (catch-up fund, API #144)", () => {
+  const nul = (o: Partial<Change> = {}): Change =>
+    ch({ fund: "ARKK", activeWeightDelta: null, weightDelta: null, sharesDelta: null, ...o });
+
+  it("are never significant and never counted as a move", () => {
+    expect(isSignificant("ARKK", null)).toBe(false);
+    expect(isSignificant("AVUV", undefined)).toBe(false);
+    const r = tickerEvidence([nul(), nul({ fund: "ARKQ" }), ch({ fund: "CGGO", activeWeightDelta: 0.6 })]);
+    expect(r.added.map((c) => c.fund)).toEqual(["CGGO"]);
+    expect(r.reduced).toEqual([]);
+    expect(r.minor).toEqual([]);
+  });
+  it("are excluded from counts, fund changes and follow moves, without throwing", () => {
+    expect(addReduceCounts([nul(), ch({ activeWeightDelta: 0.1 })])).toEqual({ added: 1, reduced: 0 });
+    expect(changesForFund([nul({ ticker: "TSLA" })], "ARKK")).toEqual([]);
+    expect(fundFollowMoves([nul({ ticker: "TSLA" })], "ARKK")).toEqual({ moves: [], more: 0 });
+    expect(tickerFollowMoves([nul()])).toEqual({ moves: [], more: 0 });
+  });
+  it("show as an em dash and a muted colour", () => {
+    expect(formatPp(null)).toBe("—");
+    expect(formatUsd(null)).toBe("—");
+    expect(deltaColor(null, terminal)).toBe(terminal.textMuted);
+    expect(resolveUsd({ apiUsd: null, weightPercent: null, aumBillions: 8 })).toEqual({ usd: null, estimated: false });
+  });
+  it("evidenceNote explains a catch-up row instead of crashing", () => {
+    expect(evidenceNote(nul())).toMatch(/catch-up/);
+  });
+  it("catchUpOf prefers the fund-level flag and also accepts catchUpSince alone", () => {
+    expect(catchUpOf({ catchUp: true, catchUpSince: "2026-09-25" })).toEqual({ active: true, since: "2026-09-25" });
+    expect(catchUpOf({ catchUpSince: "2026-09-25" })).toEqual({ active: true, since: "2026-09-25" });
+    expect(catchUpOf({ catchUp: true })).toEqual({ active: true, since: null });
+    expect(catchUpOf({})).toEqual({ active: false, since: null });
+  });
+  it("a catch-up fund's topHoldings with null deltas still parse as holdings", () => {
+    const top = { ticker: "TSLA", name: "Tesla", weight: 9.17, sector: "", weightDelta: null, sharesDelta: null, activeWeightDelta: null };
+    expect(formatPp(top.activeWeightDelta)).toBe("—");
+  });
+});
+
+describe("/fund/ARKQ shaped catch-up payload (all deltas null)", () => {
+  const arkq = {
+    fund: "ARKQ", provider: "ARK Invest", category: "active-equity", aum: 1.2, asOfDate: "2026-10-12", holdingsDate: "2026-10-12",
+    stale: false, catchUp: true, catchUpSince: "2026-09-25", holdingsCount: 2, optionsCount: 0, totalWeight: 98,
+    topHoldings: [
+      { ticker: "TSLA", name: "TESLA INC", weight: 11.02, sector: "", weightDelta: null, sharesDelta: null, activeWeightDelta: null },
+      { ticker: "TER", name: "TERADYNE INC", weight: 4.1, sector: "", weightDelta: null, sharesDelta: null, activeWeightDelta: null },
+    ],
+    recentChanges: [
+      { fund: "ARKQ", ticker: "TER", name: "TERADYNE", sector: "", activeWeightDelta: null, weightDelta: null, sharesDelta: null,
+        currentWeight: 4.1, previousWeight: 5.8, type: "CHANGED", isOption: false },
+    ],
+  } as unknown as FundResponse;
+
+  it("is recognised as catch-up and shows no moves anywhere", () => {
+    expect(catchUpOf(arkq)).toEqual({ active: true, since: "2026-09-25" });
+    expect(() => changesForFund(arkq.recentChanges, "ARKQ")).not.toThrow();
+    expect(changesForFund(arkq.recentChanges, "ARKQ")).toEqual([]);
+    expect(fundFollowMoves(arkq.recentChanges, "ARKQ")).toEqual({ moves: [], more: 0 });
+    expect(tickerEvidence(arkq.recentChanges)).toEqual({ added: [], reduced: [], minor: [] });
+    expect(addReduceCounts(arkq.recentChanges)).toEqual({ added: 0, reduced: 0 });
+  });
+  it("renders every null delta as an em dash and never as significant", () => {
+    for (const h of arkq.topHoldings) {
+      expect(formatPp(h.activeWeightDelta)).toBe("—");
+      expect(isSignificant("ARKQ", h.activeWeightDelta)).toBe(false);
+    }
+    expect(evidenceNote(arkq.recentChanges[0])).toMatch(/catch-up/);
+  });
 });

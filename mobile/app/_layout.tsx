@@ -17,6 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStateProvider } from "@/lib/app-state";
+import { OptInSheet } from "@/components/optin-sheet";
 import { fonts } from "@/lib/theme";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 
@@ -86,6 +87,7 @@ function ThemedStack() {
         <Stack.Screen name="fund/[fund]" options={detail} />
         <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
       </Stack>
+      <OptInSheet />
     </>
   );
 }

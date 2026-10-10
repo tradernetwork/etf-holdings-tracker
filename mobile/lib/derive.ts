@@ -4,6 +4,7 @@
  */
 import { formatPp, formatShares, resolveUsd, sectorLabel } from "./format";
 import { isSignificant, partitionSignificant } from "./significance";
+import { hasDelta } from "./types";
 import type {
   Change,
   Category,
@@ -14,6 +15,7 @@ import type {
   SectorFlowRow,
   Signal,
   SignalsResponse,
+  Moved,
 } from "./types";
 
 export const sumActive = (s: Signal): number => s.fundDetails.reduce((a, d) => a + d.activeWeightDelta, 0);
@@ -33,7 +35,7 @@ export function addReduceCounts(changes: Change[] | undefined): { added: number;
   let added = 0;
   let reduced = 0;
   for (const c of changes) {
-    if (c.isOption) continue;
+    if (c.isOption || !hasDelta(c)) continue;
     if (c.activeWeightDelta > 0) added++;
     else if (c.activeWeightDelta < 0) reduced++;
   }
@@ -114,8 +116,8 @@ export function consensusCards(
 }
 
 /** Evidence split for the ticker screen: who added vs who cut (equity rows only). */
-export function splitEvidence(changes: Change[]): { added: Change[]; reduced: Change[] } {
-  const eq = changes.filter((c) => !c.isOption && c.activeWeightDelta !== 0);
+export function splitEvidence(changes: Change[]): { added: Moved[]; reduced: Moved[] } {
+  const eq = changes.filter(hasDelta).filter((c) => !c.isOption && c.activeWeightDelta !== 0);
   return {
     added: eq.filter((c) => c.activeWeightDelta > 0).sort((a, b) => b.activeWeightDelta - a.activeWeightDelta),
     reduced: eq.filter((c) => c.activeWeightDelta < 0).sort((a, b) => a.activeWeightDelta - b.activeWeightDelta),
@@ -123,8 +125,9 @@ export function splitEvidence(changes: Change[]): { added: Change[]; reduced: Ch
 }
 
 /** A fund's own changes only: the API's fund payload must never leak another fund's rows. */
-export const changesForFund = (changes: Change[], fund: string): Change[] =>
+export const changesForFund = (changes: Change[], fund: string): Moved[] =>
   changes
+    .filter(hasDelta)
     .filter((c) => c.fund === fund && !c.isOption)
     .sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
 
@@ -135,7 +138,8 @@ export const changesForFund = (changes: Change[], fund: string): Change[] =>
  * figure can differ from what the raw numbers suggest.
  */
 export function evidenceNote(c: Change): string {
-  if (c.activeWeightDelta < 0 && c.weightDelta > 0) {
+  if (c.activeWeightDelta == null) return "No one-day change: this fund's file is a catch-up.";
+  if (c.activeWeightDelta < 0 && c.weightDelta != null && c.weightDelta > 0) {
     return `Raw weight rose ${formatPp(c.weightDelta)}. Price drift can hide a relative reduction.`;
   }
   if (c.sharesDelta === 0) return "Reported share count unchanged. Active weight removes price drift.";
@@ -236,12 +240,48 @@ export function alsoWorthLook(signals: SignalsResponse | undefined, excludeTicke
  * Ticker evidence: equity changes split into significant added/reduced moves
  * (per the API's thresholds) and a pile of smaller adjustments.
  */
-export function tickerEvidence(changes: Change[]): { added: Change[]; reduced: Change[]; minor: Change[] } {
-  const eq = changes.filter((c) => !c.isOption && c.activeWeightDelta !== 0);
+export function tickerEvidence(changes: Change[]): { added: Moved[]; reduced: Moved[]; minor: Moved[] } {
+  const eq = changes.filter(hasDelta).filter((c) => !c.isOption && c.activeWeightDelta !== 0);
   const { significant, minor } = partitionSignificant(eq);
   return {
     added: significant.filter((c) => c.activeWeightDelta > 0).sort((a, b) => b.activeWeightDelta - a.activeWeightDelta),
     reduced: significant.filter((c) => c.activeWeightDelta < 0).sort((a, b) => a.activeWeightDelta - b.activeWeightDelta),
     minor: minor.sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta)),
   };
+}
+
+// ---- Following ------------------------------------------------------------------
+
+export interface FollowMove {
+  /** Fund code (for a followed ticker) or ticker (for a followed fund). */
+  who: string;
+  verb: "opened" | "closed" | "added" | "trimmed";
+  delta: number;
+}
+
+function verbFor(c: Moved): FollowMove["verb"] {
+  if (c.type === "NEW") return "opened";
+  if (c.type === "REMOVED") return "closed";
+  return c.activeWeightDelta > 0 ? "added" : "trimmed";
+}
+
+/** Today's significant moves for a followed ticker: which funds acted, biggest first. */
+export function tickerFollowMoves(changes: Change[], limit = 3): { moves: FollowMove[]; more: number } {
+  const { added, reduced } = tickerEvidence(changes);
+  const all = [...added, ...reduced].sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
+  return { moves: all.slice(0, limit).map((c) => ({ who: c.fund, verb: verbFor(c), delta: c.activeWeightDelta })), more: Math.max(0, all.length - limit) };
+}
+
+/** Today's significant moves for a followed fund (its own rows only): which tickers it traded. */
+export function fundFollowMoves(changes: Change[], fund: string, limit = 3): { moves: FollowMove[]; more: number } {
+  const { significant } = partitionSignificant(changesForFund(changes, fund));
+  return { moves: significant.slice(0, limit).map((c) => ({ who: c.ticker, verb: verbFor(c), delta: c.activeWeightDelta })), more: Math.max(0, significant.length - limit) };
+}
+
+/**
+ * Catch-up state of a fund payload (API #144): the fund-level flag wins, and a
+ * `catchUpSince` alone is enough. Its deltas are null; show a banner, not moves.
+ */
+export function catchUpOf(f: { catchUp?: boolean; catchUpSince?: string | null }): { active: boolean; since: string | null } {
+  return { active: !!f.catchUp || !!f.catchUpSince, since: f.catchUpSince ?? null };
 }

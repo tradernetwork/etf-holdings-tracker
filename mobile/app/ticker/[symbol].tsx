@@ -12,7 +12,7 @@ import { cleanName, formatPp, formatUsdValue, formatWeight, freshnessLabel, reso
 import { useTicker } from "@/lib/queries";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
-import type { Change } from "@/lib/types";
+import type { Moved } from "@/lib/types";
 
 const HOLDERS_COLLAPSED = 8;
 const EVIDENCE_PER_SIDE = 3;
@@ -52,7 +52,7 @@ export default function TickerScreen() {
   const hiddenEvidence = added.length + reduced.length - evidence.length;
   const changeByFund = new Map(t.changes.filter((ch) => !ch.isOption).map((ch) => [ch.fund, ch]));
   const shown = showAll ? holdings : holdings.slice(0, HOLDERS_COLLAPSED);
-  const following = isFollowing(symbol);
+  const following = isFollowing("ticker", symbol);
   const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : "No change today.";
 
   return (
@@ -69,7 +69,7 @@ export default function TickerScreen() {
             <Text style={styles.pillText}>{holdings.length} reporting {holdings.length === 1 ? "fund" : "funds"}</Text>
           </View>
           <Pressable
-            onPress={() => toggleFollow(symbol)}
+            onPress={() => toggleFollow("ticker", symbol)}
             accessibilityRole="button"
             accessibilityState={{ selected: following }}
             style={[styles.follow, following && { backgroundColor: c.accent + "22", borderColor: c.accent }]}
@@ -125,7 +125,7 @@ export default function TickerScreen() {
   );
 }
 
-function EvidenceCard({ change, provider, aumBillions }: { change: Change; provider?: string; aumBillions: number | null }) {
+function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provider?: string; aumBillions: number | null }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const up = change.activeWeightDelta > 0;
