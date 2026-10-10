@@ -82,7 +82,7 @@ export default function FundScreen() {
           <Ionicons name="time-outline" size={20} color={c.warnText} style={{ marginTop: 1 }} />
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={styles.warnTitle}>{catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"}</Text>
-            <Text style={styles.warnBody}>This fund&apos;s previous file was carried forward, so its latest diff spans several days and is not shown as a one-day change.</Text>
+            <Text style={styles.warnBody}>Changes over that gap aren&apos;t shown as one day: this fund&apos;s previous file was carried forward, so the latest diff spans several days.</Text>
           </View>
         </View>
       ) : null}
