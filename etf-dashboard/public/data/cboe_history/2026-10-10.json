@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-10T18:48:15.414262+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5348,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 576
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "AVXX": "TIDAL TRUST II DEFIANCE DAILY T",
+        "BHYP": "BITWISE HYPERLIQUID ETF COM SHS BEN INT",
+        "IMOS": "CHIPMOS TECHNOLOGIES INC SPONSORD ADS NEW",
+        "IRLA": "IRULYA THERAPEUTICS INC",
+        "LIFE": "ETHOS TECHNOLOGIES INC CL A",
+        "MN": "Corgi MANGOS ETF",
+        "OMAH": "TIDAL TRUST III VISTASHARES TRGT",
+        "RKLZ": "TIDAL TRUST II DEFIANCE DAILY T",
+        "SRZN": "SURROZEN INC COM NEW",
+        "VYLR": "VYLOR INC COM SHS"
+      },
+      "removed": {
+        "QNCX": "QUINCE THERAPEUTICS INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
