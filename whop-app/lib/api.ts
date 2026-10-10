@@ -168,14 +168,20 @@ export interface ApiFundDetail {
         weight: number;
         shares: number;
         sector: string;
-        weightDelta: number;
-        sharesDelta: number;
+        /** null on a catch-up fund (see ApiFundDetail.catchUp). */
+        weightDelta: number | null;
+        sharesDelta: number | null;
     }[];
     optionHoldings: ApiOptionHolding[];
     recentChanges: ApiChangeRecord[];
     streaks: ApiFundStreak[];
     flow: ApiFundFlow | null;
     optionRolls: ApiOptionRoll[];
+    /** True when the fund's issuer data was stale and has just returned: its
+     *  daily deltas are withheld (null) rather than shown as one day's trades. */
+    catchUp?: boolean;
+    /** Date of the last real disclosure the withheld delta would have spanned. */
+    catchUpSince?: string | null;
 }
 
 /** A multi-day accumulation / distribution streak on one of a fund's holdings. */
@@ -525,8 +531,10 @@ export const api = {
                 sector: string;
                 weight: number;
                 shares: number;
-                weightDelta: number;
-                sharesDelta: number;
+                /** null on a catch-up fund (row has catchUpSince). */
+                weightDelta: number | null;
+                sharesDelta: number | null;
+                catchUpSince?: string;
                 isOption: boolean;
                 cusip: string;
             }[];
