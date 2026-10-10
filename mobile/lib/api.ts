@@ -4,7 +4,16 @@
  * (minus Clerk auth and the offline write-queue: nothing here is ever written).
  */
 import type { paths } from "./generated/api-types";
-import type { FundsResponse, SignalsResponse } from "./types";
+import type {
+  Category,
+  Divergence,
+  FundResponse,
+  FundsResponse,
+  LayeringResponse,
+  SectorsResponse,
+  SignalsResponse,
+  TickerResponse,
+} from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "https://api.tickertrace.pro";
 
@@ -67,8 +76,16 @@ async function request<T>(
 }
 
 export const api = {
-  signals: (category?: "active-equity" | "option-income", signal?: AbortSignal) =>
+  signals: (category?: Category, signal?: AbortSignal) =>
     request<SignalsResponse>("/api/v1/signals", { category }, signal),
-  funds: (category?: "active-equity" | "option-income", signal?: AbortSignal) =>
-    request<FundsResponse>("/api/v1/funds", { category }, signal),
+  funds: (signal?: AbortSignal) => request<FundsResponse>("/api/v1/funds", {}, signal),
+  divergences: (category?: Category, signal?: AbortSignal) =>
+    request<Divergence[]>("/api/v1/divergences", { category }, signal),
+  sectors: (category?: Category, signal?: AbortSignal) =>
+    request<SectorsResponse>("/api/v1/sectors", { category }, signal),
+  layering: (signal?: AbortSignal) => request<LayeringResponse>("/api/v1/layering-patterns", {}, signal),
+  ticker: (symbol: string, signal?: AbortSignal) =>
+    request<TickerResponse>(`/api/v1/ticker/${encodeURIComponent(symbol)}` as GetPath, {}, signal),
+  fund: (fund: string, signal?: AbortSignal) =>
+    request<FundResponse>(`/api/v1/fund/${encodeURIComponent(fund)}` as GetPath, {}, signal),
 };
