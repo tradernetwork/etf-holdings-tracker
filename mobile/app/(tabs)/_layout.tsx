@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/lib/theme";
+import { colors, fonts } from "@/lib/theme";
 
 // Tab names are placeholders; the information architecture is still being designed.
 export default function TabsLayout() {
@@ -10,12 +10,12 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.equity,
+        tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: fonts.bodyMedium },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.rule,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           // Keep the bar clear of the gesture/nav bar on edge-to-edge Android.
           height: 56 + insets.bottom,
           paddingBottom: insets.bottom,

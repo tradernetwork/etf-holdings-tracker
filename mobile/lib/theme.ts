@@ -1,34 +1,37 @@
 /**
- * Design tokens. Same flat-object shape as vero's lib/theme.ts, with values
- * mirrored from the dashboard (etf-dashboard/app/globals.css) so web and app
- * read as one product. Dark only for now.
+ * Design tokens, from the app design spec (Ling Fin visual language).
+ * Colour is always paired with a sign or a word, never the only signal.
  */
 export const colors = {
-  canvas: "#0a0f1e",
-  surface: "#111827",
-  surfaceAlt: "#0f172a",
-  surfaceElevated: "#1e293b",
-  rule: "#1f2937",
-  ruleStrong: "#334155",
+  canvas: "#080D18",
+  card: "#0D1321",
+  cardAlt: "#111A2E",
+  border: "#1C2540",
 
-  textPrimary: "#f8fafc",
-  textSecondary: "#94a3b8",
-  textMuted: "#64748b",
+  textPrimary: "#F1F5FF",
+  textSecondary: "#A3AECB",
+  textMuted: "#7A86A8",
 
-  equity: "#00d4ff",
-  income: "#fbbf24",
-  warning: "#f59e0b",
-  buy: "#00ff88",
-  sell: "#ff4444",
-  meta: "#a78bfa",
+  buy: "#00E676",
+  sell: "#FF3D5A",
+  isNew: "#FFB800",
+  accent: "#4C8DFF",
+  stale: "#7A86A8",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
-export const radii = { sm: 6, md: 10, lg: 14, pill: 999 } as const;
+export const radii = { sm: 6, md: 10, card: 14, pill: 999 } as const;
 /** Minimum touch target (dp). Android guideline is 48; 44 is our floor. */
 export const MIN_TAP = 44;
 
+/** Font family names as registered by expo-font in app/_layout.tsx. */
 export const fonts = {
-  // System fonts for now; swap for bundled fonts when the design lands.
-  mono: "monospace",
+  mono: "JetBrainsMono_500Medium",
+  monoBold: "JetBrainsMono_700Bold",
+  body: "SpaceGrotesk_400Regular",
+  bodyMedium: "SpaceGrotesk_500Medium",
+  bodyBold: "SpaceGrotesk_700Bold",
 } as const;
+
+/** Colour for a signed delta: green up, red down, muted at exactly zero. */
+export const deltaColor = (v: number): string => (v > 0 ? colors.buy : v < 0 ? colors.sell : colors.textMuted);
