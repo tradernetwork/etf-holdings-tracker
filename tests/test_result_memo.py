@@ -104,7 +104,7 @@ def test_a_same_day_rewrite_invalidates_the_memo(writable_history):
 
 def test_memo_is_bounded_and_drops_stale_signatures(monkeypatch):
     sig = {"v": 1}
-    monkeypatch.setattr(data, "snapshot_signature", lambda: ("sig", sig["v"]))
+    monkeypatch.setattr(data, "snapshot_signature", lambda depth=data._SIGNATURE_FILES: ("sig", sig["v"]))
 
     @data._memoize_per_snapshot
     def f(*, n):
@@ -121,8 +121,8 @@ def test_memo_is_bounded_and_drops_stale_signatures(monkeypatch):
 def test_prewarmer_warms_once_per_signature(monkeypatch):
     warmed = []
     state = {"sig": ("a",)}
-    monkeypatch.setattr(data, "prewarm_snapshot_caches", lambda: warmed.append(state["sig"]))
-    monkeypatch.setattr(data, "snapshot_signature", lambda: state["sig"])
+    monkeypatch.setattr(data, "prewarm_snapshot_caches", lambda *a, **k: warmed.append(state["sig"]))
+    monkeypatch.setattr(data, "snapshot_signature", lambda depth=data._SIGNATURE_FILES: state["sig"])
     p = data.SnapshotPrewarmer()
     p._tick(); p._tick()
     assert warmed == [("a",)]                                          # unchanged signature: no rework
@@ -133,8 +133,139 @@ def test_prewarmer_warms_once_per_signature(monkeypatch):
 
 def test_prewarmer_never_raises(monkeypatch):
     errors = []
-    monkeypatch.setattr(data, "snapshot_signature", lambda: ("x",))
-    monkeypatch.setattr(data, "prewarm_snapshot_caches", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(data, "snapshot_signature", lambda depth=data._SIGNATURE_FILES: ("x",))
+    monkeypatch.setattr(data, "prewarm_snapshot_caches", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
     p = data.SnapshotPrewarmer(on_error=errors.append)
     p._tick()
     assert len(errors) == 1
+
+
+# ─── Parameter-aware signature (Codex's repro) ───────────────────────────────
+
+def _weekdays(n, start="2026-07-06"):   # 20 weekdays with no market holiday
+    from datetime import date, timedelta
+    d, out = date.fromisoformat(start), []
+    while len(out) < n:
+        if d.weekday() < 5:
+            out.append(d.isoformat())
+        d += timedelta(days=1)
+    return out
+
+
+@pytest.fixture
+def deep_history(tmp_path, monkeypatch):
+    """20 daily snapshots in which ARKK/TSLA gains weight and shares EVERY day."""
+    days = _weekdays(20)
+    for i, d in enumerate(days):
+        (tmp_path / f"holdings_{d}.csv").write_text(
+            "ETF Ticker,Ticker,Name,Sector,Weight,Share Quantity,Option_Type,Underlying_Ticker,Option_Strike,Option_Expiry\n"
+            f"ARKK,TSLA,Tesla Inc,Consumer Discretionary,{10 + i * 0.5},{1000 + i * 100},,,,\n"
+            f"ARKK,NVDA,NVIDIA Corp,Technology,{20 - i * 0.5},{5000 - i * 100},,,,\n"
+        )
+    monkeypatch.setattr(data, "HISTORY_DIR", str(tmp_path))
+    return tmp_path, days
+
+
+def test_signature_depth_follows_the_calls_own_parameters(deep_history):
+    _, days = deep_history
+    assert len(data.snapshot_signature(12)[2]) == 12
+    assert len(data.snapshot_signature(22)[2]) == 20          # capped by what exists
+    assert data.snapshot_signature(12) != data.snapshot_signature(22)
+
+
+def test_editing_a_file_beyond_the_default_window_invalidates_a_deeper_streak_call(deep_history):
+    """Codex's repro: 20 snapshots, edit the 14th-newest in place, max_days=20."""
+    tmp_path, days = deep_history
+    newest_first = list(reversed(days))
+    fourteenth = tmp_path / f"holdings_{newest_first[13]}.csv"
+
+    before = data._compute_streaks(max_days=20)
+    assert data._compute_streaks(max_days=20) == before                      # served from the memo
+    assert before == data._compute_streaks.__wrapped__(max_days=20)
+
+    # Break the run at that day (flat weight and shares) without touching the newest 12 files.
+    fourteenth.write_text(
+        "ETF Ticker,Ticker,Name,Sector,Weight,Share Quantity,Option_Type,Underlying_Ticker,Option_Strike,Option_Expiry\n"
+        "ARKK,TSLA,Tesla Inc,Consumer Discretionary,99,1,,,,\n"
+        "ARKK,NVDA,NVIDIA Corp,Technology,1,1,,,,\n"
+    )
+    uncached = data._compute_streaks.__wrapped__(max_days=20)
+    assert uncached != before                                                # the edit really changes the answer
+    assert data._compute_streaks(max_days=20) == uncached                    # and the memo noticed it
+
+
+def test_default_depth_calls_are_unaffected_by_edits_beyond_their_window(deep_history):
+    """max_days=10 reads 10 files (signature covers 12), so a 14th-file edit may keep the entry."""
+    tmp_path, days = deep_history
+    before = data._compute_streaks()
+    (tmp_path / f"holdings_{list(reversed(days))[13]}.csv").write_text("ETF Ticker,Ticker,Weight\nARKK,TSLA,1\n")
+    assert data._compute_streaks() == before == data._compute_streaks.__wrapped__()
+
+
+def test_a_deep_call_does_not_evict_default_depth_entries_as_stale(deep_history):
+    data._compute_streaks()                        # depth 12 entry
+    data._compute_streaks(max_days=20)             # depth 22 entry, different signature shape
+    keys = [k for k in data._memo if k[0] == "_compute_streaks"]
+    assert len(keys) == 2
+
+
+# ─── Clean prewarmer shutdown ────────────────────────────────────────────────
+
+def test_stop_during_an_active_warm_returns_in_time_and_the_thread_dies(monkeypatch):
+    import threading
+    import time
+    started, finished_units = threading.Event(), []
+
+    def slow(**kw):
+        started.set()
+        time.sleep(0.2)
+        finished_units.append(kw)
+
+    for name in ENDPOINTS:
+        monkeypatch.setattr(data, name, slow)
+    monkeypatch.setattr(data, "snapshot_signature", lambda depth=data._SIGNATURE_FILES: ("sig",))
+    p = data.SnapshotPrewarmer(interval_s=60)
+    p.start()
+    assert started.wait(5)                          # a warm is in flight
+    t0 = time.monotonic()
+    assert p.stop(timeout=5) is True
+    assert time.monotonic() - t0 < 2.0
+    assert not p._thread.is_alive()
+    assert len(finished_units) < 6                  # it did NOT run every remaining unit after stop()
+    assert p._last is None                          # an interrupted warm is not recorded as complete
+
+
+def test_stop_without_start_is_harmless():
+    assert data.SnapshotPrewarmer().stop() is True
+
+
+def test_prewarm_checks_stop_between_units(monkeypatch):
+    ran = []
+    for name in ENDPOINTS:
+        monkeypatch.setattr(data, name, lambda **kw: ran.append(kw))
+    assert data.prewarm_snapshot_caches(lambda: len(ran) >= 2) is False
+    assert len(ran) == 2
+
+
+def test_lifespan_stops_the_prewarmer_even_when_the_app_body_raises(monkeypatch):
+    import asyncio
+    from api import server
+    stops = []
+
+    class Fake:
+        def __init__(self, *a, **k): pass
+        def start(self): pass
+        def stop(self, timeout=10.0): stops.append(timeout); return True
+
+    monkeypatch.setattr(server.data, "SnapshotPrewarmer", Fake)
+    monkeypatch.setenv("TT_PREWARM", "1")
+
+    async def run():
+        try:
+            async with server.lifespan(server.app):
+                raise RuntimeError("boom")
+        except BaseException:   # the MCP sub-app's task group wraps it in an ExceptionGroup
+            pass
+
+    asyncio.run(run())
+    assert stops == [10.0]

@@ -18,6 +18,7 @@ Env vars (all optional):
     ALLOWED_ORIGINS      — comma-separated CORS allowlist; defaults to known sites
 """
 
+import asyncio
 import logging
 from pathlib import Path
 import os
@@ -140,12 +141,17 @@ async def lifespan(_app: FastAPI):
     if prewarmer:
         prewarmer.start()
     # The MCP sub-app needs its own lifespan run (FastAPI doesn't do it for mounts).
-    async with mcp_app.lifespan(_app):
-        yield
-    if prewarmer:
-        prewarmer.stop()
-    # graceful shutdown — close any pooled connections
-    auth.close_all_connections()
+    try:
+        async with mcp_app.lifespan(_app):
+            yield
+    finally:
+        # Runs even if startup/shutdown of the MCP sub-app raised: never leave the prewarm thread behind.
+        if prewarmer:
+            stopped = await asyncio.to_thread(prewarmer.stop, 10.0)
+            if not stopped:
+                log.warning("prewarm_thread_still_running_after_stop")
+        # graceful shutdown — close any pooled connections
+        auth.close_all_connections()
     log.info("shutdown_complete")
 
 

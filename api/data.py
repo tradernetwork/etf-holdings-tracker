@@ -1490,25 +1490,42 @@ def _filter_streaks_by_category(streaks: dict[tuple[str, str], int],
 # (~3s warm: _compute_streaks alone re-parses and re-diffs ten CSVs, and the
 # 5-slot CSV cache thrashes on that ten-file scan). The answer only changes when
 # the data does, so cache the FULL result keyed on a signature of the history
-# files it can read: directory mtime plus (date, mtime_ns, size) of the newest
-# _SIGNATURE_FILES files. That is the same (mtime, size) notion _read_csv_cached
-# and _fund_aum_map already use, so a same-day re-scrape (rewritten file) and a
-# new day's file both invalidate. Two uvicorn workers each keep their own memo.
-_SIGNATURE_FILES = 12          # _compute_streaks reads 10; latest-vs-previous reads 2
+# files the call can read: directory mtime plus (date, mtime_ns, size) of the
+# newest N files. That is the same (mtime, size) notion _read_csv_cached and
+# _fund_aum_map already use, so a same-day re-scrape (rewritten file) and a new
+# day's file both invalidate. Two uvicorn workers each keep their own memo.
+#
+# WHAT EACH MEMOIZED FUNCTION READS (the signature must cover all of it):
+#   get_signals(category)       newest 2 history CSVs (latest + previous, for the daily
+#                               changes and the catch-up check) + newest 10 (streaks);
+#                               fund AUM derives from the LATEST CSV (_fund_aum_map)
+#   get_briefing(category)      same files as get_signals (options rows live in the same CSVs)
+#   get_full_payload(category)  same files, plus get_global_stats / get_catch_up_funds,
+#                               which read only latest + previous
+#   _compute_streaks(max_days)  the newest `max_days` CSVs (default 10)
+#   Not history files: FUND_AUM, _SECTOR_FALLBACK, EXCLUDED_FUNDS, _BROAD_FUNDS and the
+#   category tables are in-code constants (they change only with a deploy, which also
+#   resets this per-process memo). Nothing here reads a JSON snapshot, the clock, or
+#   the network. `_is_trading_day` is date arithmetic on the file names.
+# So depth = _SIGNATURE_FILES (12 = 10 streak files + latest/previous margin) for the
+# three public functions, and max(12, max_days + 2) for _compute_streaks: the
+# signature is derived from the call's own parameters, never a fixed window that a
+# deeper call can read past.
+_SIGNATURE_FILES = 12
 _MEMO_MAX = 16
-_memo: "OrderedDict[tuple, tuple]" = OrderedDict()   # key -> (signature, value)
+_memo: "OrderedDict[tuple, tuple]" = OrderedDict()   # key -> (signature, depth, value)
 _memo_lock = threading.Lock()
 _memo_key_locks: dict[tuple, threading.Lock] = {}
 
 
-def snapshot_signature() -> tuple:
-    """Changes whenever a history file the memoized results read is added or rewritten."""
+def snapshot_signature(depth: int = _SIGNATURE_FILES) -> tuple:
+    """Changes whenever one of the newest `depth` history files is added or rewritten."""
     try:
         dir_mtime = os.stat(HISTORY_DIR).st_mtime_ns
     except OSError:
         return (HISTORY_DIR, None, ())
     parts = []
-    for d in get_available_dates()[:_SIGNATURE_FILES]:
+    for d in get_available_dates()[:depth]:
         try:
             st = os.stat(os.path.join(HISTORY_DIR, f'holdings_{d}.csv'))
             parts.append((d, st.st_mtime_ns, st.st_size))
@@ -1517,38 +1534,43 @@ def snapshot_signature() -> tuple:
     return (HISTORY_DIR, dir_mtime, tuple(parts))
 
 
-def _memoize_per_snapshot(fn):
+def _memoize_per_snapshot(fn=None, *, depth=None):
     """Memoize a pure, keyword-parameterised data function per snapshot signature.
 
-    Returns a deep copy so callers (REST, MCP, notifications) may mutate the
-    result freely. `fn.__wrapped__` is the uncached original. Entries from an
-    older signature are dropped on insert and the table is size-bounded.
+    `depth` is an int, or a callable (args, kwargs) -> int giving how many of the
+    newest history files THIS call can read (default _SIGNATURE_FILES). Returns a
+    deep copy so callers (REST, MCP, notifications) may mutate the result freely.
+    `fn.__wrapped__` is the uncached original. Entries of the same depth from an
+    older signature are dropped on insert, and the table is size-bounded.
     """
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        sig = snapshot_signature()
-        key = (fn.__name__, args, tuple(sorted(kwargs.items())))
-        with _memo_lock:
-            hit = _memo.get(key)
-            if hit is not None and hit[0] == sig:
-                _memo.move_to_end(key)
-                return copy.deepcopy(hit[1])
-            klock = _memo_key_locks.setdefault(key, threading.Lock())
-        with klock:                       # one computation per key; others wait for it
+    def decorate(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            n = depth(args, kwargs) if callable(depth) else (depth or _SIGNATURE_FILES)
+            sig = snapshot_signature(n)
+            key = (fn.__name__, args, tuple(sorted(kwargs.items())))
             with _memo_lock:
                 hit = _memo.get(key)
                 if hit is not None and hit[0] == sig:
-                    return copy.deepcopy(hit[1])
-            value = fn(*args, **kwargs)
-            with _memo_lock:
-                for k in [k for k, (s, _) in _memo.items() if s != sig]:
-                    del _memo[k]          # stale snapshot: free it
-                _memo[key] = (sig, value)
-                _memo.move_to_end(key)
-                while len(_memo) > _MEMO_MAX:
-                    _memo.popitem(last=False)
-            return copy.deepcopy(value)
-    return wrapper
+                    _memo.move_to_end(key)
+                    return copy.deepcopy(hit[2])
+                klock = _memo_key_locks.setdefault(key, threading.Lock())
+            with klock:                       # one computation per key; others wait for it
+                with _memo_lock:
+                    hit = _memo.get(key)
+                    if hit is not None and hit[0] == sig:
+                        return copy.deepcopy(hit[2])
+                value = fn(*args, **kwargs)
+                with _memo_lock:
+                    for k in [k for k, (s_, d_, _) in _memo.items() if d_ == n and s_ != sig]:
+                        del _memo[k]          # stale snapshot (same depth): free it
+                    _memo[key] = (sig, n, value)
+                    _memo.move_to_end(key)
+                    while len(_memo) > _MEMO_MAX:
+                        _memo.popitem(last=False)
+                return copy.deepcopy(value)
+        return wrapper
+    return decorate(fn) if fn is not None else decorate
 
 
 def clear_result_memo() -> None:
@@ -1556,12 +1578,17 @@ def clear_result_memo() -> None:
         _memo.clear()
 
 
-def prewarm_snapshot_caches() -> None:
-    """Compute the common requests so the first real one is instant."""
+def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
+    """Compute the common requests so the first real one is instant.
+
+    `should_stop` is checked between units of work (a single unit, ~3s, cannot be
+    interrupted). Returns True if every unit ran, False if it stopped early."""
     for category in (None, 'active-equity'):
-        get_full_payload(category=category)
-        get_briefing(category=category)
-        get_signals(category=category)
+        for unit in (get_full_payload, get_briefing, get_signals):
+            if should_stop():
+                return False
+            unit(category=category)
+    return True
 
 
 class SnapshotPrewarmer:
@@ -1580,9 +1607,8 @@ class SnapshotPrewarmer:
     def _tick(self) -> None:
         try:
             sig = snapshot_signature()
-            if sig != self._last:
-                prewarm_snapshot_caches()
-                self._last = sig
+            if sig != self._last and prewarm_snapshot_caches(self._stop.is_set) is not False:
+                self._last = sig            # only a COMPLETE warm counts as done
         except Exception as e:  # noqa: BLE001
             self._on_error(e)
 
@@ -1596,12 +1622,18 @@ class SnapshotPrewarmer:
             self._thread = threading.Thread(target=self._run, name="snapshot-prewarm", daemon=True)
             self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 10.0) -> bool:
+        """Ask the thread to stop and wait up to `timeout`s. Returns True once it is dead.
+        An in-flight unit of work (<= a few seconds) finishes first; no further unit starts."""
         self._stop.set()
+        t = self._thread
+        if t is None:
+            return True
+        t.join(timeout)
+        return not t.is_alive()
 
 
-
-@_memoize_per_snapshot
+@_memoize_per_snapshot(depth=lambda args, kwargs: max(_SIGNATURE_FILES, int(args[0] if args else kwargs.get('max_days', 10)) + 2))
 def _compute_streaks(max_days: int = 10) -> dict[tuple[str, str], int]:
     """
     Read up to `max_days` of history files and compute consecutive-day
