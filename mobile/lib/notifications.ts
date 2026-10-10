@@ -44,3 +44,20 @@ export async function requestEnable(): Promise<EnableOutcome> {
     return { permission: "granted", token: null };
   }
 }
+
+/**
+ * The current Expo push token WITHOUT prompting: only when permission is already
+ * granted and an EAS project exists. Used on launch to notice token rotation.
+ */
+export async function currentPushToken(): Promise<string | null> {
+  if (Platform.OS === "web") return null;
+  const projectId = easProjectId();
+  if (!projectId) return null;
+  try {
+    const N = await import("expo-notifications");
+    if (!(await N.getPermissionsAsync()).granted) return null;
+    return (await N.getExpoPushTokenAsync({ projectId })).data;
+  } catch {
+    return null;
+  }
+}
