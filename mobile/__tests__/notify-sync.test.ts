@@ -173,6 +173,36 @@ describe("503: backend disabled", () => {
   });
 });
 
+describe("409: token already enrolled and we lost its secret", () => {
+  it("is a terminal failure: no retry, no loop, nothing stored", async () => {
+    const store = memoryStore();
+    const api = fakeApi({ subscribe: [{ ok: false, kind: "conflict" }] });
+    const { sync } = make({}, store, api);
+    expect(await sync.onEnabled("tokA", F1)).toBe("failed");
+    expect(api.subscribe).toHaveBeenCalledTimes(1);
+    expect(store.set).not.toHaveBeenCalled();
+    expect(api.putFollows).not.toHaveBeenCalled();
+  });
+  it("notifyApi maps 409 to conflict without retrying", async () => {
+    const f = jest.fn(async () => ({ status: 409, ok: false, json: async () => ({}) }) as Response);
+    const r = await createNotifyApi(f as never, { sleep: async () => {}, retries: 2, baseMs: 1 }).subscribe("tok");
+    expect(r).toEqual({ ok: false, kind: "conflict" });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("422 on PUT is final (not retried) and does not drop the registration", async () => {
+    const f = jest.fn(async () => ({ status: 422, ok: false, json: async () => ({}) }) as Response);
+    const r = await createNotifyApi(f as never, { sleep: async () => {}, retries: 2, baseMs: 1 }).putFollows("s", F1);
+    expect(r).toEqual({ ok: false, kind: "error", status: 422 });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("repeat delete answering 401 (already removed) wipes the local secret", async () => {
+    const store = memoryStore({ deviceId: "d", secret: "s", token: "t" });
+    const { sync } = make({}, store, fakeApi({ del: [{ ok: false, kind: "unauthorized" }] }));
+    expect(await sync.onDisabled()).toBe("synced");
+    expect(store.peek()).toBeNull();
+  });
+});
+
 describe("token rotation on launch", () => {
   it("does nothing when the token is unchanged or unavailable", async () => {
     const { sync, api } = make({}, memoryStore({ deviceId: "d", secret: "s", token: "tokA" }));
