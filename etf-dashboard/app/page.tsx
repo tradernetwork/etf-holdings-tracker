@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 10, 2026"
+            tag="feature"
+            title="The API finally puts a dollar sign on fund sizes"
+            desc="We added explicit dollar AUM and estimated position/active-flow values, because apparently 48.9 could mean millions or billions if we never label it. Income funds now use the same AUM as every other endpoint; BLOX had been living off an old lookup table. The briefing can separate stock-pickers from income overlays. Missing sectors keep only curated labels, and unknown AUM stays unknown. Existing fields still work."
+          />
+          <ChangelogEntry
+            date="October 10, 2026"
             tag="bugfix"
             title="ARK was frozen for two weeks and we didn't notice"
             desc="Since September 25 all six ARK funds (ARKK, ARKQ, ARKW, ARKG, ARKF, ARKX) were showing old holdings. ARK's file was fine. We were the problem: a check we added looked for a capitalized column header and ARK's is lowercase, so the scraper decided the file wasn't a holdings file and quietly reused the old one. The nightly job stayed green the whole time, which is the embarrassing part. Fixed, and ARK refreshes on the next scrape. The daily freshness check now also fails if any fund sits on holdings more than three business days old, so this can't hide behind a healthy overall date again. We can't backfill the missing days, since ARK only publishes the latest file."

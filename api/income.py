@@ -44,7 +44,8 @@ from collections import defaultdict
 from .data import (
     EXCLUDED_FUNDS,
     _SECTOR_FALLBACK,
-    FUND_AUM,
+    get_fund_aum,
+    get_fund_aum_usd,
     FUND_PROVIDERS,
     _clean_ticker,
     _nullable_float,
@@ -277,7 +278,8 @@ def build_fund_book(fund: str, rows: list[dict]) -> dict:
     return {
         'fund': fund,
         'provider': FUND_PROVIDERS.get(fund, 'Other'),
-        'aum': FUND_AUM.get(fund),
+        'aum': get_fund_aum(fund),
+        'aumUsd': get_fund_aum_usd(fund),
         'archetype': archetype,
         'archetypeLabel': ARCHETYPES[archetype]['label'],
         'archetypeSummary': ARCHETYPES[archetype]['summary'],
@@ -580,7 +582,7 @@ def get_income_overview() -> dict:
         book = build_fund_book(fund, by_fund[fund])
         funds.append({
             k: book[k] for k in (
-                'fund', 'provider', 'aum', 'archetype', 'archetypeLabel',
+                'fund', 'provider', 'aum', 'aumUsd', 'archetype', 'archetypeLabel',
                 'archetypeSummary', 'netAssets', 'sleeves', 'counts', 'tiles',
                 'incomeLegVisible',
             )
