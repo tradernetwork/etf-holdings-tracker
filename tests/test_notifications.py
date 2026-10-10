@@ -364,3 +364,33 @@ def test_new_snapshot_during_preparation_aborts_old_day(notifications,synthetic_
     monkeypatch.setattr(data,'compute_daily_changes',newer)
     with pytest.raises(RuntimeError,match='Snapshot changed'):
         job.prepare_daily(100000)
+
+
+def test_worker_stops_on_its_own_deadline(notifications,synthetic_history,monkeypatch):
+    """`timeout` in sync_data.sh only kills the docker client; the in-container worker
+    must bound itself. An expired deadline sends nothing and leaves rows pending."""
+    import time
+    from api import notification_job as job,push_delivery
+    d=notifications.create_device(TOKEN);notifications.replace_follows(d['deviceId'],[{'kind':'ticker','symbol':'TSLA'}])
+    job.prepare_daily(100000)
+    calls=[]
+    monkeypatch.setattr(push_delivery,'send_expo',lambda *a:calls.append(a) or {'status':'ok','id':'t1'})
+    assert job.send_pending(100001,deadline=time.monotonic()-1)==0 and calls==[]
+    with sqlite3.connect(notifications.DB_PATH) as db:
+        assert db.execute('select status from outbox').fetchone()[0]=='pending'
+    # run_once threads the budget through: a zero budget does no delivery either.
+    assert job.run_once(now=100002,budget=0)['accepted']==0 and calls==[]
+    # With budget left, the same row is delivered by the next invocation.
+    assert job.send_pending(100003,deadline=time.monotonic()+60)==1 and len(calls)==1
+
+
+def test_subscribe_ip_limit_is_30_per_hour_but_token_quota_stays(notifications):
+    c=client()
+    for i in range(30):
+        tok=f'ExponentPushToken[{i:022d}]'
+        assert c.post('/notifications/subscribe',json={'transport':'expo','token':tok}).status_code==201,i
+    assert c.post('/notifications/subscribe',json={'transport':'expo','token':'ExponentPushToken[zzzzzzzzzzzzzzzzzzzzzz]'}).status_code==429
+    c2=client()   # limiter reset: same token, 5 enrollments/day allowed, 6th refused
+    for _ in range(5):
+        assert c2.post('/notifications/subscribe',json={'transport':'expo','token':TOKEN}).status_code==201
+    assert c2.post('/notifications/subscribe',json={'transport':'expo','token':TOKEN}).status_code==429

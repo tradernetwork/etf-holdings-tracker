@@ -59,7 +59,9 @@ def build_router(limiter):
                        dependencies=[Depends(require_enabled)])
 
     @router.post('/subscribe', status_code=201)
-    @limiter.limit('5/hour')
+    # Per IP: generous because carrier-grade NAT and shared wifi put many real users behind one
+    # address. The abuse brake that matters is the 5/day-per-token enrollment quota in the store.
+    @limiter.limit('30/hour')
     def subscribe(request: Request, body: Subscription, authorization: str | None = Header(None)):
         try:
             if authorization:

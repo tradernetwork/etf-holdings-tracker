@@ -105,10 +105,17 @@ def _prune(db, row, error):
     return False
 
 
-def send_pending(now):
+# Wall-clock budget for one invocation. sync_data.sh's `timeout` only kills the docker
+# client, so the in-container worker must stop on its own.
+BUDGET_SECONDS = 120
+
+
+def send_pending(now, deadline=None):
     sent = 0
     # Limit one cron invocation; subsequent syncs drain the remainder.
     for _ in range(200):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         with store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             db.execute("UPDATE outbox SET status='failed',error='attempts_exhausted' WHERE status IN ('pending','sending') AND attempts>=5 AND lease_until<=?", (now,))
@@ -187,10 +194,11 @@ def queue_test(device_id, now=None):
     return digest_id
 
 
-def run_once(now=None):
+def run_once(now=None, budget=None):
     if not store.enabled():
         return {'enabled': False}
     now = time.time() if now is None else now
+    deadline = time.monotonic() + (BUDGET_SECONDS if budget is None else budget)
     store.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     # Kernel releases lock on crash; SQLite unique constraints/leases protect outbox too.
     with open(store.DB_PATH.with_suffix('.lock'), 'a') as lock:
@@ -200,7 +208,7 @@ def run_once(now=None):
             return {'enabled': True, 'busy': True}
         receipts = poll_receipts(now)
         prepared = prepare_daily(now)
-        sent = send_pending(now)
+        sent = send_pending(now, deadline) if time.monotonic() < deadline else 0
         with store.connect() as db:
             db.execute('DELETE FROM outbox WHERE created<?', (now-30*86400,))
             db.execute('DELETE FROM enrollments WHERE bucket<?', (int(now // 86400),))
