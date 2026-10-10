@@ -223,3 +223,11 @@ def test_main_retries_then_carries_forward(tmp_path, monkeypatch):
     assert by_fund['FLAKY']['Refreshed'].tolist() == ['True']
     assert by_fund['BAD']['Refreshed'].tolist() == ['False']
     assert by_fund['BAD']['Source_Date'].tolist() == ['2026-09-22']
+
+
+def test_lowercase_ark_header_is_a_csv():
+    # ARK's real header. A case-sensitive keyword match rejected it, so every
+    # ARK fund was carried forward from 2026-09-25 with a green scrape.
+    lines = ['date,fund,company,ticker,cusip,shares,market value ($),weight (%)',
+             '10/09/2026,ARKK,TESLA INC,TSLA,88160R101,"1,764,710","$661,766,250.00",9.62%']
+    assert s.looks_like_holdings_csv(lines)
