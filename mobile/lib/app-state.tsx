@@ -40,7 +40,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   // Server sync for notifications. Inert unless EXPO_PUBLIC_NOTIFICATIONS_BACKEND=1 and not on web.
   const sync = useMemo(
-    () => new NotifySync({ api: createNotifyApi(), store: createSecureDeviceStore(), enabled: NOTIFICATIONS_BACKEND_ENABLED, platform: Platform.OS }),
+    () => new NotifySync({ api: createNotifyApi(), store: createSecureDeviceStore(), enabled: NOTIFICATIONS_BACKEND_ENABLED, platform: Platform.OS, log: __DEV__ ? (m) => console.warn(m) : undefined }),
     [],
   );
   const notifyRef = useRef(notify);

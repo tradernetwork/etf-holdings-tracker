@@ -183,6 +183,19 @@ describe("409: token already enrolled and we lost its secret", () => {
     expect(store.set).not.toHaveBeenCalled();
     expect(api.putFollows).not.toHaveBeenCalled();
   });
+  it("logs the 409 and 422 terminal cases without leaking secrets or tokens", async () => {
+    const log = jest.fn();
+    const a = make({ log }, memoryStore(), fakeApi({ subscribe: [{ ok: false, kind: "conflict" }] }));
+    await a.sync.onEnabled("ExponentPushToken[abc]", F1);
+    const b = make({ log }, memoryStore({ deviceId: "d", secret: "topsecret", token: "t" }), fakeApi({ put: [{ ok: false, kind: "error", status: 422 }] }));
+    await b.sync.onEnabled("t", F1);
+    const lines = log.mock.calls.map((c) => String(c[0]));
+    expect(lines.some((l) => l.includes("409"))).toBe(true);
+    expect(lines.some((l) => l.includes("422"))).toBe(true);
+    expect(lines.join(" ")).not.toMatch(/topsecret|ExponentPushToken/);
+    expect(b.api.subscribe).not.toHaveBeenCalled(); // 422 never triggers a re-registration
+    expect(b.api.putFollows).toHaveBeenCalledTimes(1); // and is never retried
+  });
   it("notifyApi maps 409 to conflict without retrying", async () => {
     const f = jest.fn(async () => ({ status: 409, ok: false, json: async () => ({}) }) as Response);
     const r = await createNotifyApi(f as never, { sleep: async () => {}, retries: 2, baseMs: 1 }).subscribe("tok");
@@ -295,5 +308,55 @@ describe("device store", () => {
     expect(await s.get()).toEqual({ deviceId: "d", secret: "s", token: "t" });
     await s.clear();
     expect(await s.get()).toBeNull();
+  });
+});
+
+describe("contract test: exact paths, methods, headers and bodies (settled v1)", () => {
+  const res = (status: number, body: unknown = {}) => ({ status, ok: status >= 200 && status < 300, json: async () => body }) as Response;
+  const BASE = "https://x.test";
+  const instant = { sleep: async () => {}, retries: 0, baseMs: 1 };
+  const calls = () => jest.fn(async (_url: string, _init: RequestInit) => res(200, { deviceId: "d1", secret: "s1" }));
+
+  it("POST /notifications/subscribe: first enrollment has NO Authorization header", async () => {
+    const f = calls();
+    await createNotifyApi(f as never, instant, BASE).subscribe("ExponentPushToken[abc]");
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe("https://x.test/notifications/subscribe");
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe('{"transport":"expo","token":"ExponentPushToken[abc]"}');
+    expect(init.headers).toEqual({ "Content-Type": "application/json" });
+  });
+  it("POST /notifications/subscribe with the secret replaces the token (Bearer, same body)", async () => {
+    const f = calls();
+    await createNotifyApi(f as never, instant, BASE).subscribe("ExponentPushToken[new]", "s1");
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe("https://x.test/notifications/subscribe");
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe('{"transport":"expo","token":"ExponentPushToken[new]"}');
+    expect(init.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer s1" });
+  });
+  it("PUT /notifications/follows sends the WRAPPED {follows:[...]} body with the bearer", async () => {
+    const f = jest.fn(async (_u: string, _i: RequestInit) => res(200, { follows: [] }));
+    await createNotifyApi(f as never, instant, BASE).putFollows("s1", [{ kind: "fund", symbol: "ARKK" }, { kind: "ticker", symbol: "AAPL" }]);
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe("https://x.test/notifications/follows");
+    expect(init.method).toBe("PUT");
+    expect(init.body).toBe('{"follows":[{"kind":"fund","symbol":"ARKK"},{"kind":"ticker","symbol":"AAPL"}]}');
+    expect(JSON.parse(String(init.body))).toEqual({ follows: expect.any(Array) }); // never a bare array
+    expect(init.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer s1" });
+  });
+  it("DELETE /notifications/device has no body and identifies the device only by the bearer (no deviceId header/query)", async () => {
+    const f = jest.fn(async (_u: string, _i: RequestInit) => res(200, { deleted: true }));
+    await createNotifyApi(f as never, instant, BASE).deleteDevice("s1");
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe("https://x.test/notifications/device");
+    expect(url).not.toMatch(/\?|deviceId/);
+    expect(init.method).toBe("DELETE");
+    expect(init.body).toBeUndefined();
+    expect(init.headers).toEqual({ Authorization: "Bearer s1" });
+  });
+  it("parses the subscribe response {deviceId, secret}", async () => {
+    const r = await createNotifyApi(calls() as never, instant, BASE).subscribe("t");
+    expect(r).toEqual({ ok: true, data: { deviceId: "d1", secret: "s1" } });
   });
 });
