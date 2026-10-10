@@ -31,6 +31,8 @@ export interface HoldingsResult {
     activeCount: number;
     changedCount: number;
     asOfDate: string | null;
+    /** Funds shown without a Δ because their diff would be a multi-day catch-up. */
+    catchUp: { fund: string; since: string | null }[];
     query: HoldingsQuery;
 }
 
@@ -60,7 +62,7 @@ export function parseHoldingsQuery(params: Params): HoldingsQuery {
 
 // The enriched book is the expensive part (CSV parse + two-day diff). Memoise
 // per snapshot date so paging and sorting do not redo it on every request.
-let memo: { date: string | null; book: Record<string, any>[]; changed: number } | null = null;
+let memo: { date: string | null; book: Record<string, any>[]; changed: number; catchUp: Record<string, string | null> } | null = null;
 
 function loadBook() {
     const asOf = getLatestHoldingsDate();
@@ -71,6 +73,7 @@ function loadBook() {
 
     // "Δ Weight" is activeWeightDelta (price drift removed); sharesDelta is the
     // true share change. Same semantics the old page used.
+    const catchUp = diff?.catchUpFunds ?? {};
     const changeMap = new Map<string, { weightDelta: number; sharesDelta: number }>();
     if (diff) {
         for (const c of [...diff.newPositions, ...diff.removedPositions, ...diff.changedPositions]) {
@@ -88,20 +91,29 @@ function loadBook() {
         if (EXCLUDED_TICKERS.has(String(h.Ticker || '').toUpperCase())) continue;
         if (name.includes('cash') || name.includes('treasury bill')) continue;
         const change = changeMap.get(`${h['ETF Ticker']}|${h.Ticker}`);
-        const weightDelta = change?.weightDelta ?? 0;
-        if (weightDelta !== 0) changed++;
         const row: Record<string, any> = {};
         for (const k of HOLDINGS_COLUMNS) row[k] = (h as any)[k];
+        if (Object.prototype.hasOwnProperty.call(catchUp, h['ETF Ticker'])) {
+            // Catch-up fund: no honest one-day change exists. Show "—", not a fake number.
+            row.weightDelta = null;
+            row.sharesDelta = null;
+            row.catchUpSince = catchUp[h['ETF Ticker']] ?? '';
+            book.push(row);
+            continue;
+        }
+        const weightDelta = change?.weightDelta ?? 0;
+        if (weightDelta !== 0) changed++;
         row.weightDelta = weightDelta;
         row.sharesDelta = change?.sharesDelta ?? 0;
         book.push(row);
     }
-    memo = { date: asOf, book, changed };
+    memo = { date: asOf, book, changed, catchUp };
     return memo;
 }
 
-export function filterAndSort(q: HoldingsQuery): { rows: Record<string, any>[]; funds: string[]; activeCount: number; changedCount: number; asOfDate: string | null } {
-    const { book, changed, date } = loadBook();
+export function filterAndSort(q: HoldingsQuery): { rows: Record<string, any>[]; funds: string[]; activeCount: number; changedCount: number; asOfDate: string | null; catchUp: { fund: string; since: string | null }[] } {
+    const { book, changed, date, catchUp } = loadBook();
+    const catchUpList = Object.entries(catchUp).map(([fund, since]) => ({ fund, since })).sort((a, b) => a.fund.localeCompare(b.fund));
     const funds = Array.from(new Set(book.map(r => String(r['ETF Ticker'] ?? '')).filter(Boolean))).sort();
     const needle = q.q.trim().toLowerCase();
 
@@ -122,7 +134,7 @@ export function filterAndSort(q: HoldingsQuery): { rows: Record<string, any>[]; 
         const key = q.sort;
         rows = [...rows].sort((a, b) => {
             if (text) return m * String(a[key] ?? '').localeCompare(String(b[key] ?? ''));
-            const av = Number(a[key]), bv = Number(b[key]);
+            const av = a[key] == null ? NaN : Number(a[key]), bv = b[key] == null ? NaN : Number(b[key]);
             // Blanks (e.g. stock rows have no strike/DTE) always sink to the bottom.
             if (Number.isNaN(av) && Number.isNaN(bv)) return 0;
             if (Number.isNaN(av)) return 1;
@@ -130,18 +142,18 @@ export function filterAndSort(q: HoldingsQuery): { rows: Record<string, any>[]; 
             return m * (av - bv);
         });
     }
-    return { rows, funds, activeCount: book.length, changedCount: changed, asOfDate: date };
+    return { rows, funds, activeCount: book.length, changedCount: changed, asOfDate: date, catchUp: catchUpList };
 }
 
 export function queryHoldings(q: HoldingsQuery): HoldingsResult {
-    const { rows, funds, activeCount, changedCount, asOfDate } = filterAndSort(q);
+    const { rows, funds, activeCount, changedCount, asOfDate, catchUp } = filterAndSort(q);
     const pages = Math.max(1, Math.ceil(rows.length / q.size));
     const page = Math.min(q.page, pages);
     const start = (page - 1) * q.size;
     return {
         rows: rows.slice(start, start + q.size) as HoldingsRow[],
         total: rows.length,
-        funds, activeCount, changedCount, asOfDate,
+        funds, activeCount, changedCount, asOfDate, catchUp,
         query: { ...q, page },
     };
 }
