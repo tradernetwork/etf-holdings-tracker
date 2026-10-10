@@ -1495,6 +1495,11 @@ def main():
     # data is actually from — downstream sees a stale fund, not a vanished one
     # (a vanished fund also reads as a full exit today and a full re-entry
     # tomorrow in every day-over-day diff).
+    # INVARIANT: a fund is carried forward whole — every one of its rows gets
+    # Refreshed=False, never a subset. api/data.py's catch-up guard
+    # (_catch_up_funds) treats a half-carried fund as fresh, so a partial
+    # carry-forward would put the issuer-gap's trades back into one day's
+    # changes. tests/test_catch_up.py pins this.
     carried = []
     for ticker in failed_funds:
         cf = carry_forward_rows(ticker, today)

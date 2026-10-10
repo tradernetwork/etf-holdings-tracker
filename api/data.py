@@ -577,6 +577,12 @@ def _read_csv_cached(path: str, mtime_ns: int, size: int) -> tuple[dict, ...]:
     return tuple(_read_csv_uncached(path))
 
 
+@functools.lru_cache(maxsize=256)
+def _fund_meta_cached(path: str, mtime_ns: int, size: int) -> dict:
+    """Same key as the CSV cache, so it invalidates with it."""
+    return _fund_meta(_read_csv_cached(path, mtime_ns, size))
+
+
 def _read_csv(path: str) -> list[dict]:
     """Parsed snapshot rows, memoized per (path, mtime, size).
 
@@ -585,7 +591,9 @@ def _read_csv(path: str) -> list[dict]:
     callers and treated as read-only; the returned list is a fresh copy.
     """
     st = os.stat(path)
-    return list(_read_csv_cached(path, st.st_mtime_ns, st.st_size))
+    rows = _Rows(_read_csv_cached(path, st.st_mtime_ns, st.st_size))
+    rows.fund_meta = _fund_meta_cached(path, st.st_mtime_ns, st.st_size)
+    return rows
 
 
 def _read_csv_uncached(path: str) -> list[dict]:
@@ -862,6 +870,75 @@ def _build_map(rows: list[dict]) -> dict:
     return m
 
 
+class _Rows(list):
+    """Snapshot rows plus `fund_meta`, computed once per file by _read_csv."""
+    fund_meta: dict
+
+
+def _fund_meta(rows) -> dict[str, tuple[bool, str | None]]:
+    """fund -> (every row carried forward?, latest real date of the carried rows).
+
+    Computed once per file (see _read_csv), not per diff: it only needs the
+    Refreshed flag and, for carried rows, their Source_Date.
+    """
+    n: dict[str, int] = defaultdict(int)
+    n_false: dict[str, int] = defaultdict(int)
+    last: dict[str, str] = {}
+    for r in rows:
+        fund = r.get('ETF Ticker', '')
+        n[fund] += 1
+        if row_refreshed(r) is False:
+            n_false[fund] += 1
+            d = row_file_date(r)
+            if d and d > last.get(fund, ''):
+                last[fund] = d
+    return {f: (n_false[f] == n[f], last.get(f)) for f in n}
+
+
+def _meta_of(rows) -> dict:
+    if isinstance(rows, dict):          # already a fund_meta
+        return rows
+    return getattr(rows, 'fund_meta', None) or _fund_meta(rows)
+
+
+def _catch_up_funds(curr_rows, prev_rows) -> dict[str, str | None]:
+    """Funds whose `prev` rows were all carried forward (Refreshed=False) while
+    `curr` is fresh: fund -> date the old rows are really from.
+
+    A fund the scraper couldn't fetch is carried forward day after day. When its
+    issuer file comes back, the diff against the carried rows is the whole gap's
+    trading (ARK: 2026-09-25 -> 2026-10-12) — not one day's. Reading that as
+    "today's" change would plant weeks of trades in signals, streaks and
+    divergences, so callers drop these funds from the pair instead.
+
+    Invariant this leans on: the scraper stamps or carries a WHOLE fund at once
+    (scrape_avantis.carry_forward_rows). A fund whose rows are only partly
+    carried is deliberately NOT guarded — tests/test_catch_up.py pins that.
+    A current fund with no Refreshed flag (None) counts as fresh.
+    """
+    cm, pm = _meta_of(curr_rows), _meta_of(prev_rows)
+    return {fund: since for fund, (all_false, since) in pm.items()
+            if all_false and fund in cm and not cm[fund][0]}
+
+
+def _without_funds(m: dict, funds) -> dict:
+    return {k: v for k, v in m.items() if v['fund'] not in funds} if funds else m
+
+
+def catch_up_funds_between(curr_rows, prev_rows) -> dict[str, str | None]:
+    return _catch_up_funds(curr_rows, prev_rows)
+
+
+def drop_funds_from_rows(rows: list[dict], funds) -> list[dict]:
+    return [r for r in rows if r.get('ETF Ticker', '') not in funds] if funds else rows
+
+
+def get_catch_up_funds() -> dict[str, str | None]:
+    """Funds whose latest daily change is a catch-up (see `_catch_up_funds`):
+    fund -> `sinceDate`, the last real disclosure the delta would span."""
+    return _catch_up_funds(get_latest_holdings(), get_previous_holdings())
+
+
 # Share ratios a corporate action can plausibly produce. A split multiplies
 # shares by k and divides price by k, leaving the position's VALUE untouched —
 # which is exactly how we tell it apart from a trade.
@@ -999,6 +1076,12 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
     """
     curr = _build_map(curr_rows)
     prev = _build_map(prev_rows)
+    # A fund coming back from carried-forward rows would report its whole gap
+    # as one window's trades — in daily, weekly and monthly alike, since all
+    # three come through here. Drop it from both sides (before the per-fund
+    # renormalization in _active_weight_deltas, which is zero-sum per fund).
+    catch_up = _catch_up_funds(curr_rows, prev_rows)
+    curr, prev = _without_funds(curr, catch_up), _without_funds(prev, catch_up)
     # Computed over the FULL maps (options + cash included) before any junk or
     # option filtering, so the per-fund renormalization sees the whole book.
     active = _active_weight_deltas(curr, prev)
@@ -1199,8 +1282,13 @@ def _compute_institutional_flow(period: str = 'daily', limit: int = 25) -> dict:
     if total_aum <= 0:
         return empty
 
-    new_w, name, sector, funds_now = _blend_institutional(latest, total_aum)
-    old_w, _, _, _ = _blend_institutional(older, total_aum)
+    # A fund returning from carried-forward rows would add its whole gap to
+    # this window; drop it from BOTH sides. The denominator stays put so every
+    # other ticker's number is unchanged.
+    catch_up = catch_up_funds_between(latest, older)
+    new_w, name, sector, funds_now = _blend_institutional(
+        drop_funds_from_rows(latest, catch_up), total_aum)
+    old_w, _, _, _ = _blend_institutional(drop_funds_from_rows(older, catch_up), total_aum)
 
     rows: list[dict] = []
     for ticker in set(new_w) | set(old_w):
@@ -1282,16 +1370,29 @@ def _compute_institutional_trend(limit: int = 15) -> dict:
     cur_w, name, sector, funds_now = _blend_institutional(latest, total_aum)
     prev = get_previous_holdings()
     wk = _snapshot_for_lookback(7)
-    prev_w = _blend_institutional(prev, total_aum)[0] if prev else {}
-    wk_w = _blend_institutional(wk, total_aum)[0] if wk else {}
-    mo_w = _blend_institutional(mo, total_aum)[0]
+    # Each horizon compares today against its own start snapshot. If a fund's
+    # rows at that start were carried forward (a stale stretch ending today),
+    # the delta is the whole gap, so the fund is dropped from both sides of
+    # THAT horizon (see _catch_up_funds). Denominator unchanged.
+    def _horizon(older):
+        if not older:
+            return cur_w, {}
+        drop = catch_up_funds_between(latest, older)
+        if not drop:
+            return cur_w, _blend_institutional(older, total_aum)[0]
+        return (_blend_institutional(drop_funds_from_rows(latest, drop), total_aum)[0],
+                _blend_institutional(drop_funds_from_rows(older, drop), total_aum)[0])
+
+    cur_d, prev_w = _horizon(prev)
+    cur_wk, wk_w = _horizon(wk)
+    cur_mo, mo_w = _horizon(mo)
 
     rows = []
     for t in set(cur_w) | set(mo_w):
         cur = cur_w.get(t, 0.0)
-        daily = cur - prev_w.get(t, 0.0)
-        weekly = cur - wk_w.get(t, 0.0)
-        monthly = cur - mo_w.get(t, 0.0)
+        daily = (cur_d.get(t, 0.0) if prev else cur) - prev_w.get(t, 0.0)
+        weekly = (cur_wk.get(t, 0.0) if wk else cur) - wk_w.get(t, 0.0)
+        monthly = cur_mo.get(t, 0.0) - mo_w.get(t, 0.0)
         if round(monthly, 4) == 0 and round(weekly, 4) == 0 and round(daily, 4) == 0:
             continue
         rows.append({
@@ -1400,15 +1501,21 @@ def _compute_streaks(max_days: int = 10) -> dict[tuple[str, str], int]:
         return {}
 
     snapshots: list[dict[tuple[str, str], dict]] = []
+    snapshot_meta: list[dict] = []
     for d in dates[:max_days]:
         rows = _read_csv(os.path.join(HISTORY_DIR, f'holdings_{d}.csv'))
         snapshots.append(_build_map(rows))
+        snapshot_meta.append(_meta_of(rows))
 
     # pair_active[i] = drift-adjusted move from snapshots[i] (older) into
     # snapshots[i-1] (newer). Index 0 is unused; days are newest-first.
     pair_active: list[dict | None] = [None]
+    pair_catch_up: list[dict] = [{}]
     for i in range(1, len(snapshots)):
-        pair_active.append(_active_weight_deltas(snapshots[i - 1], snapshots[i]))
+        catch_up = _catch_up_funds(snapshot_meta[i - 1], snapshot_meta[i])
+        pair_catch_up.append(catch_up)
+        pair_active.append(_active_weight_deltas(_without_funds(snapshots[i - 1], catch_up),
+                                                 _without_funds(snapshots[i], catch_up)))
 
     streaks: dict[tuple[str, str], int] = {}
     newest = snapshots[0]
@@ -1417,6 +1524,8 @@ def _compute_streaks(max_days: int = 10) -> dict[tuple[str, str], int]:
             continue
         streak = 0
         for i in range(1, len(snapshots)):
+            if key[0] in pair_catch_up[i]:
+                break                       # gap, not a day: the streak ends here
             prev = snapshots[i].get(key)
             if prev is None:
                 if streak == 0:
@@ -1809,8 +1918,11 @@ def compute_layering_patterns(window_days: int = 5, min_funds: int = 3,
 
     # Read each needed snapshot once; index maps by trading-day position.
     maps: dict[int, dict] = {}
+    metas: dict[int, dict] = {}
     for i in range(start - 1, len(ordered)):
-        maps[i] = _build_map(_read_csv(os.path.join(HISTORY_DIR, f'holdings_{ordered[i]}.csv')))
+        rows = _read_csv(os.path.join(HISTORY_DIR, f'holdings_{ordered[i]}.csv'))
+        maps[i] = _build_map(rows)
+        metas[i] = _meta_of(rows)
 
     def _held(m: dict, fund: str, ticker: str) -> bool:
         row = m.get((fund, ticker))
@@ -1821,9 +1933,12 @@ def compute_layering_patterns(window_days: int = 5, min_funds: int = 3,
     events: dict[str, dict[str, dict]] = defaultdict(dict)
     for i in range(start, len(ordered)):
         curr, prev = maps[i], maps[i - 1]
+        catch_up = _catch_up_funds(metas[i], metas[i - 1])
         for (fund, ticker), row in curr.items():
             if row.get('option_type') or row.get('weight', 0) <= 0:
                 continue
+            if fund in catch_up:
+                continue                    # positions since the gap, not new today
             if not ticker or _is_junk_ticker(ticker) or not is_institutional_fund(fund):
                 continue
             if _held(prev, fund, ticker):
@@ -1927,6 +2042,9 @@ def get_all_holdings() -> dict:
         }
 
     as_of = get_as_of_date()
+    # A catch-up fund's delta against the carried rows is the whole gap, not a
+    # day: null (unknown), with catchUpSince so clients can say why.
+    catch_up = get_catch_up_funds()
     rows: list[dict] = []
     for r in latest:
         fund = r.get('ETF Ticker', '')
@@ -1944,8 +2062,11 @@ def get_all_holdings() -> dict:
             'weight': weight,
             'positionUsd': estimate_position_usd(fund, weight),
             'shares': shares,
-            'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
-            'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
+            'weightDelta': (None if fund in catch_up
+                            else round(weight - prev['weight'], 4) if prev else 0.0),
+            'sharesDelta': (None if fund in catch_up
+                            else round(shares - prev['shares'], 2) if prev else 0.0),
+            **({'catchUpSince': catch_up[fund]} if fund in catch_up else {}),
             'isOption': is_option,
             'cusip': r.get('CUSIP', ''),
             # ── Added 2026-09-27 (additive; see docs/DATA_QUALITY_2026-09.md) ──
@@ -1978,6 +2099,8 @@ def get_fund_detail(fund: str) -> dict | None:
         return None
 
     # Previous-day map for delta computation
+    catch_up = get_catch_up_funds()
+    is_catch_up = fund in catch_up
     prev_map: dict[str, dict] = {}
     for r in get_previous_holdings():
         if r.get('ETF Ticker') == fund and not r.get('Option_Type') and not _is_junk_ticker(r.get('Ticker', '')):
@@ -2003,8 +2126,11 @@ def get_fund_detail(fund: str) -> dict | None:
                 'positionUsd': estimate_position_usd(fund, weight),
                 'shares': shares,
                 'sector': r.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
-                'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
-                'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
+                # Catch-up fund: the delta spans a carried-forward gap — unknown (null).
+                'weightDelta': (None if is_catch_up
+                                else round(weight - prev['weight'], 4) if prev else 0.0),
+                'sharesDelta': (None if is_catch_up
+                                else round(shares - prev['shares'], 2) if prev else 0.0),
             })
 
     equities.sort(key=lambda x: -x['weight'])
@@ -2048,7 +2174,7 @@ def get_fund_detail(fund: str) -> dict | None:
         if not c.get('isOption')
     }
     for e in equities:
-        e['activeWeightDelta'] = _active_map.get(e['ticker'], 0.0)
+        e['activeWeightDelta'] = None if is_catch_up else _active_map.get(e['ticker'], 0.0)
 
     # Active accumulation / distribution streaks among this fund's holdings —
     # consecutive-day weight moves of magnitude >= 2 days. Drives the streak
@@ -2160,6 +2286,8 @@ def get_fund_detail(fund: str) -> dict | None:
         # The fund's own holdings date — asOfDate is the snapshot (run) date,
         # which a frozen or carried-forward fund doesn't actually match.
         **_fund_freshness(fund_rows),
+        'catchUp': is_catch_up,
+        'catchUpSince': catch_up.get(fund),
     }
 
 
@@ -2386,6 +2514,7 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
 
     as_of = get_as_of_date()
     out = []
+    catch_up = get_catch_up_funds()
     for fund in sorted(by_fund):
         d = by_fund[fund]
         if d['holdings'] == 0 and d['options'] == 0:
@@ -2406,6 +2535,8 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             'lastHoldingsDate': d['fileDate'],
             'stale': is_stale(d['fileDate'], as_of),
             'refreshed': d['refreshed'],
+            'catchUp': fund in catch_up,
+            'catchUpSince': catch_up.get(fund),
         })
     return out
 
@@ -2510,4 +2641,7 @@ def get_full_payload(*, category: str | None = None) -> dict:
         'divergences': _divergences_from(changes_eq),
         'briefing': _briefing_from(signals, activity, streaks),
         'activity': activity,
+        # fund -> sinceDate: funds whose daily change is withheld because it
+        # would span a carried-forward gap (changes are "since <date>", not today).
+        'catchUp': get_catch_up_funds(),
     }
