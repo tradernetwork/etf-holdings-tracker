@@ -14,7 +14,7 @@
  * test-push and digests are not used by the client yet.
  */
 import type { Follow } from "./follows";
-import { fetchWithRetry, type RetryOptions } from "./retry";
+import { fetchWithRetry, type On429, type RetryOptions } from "./retry";
 
 export const NOTIFICATIONS_BACKEND_ENABLED = process.env.EXPO_PUBLIC_NOTIFICATIONS_BACKEND === "1";
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "https://api.tickertrace.pro";
@@ -28,6 +28,7 @@ export interface DeviceRegistration {
 export type ApiFailure =
   | { ok: false; kind: "disabled" } // 503: backend turned off; stay silent, keep local state
   | { ok: false; kind: "unauthorized" } // 401: the server doesn't know this secret
+  | { ok: false; kind: "rate-limited" } // 429 that we will not (or no longer) retry: quotas are deterministic
   | { ok: false; kind: "conflict" } // 409 (defensive: current servers answer 201 and replace the old device)
   | { ok: false; kind: "network"; detail: string } // never got an answer, retries exhausted
   | { ok: false; kind: "error"; status: number };
@@ -48,16 +49,17 @@ export interface NotifyApi {
 }
 
 export function createNotifyApi(fetchImpl: typeof fetch = fetch, retry: RetryOptions = {}, base = API_BASE): NotifyApi {
-  async function call<T>(path: string, init: RequestInit, parse: (res: Response) => Promise<T>, okOn404 = false): Promise<ApiResult<T>> {
+  async function call<T>(path: string, init: RequestInit, parse: (res: Response) => Promise<T>, on429: On429, okOn404 = false): Promise<ApiResult<T>> {
     let res: Response;
     try {
-      res = await fetchWithRetry(fetchImpl, `${base}${path}`, init, retry);
+      res = await fetchWithRetry(fetchImpl, `${base}${path}`, init, { ...retry, on429 });
     } catch (e) {
       return { ok: false, kind: "network", detail: e instanceof Error ? e.message : "network error" };
     }
     if (res.status === 503) return { ok: false, kind: "disabled" };
     if (res.status === 401) return { ok: false, kind: "unauthorized" };
     if (res.status === 409) return { ok: false, kind: "conflict" };
+    if (res.status === 429) return { ok: false, kind: "rate-limited" };
     if (res.ok || (okOn404 && res.status === 404)) {
       try {
         return { ok: true, data: await parse(res) };
@@ -80,10 +82,11 @@ export function createNotifyApi(fetchImpl: typeof fetch = fetch, retry: RetryOpt
           if (typeof v.deviceId !== "string" || typeof v.secret !== "string") throw new Error("bad subscribe response");
           return { deviceId: v.deviceId, secret: v.secret };
         },
+        "terminal", // enrolment quotas are deterministic: a retry only burns more of them
       ),
     putFollows: (secret, follows) =>
-      call("/notifications/follows", { method: "PUT", headers: { ...json, ...bearer(secret) }, body: JSON.stringify(followsPayload(follows)) }, async () => null),
+      call("/notifications/follows", { method: "PUT", headers: { ...json, ...bearer(secret) }, body: JSON.stringify(followsPayload(follows)) }, async () => null, "retry-after-once"),
     deleteDevice: (secret) =>
-      call("/notifications/device", { method: "DELETE", headers: bearer(secret) }, async () => null, true),
+      call("/notifications/device", { method: "DELETE", headers: bearer(secret) }, async () => null, "retry-after-once", true),
   };
 }

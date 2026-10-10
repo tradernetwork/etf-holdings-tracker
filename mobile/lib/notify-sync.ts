@@ -94,7 +94,7 @@ export class NotifySync {
       return "synced";
     }
     // 503/network: keep the secret so a later attempt can still delete; local state is untouched.
-    return r.kind === "disabled" ? "silent" : "failed";
+    return r.kind === "disabled" || r.kind === "rate-limited" ? "silent" : "failed";
   }
 
   // ---- internals -----------------------------------------------------------
@@ -129,6 +129,11 @@ export class NotifySync {
   private outcomeOf(r: ApiResult<unknown> & ApiFailure): SyncOutcome {
     const log = this.d.log ?? (() => {});
     if (r.kind === "disabled") return "silent";
+    // 429: quotas are deterministic, so we never hammer. Silent for the user, one line for developers.
+    if (r.kind === "rate-limited") {
+      log("notify: rate limited (429); not retrying");
+      return "silent";
+    }
     // 409 is defensive only (current servers answer 201 and replace the old device). Terminal: stay opted in locally, don't loop.
     if (r.kind === "conflict") log("notify: subscribe conflict (409); staying unregistered, local opt-in kept");
     // 422: the server rejected the follow list. Don't retry; local follows are kept.

@@ -1,6 +1,7 @@
 import { createSecureDeviceStore, parseStoredDevice, webDeviceStore, type DeviceStore, type StoredDevice } from "../lib/device-store";
 import type { Follow } from "../lib/follows";
 import { NotifySync } from "../lib/notify-sync";
+import { fetchWithRetry, parseRetryAfter } from "../lib/retry";
 import { createNotifyApi, followsPayload, type ApiResult, type DeviceRegistration, type NotifyApi } from "../lib/notifyApi";
 
 const F1: Follow[] = [{ kind: "ticker", symbol: "AAPL" }];
@@ -358,5 +359,84 @@ describe("contract test: exact paths, methods, headers and bodies (settled v1)",
   it("parses the subscribe response {deviceId, secret}", async () => {
     const r = await createNotifyApi(calls() as never, instant, BASE).subscribe("t");
     expect(r).toEqual({ ok: true, data: { deviceId: "d1", secret: "s1" } });
+  });
+});
+
+describe("429: deterministic quotas are not retried blindly", () => {
+  const mk = (status: number, headers: Record<string, string> = {}, body: unknown = {}) =>
+    ({ status, ok: status >= 200 && status < 300, json: async () => body, headers: { get: (k: string) => headers[k] ?? null } }) as unknown as Response;
+  const sleeps: number[] = [];
+  const opts = { sleep: async (ms: number) => { sleeps.push(ms); }, retries: 3, baseMs: 10 };
+  beforeEach(() => { sleeps.length = 0; });
+
+  it("subscribe: 429 is terminal. One call, no sleep, even with retries available", async () => {
+    const f = jest.fn(async () => mk(429, { "Retry-After": "1" }));
+    const r = await createNotifyApi(f as never, opts).subscribe("tok");
+    expect(r).toEqual({ ok: false, kind: "rate-limited" });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(sleeps).toEqual([]);
+  });
+  it("put follows: ONE retry after Retry-After, then succeeds", async () => {
+    const f = jest.fn().mockResolvedValueOnce(mk(429, { "Retry-After": "2" })).mockResolvedValueOnce(mk(200, {}, { follows: [] }));
+    const r = await createNotifyApi(f as never, opts).putFollows("s", F1);
+    expect(r.ok).toBe(true);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(sleeps).toEqual([2000]);
+  });
+  it("put follows: a second 429 is terminal (never more than one retry)", async () => {
+    const f = jest.fn(async () => mk(429, { "Retry-After": "1" }));
+    const r = await createNotifyApi(f as never, opts).putFollows("s", F1);
+    expect(r).toEqual({ ok: false, kind: "rate-limited" });
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+  it("put follows: 429 without Retry-After is terminal at once", async () => {
+    const f = jest.fn(async () => mk(429));
+    expect(await createNotifyApi(f as never, opts).putFollows("s", F1)).toEqual({ ok: false, kind: "rate-limited" });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(sleeps).toEqual([]);
+  });
+  it("put follows: an absurdly long Retry-After is terminal rather than a long wait", async () => {
+    const f = jest.fn(async () => mk(429, { "Retry-After": "86400" }));
+    expect(await createNotifyApi(f as never, opts).putFollows("s", F1)).toEqual({ ok: false, kind: "rate-limited" });
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("delete follows the same once-after-Retry-After rule", async () => {
+    const f = jest.fn().mockResolvedValueOnce(mk(429, { "Retry-After": "1" })).mockResolvedValueOnce(mk(200, {}, { deleted: true }));
+    expect((await createNotifyApi(f as never, opts).deleteDevice("s")).ok).toBe(true);
+    expect(sleeps).toEqual([1000]);
+  });
+  it("other transient statuses (5xx) still back off as before", async () => {
+    const f = jest.fn().mockResolvedValueOnce(mk(502)).mockResolvedValueOnce(mk(200, {}, { follows: [] }));
+    expect((await createNotifyApi(f as never, opts).putFollows("s", F1)).ok).toBe(true);
+    expect(sleeps).toEqual([10]);
+  });
+  it("the default fetchWithRetry policy (data-client style) still retries 429 with backoff", async () => {
+    const f = jest.fn().mockResolvedValueOnce(mk(429)).mockResolvedValueOnce(mk(200));
+    const res = await fetchWithRetry(f as never, "u", {}, { sleep: async (ms) => { sleeps.push(ms); }, baseMs: 5 });
+    expect(res.status).toBe(200);
+    expect(sleeps).toEqual([5]);
+  });
+  it("parseRetryAfter handles seconds, HTTP dates and junk", async () => {
+    expect(parseRetryAfter("3")).toBe(3000);
+    expect(parseRetryAfter("Sat, 10 Oct 2026 12:00:05 GMT", Date.parse("Sat, 10 Oct 2026 12:00:00 GMT"))).toBe(5000);
+    expect(parseRetryAfter("Sat, 10 Oct 2026 11:59:00 GMT", Date.parse("Sat, 10 Oct 2026 12:00:00 GMT"))).toBe(0);
+    expect(parseRetryAfter("soon")).toBeNull();
+    expect(parseRetryAfter(null)).toBeNull();
+  });
+  it("sync: a rate-limited subscribe is silent, stores nothing and logs one line", async () => {
+    const log = jest.fn();
+    const store = memoryStore();
+    const { sync } = make({ log }, store, fakeApi({ subscribe: [{ ok: false, kind: "rate-limited" }] }));
+    expect(await sync.onEnabled("tokA", F1)).toBe("silent");
+    expect(store.set).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("429"));
+  });
+  it("sync: a rate-limited PUT or DELETE is silent and keeps local state", async () => {
+    const store = memoryStore({ deviceId: "d", secret: "s", token: "t" });
+    const a = make({}, store, fakeApi({ put: [{ ok: false, kind: "rate-limited" }] }));
+    expect(await a.sync.onEnabled("t", F1)).toBe("silent");
+    const b = make({}, store, fakeApi({ del: [{ ok: false, kind: "rate-limited" }] }));
+    expect(await b.sync.onDisabled()).toBe("silent");
+    expect(store.peek()?.secret).toBe("s"); // kept, so a later delete can still work
   });
 });
