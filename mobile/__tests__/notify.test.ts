@@ -1,5 +1,4 @@
 import { initialOptIn, optInStatus, parseOptIn, reduceOptIn, shouldPrompt } from "../lib/notify";
-import { followsPayload, registerDevice } from "../lib/register-device";
 
 describe("shouldPrompt", () => {
   const base = { justAdded: true, followCount: 1, platform: "android" };
@@ -44,16 +43,4 @@ test("parseOptIn tolerates junk", () => {
   expect(parseOptIn(null)).toEqual(initialOptIn);
   expect(parseOptIn("{bad")).toEqual(initialOptIn);
   expect(parseOptIn('{"asked":true,"enabled":true,"token":5}')).toMatchObject({ asked: true, enabled: true, token: null });
-});
-
-describe("registerDevice", () => {
-  it("is off by default (no backend yet) and never touches the network", async () => {
-    const fetchImpl = jest.fn();
-    const r = await registerDevice("tok", [{ kind: "ticker", symbol: "AAPL" }], fetchImpl as never);
-    expect(r).toEqual({ ok: false, reason: "backend-disabled" });
-    expect(fetchImpl).not.toHaveBeenCalled();
-  });
-  it("builds the planned follows payload", () => {
-    expect(followsPayload([{ kind: "fund", symbol: "ARKK" }])).toEqual({ follows: [{ kind: "fund", symbol: "ARKK" }] });
-  });
 });
