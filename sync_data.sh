@@ -33,6 +33,16 @@ ts() { date -u +%FT%TZ; }
 
 cd "$REPO" || { echo "$(ts) FATAL: cannot cd $REPO"; exit 1; }
 
+# Serialize sync and its out-of-process digest worker across overlapping cron runs.
+exec 9>/var/lock/tickertrace-sync.lock
+flock -n 9 || exit 0
+notifications() {
+  # Disabled-by-default worker is a cheap no-op. Poll tickets/retry outbox even
+  # when git is already current; no job runs in either uvicorn worker.
+  docker compose exec -T api python -m api.notification_job \
+    || echo "$(ts) warning: notification worker failed; next sync will retry"
+}
+
 git fetch --quiet origin main || { echo "$(ts) git fetch failed"; exit 1; }
 
 # The box must sit on `main` for the ff-only merge below to be possible at all.
@@ -57,7 +67,12 @@ fi
 
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
-[ "$LOCAL" = "$REMOTE" ] && exit 0   # already current — stay quiet
+if [ "$LOCAL" = "$REMOTE" ]; then
+  if curl -sf http://localhost:8100/health >/dev/null; then
+    notifications
+  fi
+  exit 0
+fi
 
 if ! git merge --ff-only origin/main; then
   echo "$(ts) ff-only merge BLOCKED (tracked local edits on the box?) — not forcing; HEAD still ${LOCAL:0:7}"
@@ -74,13 +89,14 @@ fi
 if git diff --name-only "$LOCAL" "$REMOTE" | grep -qE '^(api/|Dockerfile|docker-compose\.yml|etf-dashboard/public/llms\.txt)'; then
   echo "$(ts) code changed in api/ — rebuilding image"
   GIT_SHA="$(git rev-parse HEAD)" docker compose up -d --build >/dev/null 2>&1 \
-    || echo "$(ts) BUILD FAILED — existing container left running"
+    || { echo "$(ts) BUILD FAILED — existing container left running"; exit 1; }
 else
   docker compose up -d >/dev/null 2>&1 || echo "$(ts) warning: 'docker compose up -d' returned non-zero"
 fi
 sleep 5
 if curl -sf http://localhost:8100/health >/dev/null; then
   echo "$(ts) synced ${LOCAL:0:7} -> ${REMOTE:0:7}; API healthy"
+  notifications
 else
   echo "$(ts) synced ${LOCAL:0:7} -> ${REMOTE:0:7} but API HEALTH CHECK FAILED"
   exit 1

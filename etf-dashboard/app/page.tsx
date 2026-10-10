@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 10, 2026"
+            tag="feature"
+            title="Coming soon: one daily digest for the funds and stocks you follow"
+            desc="The notification backend is in place: anonymous device registration, a saved follow list, and one daily digest of meaningful holdings changes. Catch-up disclosures get an honest refresh note instead of weeks of trades dressed up as today. Everything stays switched off while we connect the native app and test a real device — apparently shipping a push button before a working push is not much of a feature."
+          />
+          <ChangelogEntry
+            date="October 10, 2026"
             tag="bugfix"
             title="Holdings page won't pretend two weeks of ARK trades happened in one day"
             desc="ARK's issuer file went quiet after Sep 25 and we carried those positions forward while we fixed it. When ARK comes back, the naive math would show every trade since then as a single day's move. The Holdings page now spots that, leaves ARK's Δ Weight and Δ Shares as a dash, and says 'catch-up since Sep 25' instead of making up a number. Everyone else's rows are untouched. Same guard the API already has, now on the page too."

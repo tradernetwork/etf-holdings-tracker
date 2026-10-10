@@ -73,3 +73,6 @@ firebase-debug.log
 /.env
 /.env.*
 !/.env*.example
+
+# Anonymous notification worker lock (runtime state)
+api/data/notifications.lock
