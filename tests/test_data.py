@@ -660,3 +660,40 @@ def test_layering_respects_min_funds(tmp_path, monkeypatch):
     # Only 3 funds ever enter TARGET; requiring 4 should yield no pattern for it.
     res = _data.compute_layering_patterns(window_days=5, min_funds=4)
     assert "TARGET" not in {p["ticker"] for p in res["patterns"]}
+
+
+# ─── Sector canonicalization ─────────────────────────────────────
+
+def test_canonical_sector_collapses_case_and_whitespace():
+    from api.data import canonical_sector as cs
+    assert cs('MATERIALS') == cs('Materials') == cs('  materials ') == 'Materials'
+    assert cs('REAL ESTATE') == cs('Real   Estate') == 'Real Estate'
+    assert cs('INFORMATION TECHNOLOGY') == 'Information Technology'
+    assert cs('MISCELLANEOUS') == 'Other'
+    assert cs('Software') == 'Information Technology'
+    assert cs('Propane') == 'Energy'
+    assert cs('') == '' and cs(None) == ''
+    assert cs('Some New Label') == 'Some New Label'  # unknowns pass through
+
+
+def test_no_sector_facets_differ_only_by_case_or_whitespace():
+    """Live data: /api/v1/sectors and the changes sector facet (what /changes
+    builds its chips from) must not split a sector by spelling."""
+    import pytest
+    from api import data
+    if not data.get_available_dates():
+        pytest.skip('no history data checked in')
+    from fastapi.testclient import TestClient
+    from api.server import app
+    flow = TestClient(app).get('/api/v1/sectors').json()
+    sectors = [x['sector'] for k in ('inflows', 'outflows') for x in flow.get(k, [])]
+    facet = sorted({ch['sector'] for ch in data.compute_daily_changes() if ch.get('sector')})
+    assert sectors and facet
+
+    def key(x):
+        return ' '.join(x.split()).casefold()
+
+    for names in (sectors, facet):
+        seen = {}
+        for n in names:
+            assert seen.setdefault(key(n), n) == n, f'{n!r} vs {seen[key(n)]!r}'
