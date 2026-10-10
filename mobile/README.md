@@ -41,7 +41,7 @@ handlers return dicts), so body shapes are hand-written in `lib/types.ts`. Re-ru
 
 1. **Play upload keystore for `pro.tickertrace.app`**: the existing Play listing is signed by whoever uploaded the TWA. The owner must locate that upload key (or request an upload-key reset in Play Console) and give it to EAS (`eas credentials`).
 2. **Expo project**: run `eas init` as the owner to create the project; then set `extra.eas.projectId` in `app.config.ts`, and add `expo-updates` + `updates.url` if OTA updates are wanted (see the TODOs there). Not done in this PR on purpose.
-3. **`EXPO_TOKEN`** GitHub repo secret, for `.github/workflows/mobile-build.yml`.
+3. **`EXPO_TOKEN`** GitHub repo secret, for the manual EAS build workflow (`mobile-build.yml`, `workflow_dispatch` only). That workflow and the `mobile-check` CI job are not in the shell PR; they need a token with the `workflow` scope to push.
 4. **Google Play service account** JSON (Play Console API access) configured in EAS for `eas submit`. Not wired into CI; submission is manual for now.
 5. **Icon assets**: `assets/icon.png` is the dashboard's 512px icon (Play wants a 512px store icon; Expo recommends 1024px for the app icon). Provide a 1024px master and proper adaptive foreground/monochrome layers.
 6. After cutover, `assetlinks.json` (Digital Asset Links for the TWA) is no longer needed and can be removed from the dashboard.
