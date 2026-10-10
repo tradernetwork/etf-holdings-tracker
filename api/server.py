@@ -184,13 +184,17 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Anonymous opt-in device management; no DB initialization or worker in request paths.
+from .notifications import build_router
+app.include_router(build_router(limiter))
+
 # Order matters: CORS first so preflight responses get the right headers,
 # request-id second so it logs every actual handler invocation.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
     allow_credentials=False,
 )
 app.add_middleware(RequestIdMiddleware)
