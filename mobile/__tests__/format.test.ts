@@ -45,10 +45,10 @@ describe("formatUsd", () => {
 });
 
 describe("resolveUsd / formatUsdValue", () => {
-  it("prefers the API's explicit dollars", () => {
+  it("prefers the API's explicit dollars, still labelled as an estimate", () => {
     const v = resolveUsd({ apiUsd: 5_000_000, weightPercent: 1, aumBillions: 10 });
-    expect(v).toEqual({ usd: 5_000_000, estimated: false });
-    expect(formatUsdValue(v)).toBe("$5.00M");
+    expect(v).toEqual({ usd: 5_000_000, estimated: true });
+    expect(formatUsdValue(v)).toBe("est. $5.00M");
   });
   it("falls back to weight x AUM (billions) and labels it an estimate", () => {
     const v = resolveUsd({ apiUsd: null, weightPercent: 1.5, aumBillions: 8.76 });
@@ -57,7 +57,7 @@ describe("resolveUsd / formatUsdValue", () => {
     expect(formatUsdValue(v)).toBe("est. $131M");
   });
   it("treats an explicit zero as real, not missing", () => {
-    expect(resolveUsd({ apiUsd: 0, weightPercent: 5, aumBillions: 1 })).toEqual({ usd: 0, estimated: false });
+    expect(resolveUsd({ apiUsd: 0, weightPercent: 5, aumBillions: 1 })).toEqual({ usd: 0, estimated: true });
   });
   it("returns null when nothing is known", () => {
     expect(resolveUsd({})).toEqual({ usd: null, estimated: false });
