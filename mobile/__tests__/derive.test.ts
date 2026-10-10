@@ -89,7 +89,7 @@ describe("consensusCards", () => {
       [pattern("T", [entry("A1", 1, 10, 7e6), entry("A2", 2, 5, 3e6), entry("A3", 1, 1, 1e6)])],
       funds, "all",
     );
-    expect(cards[0]).toMatchObject({ usd: 11e6, estimated: false });
+    expect(cards[0]).toMatchObject({ usd: 11e6, estimated: true });
   });
 });
 

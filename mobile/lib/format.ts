@@ -39,7 +39,7 @@ export function formatUsd(value: number | null | undefined): string {
 export interface UsdValue {
   /** Whole US dollars, or null when it can't be known. */
   usd: number | null;
-  /** True when we computed it ourselves (weight x AUM) instead of the API. */
+  /** True for every position/flow dollar figure: API-supplied or computed, none is an executed amount. */
   estimated: boolean;
 }
 
@@ -54,7 +54,8 @@ export function resolveUsd(input: {
   weightPercent?: number | null;
   aumBillions?: number | null;
 }): UsdValue {
-  if (input.apiUsd != null) return { usd: input.apiUsd, estimated: false };
+  // The API's own positionUsd / activeFlowUsd are still estimates (latest AUM x weight), so they are labelled too.
+  if (input.apiUsd != null) return { usd: input.apiUsd, estimated: true };
   if (input.weightPercent != null && input.aumBillions != null) {
     return { usd: (input.weightPercent / 100) * input.aumBillions * 1e9, estimated: true };
   }
