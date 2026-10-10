@@ -103,6 +103,45 @@ def _clean_ticker(ticker: str) -> str:
     return _BLOOMBERG_SUFFIX_RE.sub('', ticker.strip())
 
 
+# ─── Sector canonicalization ─────────────────────────────────────────────────
+# Providers disagree on sector spelling: Avantis ships GICS sectors in UPPER
+# CASE ("MATERIALS"), First Trust in Title Case ("Materials"), so the same
+# sector split into two facets/rows everywhere. Canonicalize read-side (history
+# CSVs are never rewritten) to GICS-style Title Case. Lookup is case- and
+# whitespace-insensitive. Industry-level labels some funds put in the Sector
+# column (CRPT, EMLP) map to their GICS parent sector; unknown labels keep their
+# text (whitespace-collapsed) so nothing is silently dropped.
+_GICS_SECTORS = (
+    'Communication Services', 'Consumer Discretionary', 'Consumer Staples',
+    'Energy', 'Financials', 'Health Care', 'Industrials',
+    'Information Technology', 'Materials', 'Real Estate', 'Utilities',
+)
+_SECTOR_ALIASES: dict[str, str] = {
+    **{g.casefold(): g for g in _GICS_SECTORS},
+    'miscellaneous': 'Other',
+    # CRPT industry labels
+    'software': 'Information Technology',
+    'capital markets': 'Financials',
+    'hotels, restaurants & leisure': 'Consumer Discretionary',
+    'health care equipment & supplies': 'Health Care',
+    # EMLP midstream sub-industries
+    'crude oil transmission': 'Energy',
+    'natural gas transmission': 'Energy',
+    'nat. gas gathering & processing': 'Energy',
+    'petroleum product transmission': 'Energy',
+    'propane': 'Energy',
+    'electric power & transmission': 'Utilities',
+}
+
+
+def canonical_sector(raw: str | None) -> str:
+    """Map a provider sector string to its canonical spelling ('' stays '')."""
+    s = ' '.join((raw or '').split())
+    if not s:
+        return ''
+    return _SECTOR_ALIASES.get(s.casefold(), s)
+
+
 # ─── Static sector fallback ──────────────────────────────────────────────────
 # Most fund providers (ARK, Corgi, Roundhill, YieldMax, REX, Amplify thematic)
 # don't include GICS sector in their holdings files — only Avantis does.  That
@@ -267,6 +306,7 @@ _SECTOR_FALLBACK: dict[str, str] = {
     'CCI': 'REAL ESTATE',
     'EQIX': 'REAL ESTATE',
 }
+_SECTOR_FALLBACK = {t: canonical_sector(v) for t, v in _SECTOR_FALLBACK.items()}
 
 
 # ─── Significance thresholds (review #10 — porting from holdings.ts) ──────────
@@ -539,6 +579,7 @@ def _read_csv_uncached(path: str) -> list[dict]:
     with open(path, newline='') as fh:
         for r in csv.DictReader(fh):
             if r.get('ETF Ticker', '') not in EXCLUDED_FUNDS:
+                r['Sector'] = canonical_sector(r.get('Sector'))
                 rows.append(r)
 
     # Group by (fund, ticker) and keep the freshest row per group.

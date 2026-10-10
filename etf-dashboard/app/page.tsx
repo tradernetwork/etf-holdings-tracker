@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 10, 2026"
+            tag="bugfix"
+            title="Materials and MATERIALS are the same sector, who knew"
+            desc="Avantis sends sector names in ALL CAPS and First Trust sends them in Title Case, so for months the Changes page showed two Materials chips, two Utilities chips, two Real Estate chips, and sector flow was quietly splitting each one in half. I fixed it at the source, in the API, so every sector now has exactly one spelling and the numbers add up. A few odd labels from the crypto and pipeline funds (Software, Propane, that kind of thing) got folded into their proper sectors too. Past days are fixed as well, nothing had to be re-scraped."
+          />
+          <ChangelogEntry
             date="October 9, 2026"
             tag="bugfix"
             title="Fixed a rate limiter that thought everyone was the same person"
