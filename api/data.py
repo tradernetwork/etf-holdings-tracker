@@ -2042,6 +2042,9 @@ def get_all_holdings() -> dict:
         }
 
     as_of = get_as_of_date()
+    # A catch-up fund's delta against the carried rows is the whole gap, not a
+    # day: null (unknown), with catchUpSince so clients can say why.
+    catch_up = get_catch_up_funds()
     rows: list[dict] = []
     for r in latest:
         fund = r.get('ETF Ticker', '')
@@ -2059,8 +2062,11 @@ def get_all_holdings() -> dict:
             'weight': weight,
             'positionUsd': estimate_position_usd(fund, weight),
             'shares': shares,
-            'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
-            'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
+            'weightDelta': (None if fund in catch_up
+                            else round(weight - prev['weight'], 4) if prev else 0.0),
+            'sharesDelta': (None if fund in catch_up
+                            else round(shares - prev['shares'], 2) if prev else 0.0),
+            **({'catchUpSince': catch_up[fund]} if fund in catch_up else {}),
             'isOption': is_option,
             'cusip': r.get('CUSIP', ''),
             # ── Added 2026-09-27 (additive; see docs/DATA_QUALITY_2026-09.md) ──
@@ -2093,6 +2099,8 @@ def get_fund_detail(fund: str) -> dict | None:
         return None
 
     # Previous-day map for delta computation
+    catch_up = get_catch_up_funds()
+    is_catch_up = fund in catch_up
     prev_map: dict[str, dict] = {}
     for r in get_previous_holdings():
         if r.get('ETF Ticker') == fund and not r.get('Option_Type') and not _is_junk_ticker(r.get('Ticker', '')):
@@ -2118,8 +2126,11 @@ def get_fund_detail(fund: str) -> dict | None:
                 'positionUsd': estimate_position_usd(fund, weight),
                 'shares': shares,
                 'sector': r.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
-                'weightDelta': round(weight - prev['weight'], 4) if prev else 0.0,
-                'sharesDelta': round(shares - prev['shares'], 2) if prev else 0.0,
+                # Catch-up fund: the delta spans a carried-forward gap — unknown (null).
+                'weightDelta': (None if is_catch_up
+                                else round(weight - prev['weight'], 4) if prev else 0.0),
+                'sharesDelta': (None if is_catch_up
+                                else round(shares - prev['shares'], 2) if prev else 0.0),
             })
 
     equities.sort(key=lambda x: -x['weight'])
@@ -2163,7 +2174,7 @@ def get_fund_detail(fund: str) -> dict | None:
         if not c.get('isOption')
     }
     for e in equities:
-        e['activeWeightDelta'] = _active_map.get(e['ticker'], 0.0)
+        e['activeWeightDelta'] = None if is_catch_up else _active_map.get(e['ticker'], 0.0)
 
     # Active accumulation / distribution streaks among this fund's holdings —
     # consecutive-day weight moves of magnitude >= 2 days. Drives the streak
@@ -2275,6 +2286,8 @@ def get_fund_detail(fund: str) -> dict | None:
         # The fund's own holdings date — asOfDate is the snapshot (run) date,
         # which a frozen or carried-forward fund doesn't actually match.
         **_fund_freshness(fund_rows),
+        'catchUp': is_catch_up,
+        'catchUpSince': catch_up.get(fund),
     }
 
 

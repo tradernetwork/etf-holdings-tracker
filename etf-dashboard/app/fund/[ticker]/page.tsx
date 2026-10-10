@@ -581,9 +581,11 @@ function TopHoldingsTable({ holdings }: { holdings: ApiFundDetail['topHoldings']
                     ];
                     const rows: DataTableRow[] = holdings.map((h, i) => {
                         const barWidth = holdings[0]?.weight > 0 ? (h.weight / holdings[0].weight) * 100 : 0;
-                        const delta = h.activeWeightDelta ?? h.weightDelta;
+                        // null on a catch-up fund (delta would span a stale gap): show '—', not a number.
+                        const delta = h.activeWeightDelta ?? h.weightDelta ?? 0;
                         const hasChange = Math.abs(delta) > 0.0005;
-                        const hasSharesChange = h.sharesDelta !== 0;
+                        const sharesDelta = h.sharesDelta ?? 0;
+                        const hasSharesChange = sharesDelta !== 0;
                         return {
                             key: h.ticker,
                             cells: {
@@ -614,11 +616,11 @@ function TopHoldingsTable({ holdings }: { holdings: ApiFundDetail['topHoldings']
                                 ),
                                 shares: <span className="font-mono text-slate-300 text-xs">{h.shares.toLocaleString()}</span>,
                                 sharesDelta: (
-                                    <span className={`font-mono text-xs ${!hasSharesChange ? 'text-slate-600' : h.sharesDelta > 0 ? 'text-buy' : 'text-sell'}`}>
+                                    <span className={`font-mono text-xs ${!hasSharesChange ? 'text-slate-600' : sharesDelta > 0 ? 'text-buy' : 'text-sell'}`}>
                                         {hasSharesChange ? (
                                             <span className="flex items-center justify-end gap-0.5">
-                                                {h.sharesDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                                                {h.sharesDelta > 0 ? '+' : ''}{h.sharesDelta.toLocaleString()}
+                                                {sharesDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                                {sharesDelta > 0 ? '+' : ''}{sharesDelta.toLocaleString()}
                                             </span>
                                         ) : '—'}
                                     </span>

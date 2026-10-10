@@ -312,9 +312,10 @@ export interface ApiFundDetail {
         weight: number;
         shares: number;
         sector: string;
-        weightDelta: number;
-        activeWeightDelta?: number;
-        sharesDelta: number;
+        /** null on a catch-up fund (see catchUp/catchUpSince): the delta would span a stale gap. */
+        weightDelta: number | null;
+        activeWeightDelta?: number | null;
+        sharesDelta: number | null;
     }[];
     /** The fund's own holdings date (issuer file). asOfDate is the snapshot date. */
     holdingsDate?: string | null;
@@ -322,6 +323,9 @@ export interface ApiFundDetail {
     stale?: boolean;
     /** False = today's issuer fetch failed; rows carried forward. */
     refreshed?: boolean | null;
+    /** True when the fund's latest daily delta is a catch-up across a carried-forward gap. */
+    catchUp?: boolean;
+    catchUpSince?: string | null;
     optionHoldings: ApiOptionHolding[];
     recentChanges: ApiChangeRecord[];
     streaks: ApiFundStreak[];

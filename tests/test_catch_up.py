@@ -172,3 +172,28 @@ def test_scraper_carries_a_whole_fund_atomically(tmp_path):
     pd.DataFrame(rows).to_csv(day, index=False)
     cf = sa.carry_forward_rows('ARKK', '2026-10-12', history_dir=str(tmp_path))
     assert len(cf) == 3 and (cf['Refreshed'] == False).all()  # noqa: E712
+
+
+# ─── Per-row deltas on /holdings and /fund ───────────────────────
+
+def test_holdings_endpoint_nulls_catch_up_deltas(history):
+    history(gap_then_fresh())
+    rows = data.get_all_holdings()['holdings']
+    ark = [r for r in rows if r['fund'] == 'ARKK']
+    assert ark and all(r['weightDelta'] is None and r['sharesDelta'] is None for r in ark)
+    assert all(r['catchUpSince'] == '2026-09-25' for r in ark)
+    other = [r for r in rows if r['fund'] == 'AVUV'][0]
+    assert other['weightDelta'] == 1.0 and 'catchUpSince' not in other
+
+
+def test_fund_detail_nulls_catch_up_deltas_consistently(history):
+    history(gap_then_fresh())
+    d = data.get_fund_detail('ARKK')
+    assert d['catchUp'] is True and d['catchUpSince'] == '2026-09-25'
+    for h in d['topHoldings']:
+        # all three agree: unknown, not a raw delta contradicting a 0 active delta
+        assert h['weightDelta'] is None and h['sharesDelta'] is None
+        assert h['activeWeightDelta'] is None
+    healthy = data.get_fund_detail('AVUV')
+    assert healthy['catchUp'] is False
+    assert healthy['topHoldings'][0]['weightDelta'] == 1.0
