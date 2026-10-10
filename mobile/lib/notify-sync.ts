@@ -129,7 +129,7 @@ export class NotifySync {
   private outcomeOf(r: ApiResult<unknown> & ApiFailure): SyncOutcome {
     const log = this.d.log ?? (() => {});
     if (r.kind === "disabled") return "silent";
-    // 409: the token is already enrolled and its secret is gone. Terminal: stay opted in locally, don't loop.
+    // 409 is defensive only (current servers answer 201 and replace the old device). Terminal: stay opted in locally, don't loop.
     if (r.kind === "conflict") log("notify: subscribe conflict (409); staying unregistered, local opt-in kept");
     // 422: the server rejected the follow list. Don't retry; local follows are kept.
     else if (r.kind === "error" && r.status === 422) log("notify: follows rejected (422); not retrying, local follows kept");

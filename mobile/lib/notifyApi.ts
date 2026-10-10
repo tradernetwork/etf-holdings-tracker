@@ -3,7 +3,9 @@
  * headers, status meanings). Settled v1 client contract (Codex, 2026-10-10):
  *  - POST /notifications/subscribe {transport:"expo", token} -> {deviceId, secret}; no bearer on first
  *    enrollment. The same POST WITH `Authorization: Bearer <secret>` replaces the token and returns the
- *    same deviceId/secret. A duplicate token without its secret -> 409 (the server never re-issues a secret).
+ *    same deviceId/secret. Enrolling again with an already-registered token and NO bearer returns 201: the
+ *    server erases the old device and issues new credentials (so reinstalls just work); the old secret then
+ *    gets 401. The 409 handling below is DEFENSIVE only (an older server that never re-issues secrets).
  *  - GET/PUT /notifications/follows {follows:[{kind,symbol}]}: PUT atomically replaces up to 100,
  *    normalises, dedupes; 422 for an unknown fund / invalid symbol / bad body.
  *  - DELETE /notifications/device (alias /unsubscribe) -> {deleted:true}; later bearer calls -> 401, so a
@@ -26,7 +28,7 @@ export interface DeviceRegistration {
 export type ApiFailure =
   | { ok: false; kind: "disabled" } // 503: backend turned off; stay silent, keep local state
   | { ok: false; kind: "unauthorized" } // 401: the server doesn't know this secret
-  | { ok: false; kind: "conflict" } // 409: this token is already enrolled and we no longer hold its secret
+  | { ok: false; kind: "conflict" } // 409 (defensive: current servers answer 201 and replace the old device)
   | { ok: false; kind: "network"; detail: string } // never got an answer, retries exhausted
   | { ok: false; kind: "error"; status: number };
 export type ApiResult<T> = { ok: true; data: T } | ApiFailure;
