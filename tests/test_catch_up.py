@@ -132,3 +132,43 @@ def test_signal_performance_emits_nothing_for_catch_up_step(tmp_path):
     assert not [a for a in ark if a[0] == '2026-10-12']       # the gap day emits nothing
     assert ('2026-10-13', 'TSLA') in ark                        # the next real day does
     assert ('2026-10-12', 'AAA') in [(s['date'], s['ticker']) for s in sigs if s['fund'] == 'AVUV']
+
+
+# ─── Edge cases & the scraper invariant ──────────────────────────
+
+def _rec(fund, ticker, refreshed='True', option=''):
+    r = {'ETF Ticker': fund, 'Ticker': ticker, 'Weight': '1', 'Source_Date': '2026-09-25',
+         'Option_Type': option}
+    if refreshed is not None:
+        r['Refreshed'] = refreshed
+    return r
+
+
+def test_partly_carried_fund_is_not_guarded():
+    # Safe today only because the scraper stamps/carries a whole fund at once.
+    prev = [_rec('ARKK', 'AAA', 'False'), _rec('ARKK', 'BBB', 'True')]
+    assert data._catch_up_funds([_rec('ARKK', 'AAA'), _rec('ARKK', 'BBB')], prev) == {}
+
+
+def test_unknown_current_flag_counts_as_fresh():
+    assert data._catch_up_funds([_rec('ARKK', 'AAA', None)], [_rec('ARKK', 'AAA', 'False')]) \
+        == {'ARKK': '2026-09-25'}
+    assert data._catch_up_funds([_rec('ARKK', 'AAA', None)], [_rec('ARKK', 'AAA', None)]) == {}
+
+
+def test_new_fund_and_still_carried_fund_are_not_catch_up():
+    assert data._catch_up_funds([_rec('NEW', 'AAA')], []) == {}
+    assert data._catch_up_funds([_rec('ARKK', 'AAA', 'False')], [_rec('ARKK', 'AAA', 'False')]) == {}
+
+
+def test_scraper_carries_a_whole_fund_atomically(tmp_path):
+    """The guard treats a half-carried fund as fresh, so the scraper must never
+    produce one: every carried row of a fund is Refreshed=False."""
+    import scrape_avantis as sa
+    day = tmp_path / 'holdings_2026-10-09.csv'
+    rows = [{'ETF Ticker': 'ARKK', 'Ticker': t, 'Name': t, 'Weight': 1, 'Refreshed': True,
+             'Source_Date': '2026-09-25', 'Date': '2026-09-25'} for t in ('A', 'B', 'C')]
+    import pandas as pd
+    pd.DataFrame(rows).to_csv(day, index=False)
+    cf = sa.carry_forward_rows('ARKK', '2026-10-12', history_dir=str(tmp_path))
+    assert len(cf) == 3 and (cf['Refreshed'] == False).all()  # noqa: E712
