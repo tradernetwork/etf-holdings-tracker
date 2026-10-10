@@ -46,7 +46,7 @@ def test_change_signed_estimates_and_unknown_aum(monkeypatch):
     assert data.get_fund_aum_usd('NOAUM') is None
 
 
-def test_sector_backfill_same_snapshot_fallback_and_conflict(tmp_path):
+def test_sector_only_uses_curated_fallback(tmp_path):
     path = tmp_path / 'holdings.csv'
     rows = [row('ARKK'), row('AVUV', Sector='CONSUMER DISCRETIONARY'),
             row('ARKK', 'AAPL'), row('ARKK', 'MYSTERY'),
@@ -55,7 +55,7 @@ def test_sector_backfill_same_snapshot_fallback_and_conflict(tmp_path):
     with path.open('w') as f:
         w = csv.DictWriter(f, fieldnames=rows[0].keys()); w.writeheader(); w.writerows(rows)
     parsed = data._read_csv(str(path))
-    assert next(r for r in parsed if r['ETF Ticker']=='ARKK' and r['Ticker']=='THRM')['Sector'] == 'Consumer Discretionary'
+    assert next(r for r in parsed if r['ETF Ticker']=='ARKK' and r['Ticker']=='THRM')['Sector'] == ''
     assert next(r for r in parsed if r['Ticker']=='AAPL')['Sector'] == 'Information Technology'
     assert next(r for r in parsed if r['Ticker']=='MYSTERY')['Sector'] == ''
     assert next(r for r in parsed if r['ETF Ticker']=='ARKK' and r['Ticker']=='CONFLICT')['Sector'] == ''
@@ -85,6 +85,11 @@ def test_layering_dollar_totals(tmp_path, monkeypatch):
     assert p['positionUsdTotal']==60000000
     assert [e['positionUsd'] for e in p['entrySequence']]==[20000000,40000000]
     assert all(e['aumUsd']==2000000000 for e in p['entrySequence'])
+    monkeypatch.setattr(data, 'get_fund_aum', lambda fund: 2 if fund == 'ARKK' else None)
+    p=data.compute_layering_patterns(min_funds=2)['patterns'][0]
+    assert p['consensusAum'] is None
+    assert p['consensusAumUsd'] is None
+    assert p['positionUsdTotal'] is None
 
 
 def test_openapi_units_estimates_and_briefing_category():
@@ -135,3 +140,53 @@ def test_briefing_http_category_validation_and_forwarding(monkeypatch):
     assert client.get('/api/v1/briefing?category=active-equity').json()['category'] == 'active-equity'
     assert client.get('/api/v1/briefing?category=option-income').json()['category'] == 'option-income'
     assert client.get('/api/v1/briefing?category=bogus').status_code == 422
+
+
+@pytest.mark.parametrize('fund,ticker,name,donor,sector', [
+    ('XA','S','SentinelOne','Singha Estate','REAL ESTATE'),
+    ('KYC','EFX','Equifax','Enerflex','ENERGY'),
+    ('KYC','RKT','Rocket','Reckitt','CONSUMER STAPLES'),
+    ('ULTI','CASH','Cash','Pathward','FINANCIALS'),
+])
+def test_sector_foreign_donor_never_labels_blank(tmp_path, fund, ticker, name, donor, sector):
+    path=tmp_path/'collision.csv'
+    rows=[row(fund,ticker,Name=name),row('AVDE',ticker,Name=donor,Sector=sector)]
+    with path.open('w') as f:
+        writer=csv.DictWriter(f,fieldnames=rows[0].keys());writer.writeheader();writer.writerows(rows)
+    assert data._read_csv(str(path))[0]['Sector']==''
+
+
+def test_unknown_aum_is_null_across_endpoints(snapshot, monkeypatch):
+    snapshot[0].update({'ETF Ticker':'UNKNOWN','NetAssets':'','Market Value':''})
+    monkeypatch.setattr(income,'get_fund_category',lambda _: 'option-income')
+    data._fund_aum_map.cache_clear()
+    assert data.get_fund_aum('UNKNOWN') is None
+    records=[data.get_funds_index()[0],data.get_fund_detail('UNKNOWN'),
+             data.get_ticker_detail('THRM')['holdings'][0],
+             income.get_income_fund('UNKNOWN')]
+    for record in records:
+        assert record['aum'] is None
+        assert record['aumUsd'] is None
+    assert data.get_all_holdings()['holdings'][0]['positionUsd'] is None
+
+
+def test_changes_resolve_aum_once_per_fund(monkeypatch):
+    calls=[]
+    def aum(fund):
+        calls.append(fund)
+        return 1
+    monkeypatch.setattr(data,'get_fund_aum',aum)
+    data._changes_between([row('ARKK','AAPL'),row('ARKK','MSFT'),row('AVUV','TSLA')],[])
+    assert sorted(calls)==['ARKK','AVUV']
+
+
+def test_signals_resolve_aum_once_per_fund(monkeypatch):
+    calls = []
+    def aum(fund):
+        calls.append(fund)
+        return 1
+    monkeypatch.setattr(data, 'get_fund_aum', aum)
+    changes = data._changes_between([row('ARKK','AAPL'), row('ARKK','MSFT')], [])
+    calls.clear()
+    data._signals_from(changes, streaks={})
+    assert calls == ['ARKK']

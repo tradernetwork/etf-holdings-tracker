@@ -359,7 +359,7 @@ export default function LandingPage() {
             date="October 10, 2026"
             tag="feature"
             title="The API finally puts a dollar sign on fund sizes"
-            desc="We added explicit dollar AUM and estimated position/active-flow values, because apparently 48.9 could mean millions or billions if we never label it. Income funds now use the same AUM as every other endpoint; BLOX had been living off an old lookup table. The briefing can separate stock-pickers from income overlays, and blank sectors borrow a matching label from another fund when the evidence agrees. Existing fields still work."
+            desc="We added explicit dollar AUM and estimated position/active-flow values, because apparently 48.9 could mean millions or billions if we never label it. Income funds now use the same AUM as every other endpoint; BLOX had been living off an old lookup table. The briefing can separate stock-pickers from income overlays. Missing sectors keep only curated labels, and unknown AUM stays unknown. Existing fields still work."
           />
           <ChangelogEntry
             date="October 10, 2026"

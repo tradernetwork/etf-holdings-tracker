@@ -19,7 +19,7 @@ def amount(description, integer=False):
 
 
 DOLLARS = obj(
-    aum=amount('Fund AUM in billions of US dollars ($B); legacy field.'),
+    aum=amount('Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable.'),
     aumUsd=amount('Fund AUM in whole US dollars; null when AUM is unavailable.', True),
     positionUsd=amount('Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional.', True),
     activeFlowUsd=amount('Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable.', True),
@@ -37,7 +37,7 @@ BRIEFING = obj(topBuys=array(SIGNAL), topSells=array(SIGNAL),
                notableOptions=array(obj(record=CHANGE)))
 ACTIVITY = obj(accumulating=array(CHANGE), reducing=array(CHANGE), optionsActivity=array(CHANGE))
 PATTERN = obj(
-    consensusAum=amount('Combined participating fund AUM in billions of USD, rounded to three decimals; not capital invested in this ticker.'),
+    consensusAum=amount('Combined participating fund AUM in billions of USD, rounded to three decimals; not capital invested in this ticker; null if any AUM is unknown.'),
     consensusAumUsd=amount('Combined participating fund AUM in whole USD (sum of unrounded individual AUM); null if any AUM is unknown.', True),
     positionUsdTotal=amount('Estimated total entry-position value in whole USD: sum of entry weights × latest respective fund AUM / 100. Null if any AUM is unknown.', True),
     entrySequence=array(obj(**AUM['properties'], positionUsd=P['positionUsd'])),
