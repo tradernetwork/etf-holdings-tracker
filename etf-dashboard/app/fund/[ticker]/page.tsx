@@ -32,6 +32,7 @@ import React, { Suspense } from 'react';
 import { FundEffectiveness } from '@/components/fund-effectiveness';
 import { RotationPanel } from '@/components/rotation-panel';
 import { FundPositions } from '@/components/fund-positions';
+import { catchUpLabel } from '@/lib/catch-up';
 import { OptionActivity } from '@/components/option-activity';
 
 // The page reads searchParams (the Daily/Weekly/Monthly toggle), so it MUST
@@ -157,6 +158,14 @@ function FundHeader({ detail, aum, category }: {
                             <span>as of {formatAsOfDate(detail.asOfDate)}</span>
                             {detail.holdingsDate && detail.holdingsDate !== detail.asOfDate && (
                                 <span>· issuer file {formatAsOfDate(detail.holdingsDate)}</span>
+                            )}
+                            {detail.catchUp && (
+                                <span
+                                    className="font-sans text-[10px] px-1.5 py-0.5 rounded border border-warning/40 bg-warning/10 text-warning"
+                                    title="This fund's issuer data was stale and has just returned. Its daily changes are withheld because they would span the whole gap, not one day."
+                                >
+                                    {catchUpLabel(detail.catchUpSince)}
+                                </span>
                             )}
                             {(detail.stale || detail.refreshed === false) && (
                                 <span
@@ -326,7 +335,9 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
                 </CardHeader>
                 <CardContent className="pt-4">
                     {!hasChanges ? (
-                        <EmptyState label={hasPositions ? 'No contracts opened or closed today' : 'No changes detected today'} />
+                        <EmptyState label={detail.catchUp
+                            ? `${catchUpLabel(detail.catchUpSince)}: daily changes are withheld, not shown as one day's trades`
+                            : hasPositions ? 'No contracts opened or closed today' : 'No changes detected today'} />
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {!hasPositions && newPositions.length > 0 && (

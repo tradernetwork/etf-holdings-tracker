@@ -24,7 +24,7 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), 'analyses')
 import sys
 sys.path.append(os.path.dirname(__file__))
 
-from api.data import _is_junk_ticker
+from api.data import _is_junk_ticker, _is_trading_day, _catch_up_funds, drop_funds_from_rows
 
 EXCLUDED = {'IBIT', 'IVV', 'IWM'}
 
@@ -314,6 +314,8 @@ def main():
     # Get latest two dates
     files = [f for f in os.listdir(DATA_DIR) if f.startswith('holdings_') and f.endswith('.csv')]
     dates = sorted([f.replace('holdings_', '').replace('.csv', '') for f in files], reverse=True)
+    # Same rule as the API: weekend/holiday snapshots are not trading days.
+    dates = [d for d in dates if _is_trading_day(d)]
 
     if len(dates) < 2:
         print("Need at least 2 history files to compute changes.")
@@ -326,11 +328,21 @@ def main():
     curr = read_csv(os.path.join(DATA_DIR, f'holdings_{today}.csv'))
     prev = read_csv(os.path.join(DATA_DIR, f'holdings_{yesterday}.csv'))
 
+    # A fund returning from carried-forward rows (ARK: 2026-09-25 -> first fresh
+    # scrape) would report its whole gap as one day's trades. Drop it from both
+    # sides and say so (same guard as the API: api.data._catch_up_funds).
+    catch_up = _catch_up_funds(curr, prev)
+    curr, prev = drop_funds_from_rows(curr, catch_up), drop_funds_from_rows(prev, catch_up)
+
     curr_map = build_map(curr)
     prev_map = build_map(prev)
     changes = compute_changes(curr_map, prev_map)
 
     md = generate_markdown(today, changes, curr_map, prev_map)
+    if catch_up:
+        note = ', '.join(f"{f} (since {d or 'unknown'})" for f, d in sorted(catch_up.items()))
+        md += f"\n\n> Catch-up, changes withheld: {note}. These funds' issuer data was stale and has just returned; their delta spans the gap, not one day.\n"
+        print(f"Catch-up funds withheld: {note}")
 
     # Write dated file
     dated_path = os.path.join(OUT_DIR, f'daily_analysis_{today}.md')

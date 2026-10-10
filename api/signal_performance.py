@@ -69,6 +69,7 @@ from api.data import (
     HISTORY_DIR,
     _clean_ticker,
     _read_csv,
+    _is_trading_day,
     catch_up_funds_between,
     _safe_float,
     get_available_dates,
@@ -106,8 +107,15 @@ def _holding_weight_map(rows: list[dict]) -> dict[tuple[str, str], float]:
     return out
 
 
-def generate_all_signals(history_dir: str = HISTORY_DIR) -> list[dict]:
-    """Walk the CSV history, emit signals for every weight change."""
+def generate_all_signals(history_dir: str = HISTORY_DIR, *,
+                         trading_days_only: bool = True) -> list[dict]:
+    """Walk the CSV history, emit signals for every weight change.
+
+    Weekend / holiday snapshot files are skipped (same `_is_trading_day` the
+    API reads with): a stray Saturday scrape would otherwise become its own
+    "day", dating signals on a non-session and splitting the next real day's
+    move across two pairs.
+    """
     # get_available_dates returns newest-first; reverse so we can iterate
     # consecutive pairs (prev_date, curr_date).
     dates = sorted([
@@ -115,6 +123,8 @@ def generate_all_signals(history_dir: str = HISTORY_DIR) -> list[dict]:
         for f in os.listdir(history_dir)
         if f.startswith('holdings_') and f.endswith('.csv')
     ])
+    if trading_days_only:
+        dates = [d for d in dates if _is_trading_day(d)]
     if len(dates) < 2:
         return []
 

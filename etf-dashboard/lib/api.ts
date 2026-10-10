@@ -992,8 +992,10 @@ export const api = {
                 sector: string;
                 weight: number;
                 shares: number;
-                weightDelta: number;
-                sharesDelta: number;
+                /** null on a catch-up fund (row has catchUpSince). */
+                weightDelta: number | null;
+                sharesDelta: number | null;
+                catchUpSince?: string;
                 isOption: boolean;
                 cusip: string;
                 // Added 2026-09-27 — optional so older API deploys still type-check.

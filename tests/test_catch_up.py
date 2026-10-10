@@ -197,3 +197,33 @@ def test_fund_detail_nulls_catch_up_deltas_consistently(history):
     healthy = data.get_fund_detail('AVUV')
     assert healthy['catchUp'] is False
     assert healthy['topHoldings'][0]['weightDelta'] == 1.0
+
+
+# ─── Calendar & generate_analysis ────────────────────────────────
+
+def test_signal_performance_skips_non_trading_day_snapshots(tmp_path):
+    from api import signal_performance as sp
+    d = tmp_path / 'h'; d.mkdir()
+    # 2026-10-10 is a Saturday: its own diff must not exist, and Monday must
+    # diff against Friday (the last trading day), not the weekend file.
+    for day, a in [('2026-10-09', {'AAA': 2.0}), ('2026-10-10', {'AAA': 3.0}), ('2026-10-12', {'AAA': 5.0})]:
+        _, rows = snap(day, {}, a)
+        with (d / f'holdings_{day}.csv').open('w', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS, restval=''); w.writeheader(); w.writerows(rows)
+    sigs = sp.generate_all_signals(str(d))
+    assert [(s['date'], round(s['weightDelta'], 4)) for s in sigs] == [('2026-10-12', 3.0)]
+    legacy = sp.generate_all_signals(str(d), trading_days_only=False)
+    assert [s['date'] for s in legacy] == ['2026-10-10', '2026-10-12']
+
+
+def test_generate_analysis_withholds_catch_up_fund(history, tmp_path, monkeypatch):
+    import generate_analysis as ga
+    out = tmp_path / 'out'
+    monkeypatch.setattr(ga, 'DATA_DIR', str(tmp_path))
+    monkeypatch.setattr(ga, 'OUT_DIR', str(out))
+    history(gap_then_fresh())
+    ga.main()
+    md = (out / 'latest.md').read_text()
+    assert 'Catch-up, changes withheld' in md and 'ARKK (since 2026-09-25)' in md
+    assert 'TSLA' not in md and 'COIN' not in md      # ARK's gap trades are not reported
+    assert 'AAA' in md                                  # healthy fund still reported

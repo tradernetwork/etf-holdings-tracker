@@ -356,6 +356,12 @@ export default function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 12, 2026"
+            tag="bugfix"
+            title="Catch-up funds now say so, and the track record stopped counting Saturdays"
+            desc="Two loose ends from the ARK mess. First, when a fund comes back from a stale stretch, its fund page now says 'catch-up since Sep 25' instead of the misleading 'no changes today', and the Whop app got the same note. Second, our signal track record had been treating weekend and holiday scrape files as trading days, which dated signals on days the market was closed and split real moves across two pairs. It now uses trading days only, the same rule the rest of the API uses, so the published win rates will shift a little. The daily analysis script got the catch-up guard too, so it can't report ARK's two-week gap as one day."
+          />
+          <ChangelogEntry
             date="October 10, 2026"
             tag="bugfix"
             title="Holdings page won't pretend two weeks of ARK trades happened in one day"

@@ -84,6 +84,7 @@ export default async function FundDetailPage({
         {fund.optionRolls.length > 0 ? (
           <OptionRollsCard rolls={fund.optionRolls} />
         ) : null}
+        {fund.catchUp ? <CatchUpCard since={fund.catchUpSince ?? null} /> : null}
         <RecentChangesCard
           changes={fund.recentChanges}
           experienceId={experienceId}
@@ -358,9 +359,11 @@ function TopHoldingsCard({
           <TableBody>
             {rows.map((h) => {
               const tickerHref = `/experiences/${experienceId}/ticker/${encodeURIComponent(h.ticker)}`;
-              const hasDelta = Math.abs(h.weightDelta) > 0.0005;
+              // weightDelta is null on a catch-up fund: no delta, not a zero one.
+              const weightDelta = h.weightDelta ?? 0;
+              const hasDelta = Math.abs(weightDelta) > 0.0005;
               const deltaDirection: "buying" | "selling" =
-                h.weightDelta >= 0 ? "buying" : "selling";
+                weightDelta >= 0 ? "buying" : "selling";
               return (
                 <TableRow key={h.ticker}>
                   <TableCell>
@@ -394,7 +397,7 @@ function TopHoldingsCard({
                       <span
                         className={`inline-flex rounded px-2 py-0.5 text-xs font-mono ${directionTone(deltaDirection)}`}
                       >
-                        {pct(h.weightDelta)}
+                        {pct(weightDelta)}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -551,6 +554,23 @@ function OptionRollsCard({ rolls }: { rolls: ApiOptionRoll[] }) {
 }
 
 // ─── Recent changes ─────────────────────────────────────────────────────────
+
+function CatchUpCard({ since }: { since: string | null }) {
+  return (
+    <Card className="border-amber-500/40 bg-amber-500/5">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">
+          Catch-up{since ? ` since ${since}` : ""}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">
+        This fund&apos;s issuer data was stale and has just come back. Its
+        daily changes are withheld because they would span the whole gap, not
+        one day of trading. Normal daily changes resume next session.
+      </CardContent>
+    </Card>
+  );
+}
 
 function RecentChangesCard({
   changes,
