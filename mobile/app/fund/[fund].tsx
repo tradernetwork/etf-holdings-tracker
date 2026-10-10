@@ -1,14 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MinorAdjustments } from "@/components/minor-adjustments";
 import { Badge, Card, ErrorNote, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, ThinBar, Tappable } from "@/components/ui";
 import { ApiError } from "@/lib/api";
+import { useAppState } from "@/lib/app-state";
 import { changesForFund } from "@/lib/derive";
 import { partitionSignificant } from "@/lib/significance";
 import { cleanName, formatPp, formatShortDate, formatUsd, formatUsdValue, formatWeight, fundAumUsd, resolveUsd } from "@/lib/format";
 import { useFund } from "@/lib/queries";
-import { deltaColor, display, fonts, radii, spacing, type Palette } from "@/lib/theme";
+import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
 const CHANGES_SHOWN = 12;
@@ -20,6 +21,7 @@ export default function FundScreen() {
   const { fund: raw } = useLocalSearchParams<{ fund: string }>();
   const symbol = String(raw ?? "").toUpperCase();
   const q = useFund(symbol);
+  const { isFollowing, toggleFollow } = useAppState();
 
   if (q.isLoading) return <Screen topInset={false}><Loading /></Screen>;
   if (q.isError || !q.data) {
@@ -50,6 +52,15 @@ export default function FundScreen() {
           <Text style={styles.eyebrow}>{income ? "INCOME & OPTIONS" : "STOCK ACTIVITY"}</Text>
           <Text style={styles.symbol}>{f.fund}</Text>
           <Text style={styles.provider}>{f.provider}</Text>
+          <Pressable
+            onPress={() => toggleFollow("fund", symbol)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isFollowing("fund", symbol) }}
+            style={[styles.follow, isFollowing("fund", symbol) && { backgroundColor: c.accent + "22", borderColor: c.accent }]}
+          >
+            <Ionicons name={isFollowing("fund", symbol) ? "star" : "star-outline"} size={15} color={isFollowing("fund", symbol) ? c.accent : c.textSecondary} />
+            <Text style={[styles.followText, isFollowing("fund", symbol) && { color: c.accent }]}>{isFollowing("fund", symbol) ? "Following" : "Follow"}</Text>
+          </Pressable>
         </View>
         <Monogram label={f.provider.slice(0, 3).toUpperCase()} />
       </View>
@@ -65,6 +76,16 @@ export default function FundScreen() {
         </View>
       </View>
 
+      {f.catchUpSince ? (
+        <View style={styles.warn}>
+          <Ionicons name="time-outline" size={20} color={c.warnText} style={{ marginTop: 1 }} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={styles.warnTitle}>Catch-up since {formatShortDate(f.catchUpSince)}</Text>
+            <Text style={styles.warnBody}>This fund&apos;s previous file was carried forward, so its latest diff spans several days and is not shown as a one-day change.</Text>
+          </View>
+        </View>
+      ) : null}
+
       {f.stale && (
         <View style={styles.warn}>
           <Ionicons name="time-outline" size={20} color={c.warnText} style={{ marginTop: 1 }} />
@@ -78,7 +99,7 @@ export default function FundScreen() {
         </View>
       )}
 
-      {!f.stale && (
+      {!f.stale && !f.catchUpSince && (
         <>
           <SectionHeader title="Today's changes" right={<Hint>active weight</Hint>} />
           {changes.length === 0 ? (
@@ -146,6 +167,11 @@ const makeStyles = (c: Palette) =>
     eyebrow: { color: c.textMuted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 1.4 },
     symbol: { ...display, color: c.textPrimary, fontSize: 56, lineHeight: 60, marginTop: spacing.xs },
     provider: { color: c.textSecondary, fontFamily: fonts.body, fontSize: 14 },
+    follow: {
+      flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: spacing.md, minHeight: MIN_TAP, paddingHorizontal: spacing.md,
+      borderWidth: 1, borderColor: c.border, borderRadius: radii.pill, backgroundColor: c.card,
+    },
+    followText: { color: c.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13 },
     statGrid: { flexDirection: "row", gap: spacing.sm },
     statCell: { flex: 1, backgroundColor: c.card, borderColor: c.border, borderWidth: 1, borderRadius: radii.card, padding: spacing.lg, gap: 4 },
     statValue: { ...display, color: c.textPrimary, fontSize: 30, letterSpacing: -1 },

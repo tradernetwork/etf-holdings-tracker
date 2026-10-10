@@ -52,7 +52,7 @@ export default function TickerScreen() {
   const hiddenEvidence = added.length + reduced.length - evidence.length;
   const changeByFund = new Map(t.changes.filter((ch) => !ch.isOption).map((ch) => [ch.fund, ch]));
   const shown = showAll ? holdings : holdings.slice(0, HOLDERS_COLLAPSED);
-  const following = isFollowing(symbol);
+  const following = isFollowing("ticker", symbol);
   const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : "No change today.";
 
   return (
@@ -69,7 +69,7 @@ export default function TickerScreen() {
             <Text style={styles.pillText}>{holdings.length} reporting {holdings.length === 1 ? "fund" : "funds"}</Text>
           </View>
           <Pressable
-            onPress={() => toggleFollow(symbol)}
+            onPress={() => toggleFollow("ticker", symbol)}
             accessibilityRole="button"
             accessibilityState={{ selected: following }}
             style={[styles.follow, following && { backgroundColor: c.accent + "22", borderColor: c.accent }]}

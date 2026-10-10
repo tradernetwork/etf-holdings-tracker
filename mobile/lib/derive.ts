@@ -245,3 +245,31 @@ export function tickerEvidence(changes: Change[]): { added: Change[]; reduced: C
     minor: minor.sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta)),
   };
 }
+
+// ---- Following ------------------------------------------------------------------
+
+export interface FollowMove {
+  /** Fund code (for a followed ticker) or ticker (for a followed fund). */
+  who: string;
+  verb: "opened" | "closed" | "added" | "trimmed";
+  delta: number;
+}
+
+function verbFor(c: Change): FollowMove["verb"] {
+  if (c.type === "NEW") return "opened";
+  if (c.type === "REMOVED") return "closed";
+  return c.activeWeightDelta > 0 ? "added" : "trimmed";
+}
+
+/** Today's significant moves for a followed ticker: which funds acted, biggest first. */
+export function tickerFollowMoves(changes: Change[], limit = 3): { moves: FollowMove[]; more: number } {
+  const { added, reduced } = tickerEvidence(changes);
+  const all = [...added, ...reduced].sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta));
+  return { moves: all.slice(0, limit).map((c) => ({ who: c.fund, verb: verbFor(c), delta: c.activeWeightDelta })), more: Math.max(0, all.length - limit) };
+}
+
+/** Today's significant moves for a followed fund (its own rows only): which tickers it traded. */
+export function fundFollowMoves(changes: Change[], fund: string, limit = 3): { moves: FollowMove[]; more: number } {
+  const { significant } = partitionSignificant(changesForFund(changes, fund));
+  return { moves: significant.slice(0, limit).map((c) => ({ who: c.ticker, verb: verbFor(c), delta: c.activeWeightDelta })), more: Math.max(0, significant.length - limit) };
+}

@@ -6,6 +6,8 @@ import {
   evidenceNote,
   pickHero,
   tickerEvidence,
+  tickerFollowMoves,
+  fundFollowMoves,
   convictionFractions,
   mergeSectorFlow,
   splitEvidence,
@@ -161,4 +163,30 @@ test("tickerEvidence applies the API's per-fund significance thresholds", () => 
   expect(r.added.map((c) => c.fund)).toEqual(["CGGO", "ARKK"]);
   expect(r.reduced.map((c) => c.fund)).toEqual(["AVUS"]);
   expect(r.minor).toHaveLength(3);
+});
+
+describe("follow moves", () => {
+  it("ticker follow lists significant fund moves only, biggest first, with an overflow count", () => {
+    const { moves, more } = tickerFollowMoves([
+      ch({ fund: "CGGO", activeWeightDelta: 0.6, type: "CHANGED" }),
+      ch({ fund: "AVUS", activeWeightDelta: -0.0104 }),
+      ch({ fund: "CMAG", activeWeightDelta: 0.001 }), // noise
+      ch({ fund: "ARKK", activeWeightDelta: 0.3, type: "NEW" }),
+      ch({ fund: "X1", activeWeightDelta: -0.2 }),
+      ch({ fund: "X2", activeWeightDelta: 0.05 }),
+    ]);
+    expect(moves.map((m) => [m.who, m.verb])).toEqual([["CGGO", "added"], ["ARKK", "opened"], ["X1", "trimmed"]]);
+    expect(more).toBe(2);
+  });
+  it("fund follow ignores other funds, options and noise", () => {
+    const { moves } = fundFollowMoves(
+      [ch({ fund: "ARKK", ticker: "TSLA", activeWeightDelta: -0.5, type: "REMOVED" }), ch({ fund: "OTHER", ticker: "X", activeWeightDelta: 9 }),
+       ch({ fund: "ARKK", ticker: "OPT", isOption: true, activeWeightDelta: 9 }), ch({ fund: "ARKK", ticker: "Z", activeWeightDelta: 0.001 })],
+      "ARKK",
+    );
+    expect(moves).toEqual([{ who: "TSLA", verb: "closed", delta: -0.5 }]);
+  });
+  it("returns nothing when nothing is meaningful", () => {
+    expect(tickerFollowMoves([ch({ fund: "CMAG", activeWeightDelta: 0.001 })])).toEqual({ moves: [], more: 0 });
+  });
 });

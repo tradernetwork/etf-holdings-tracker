@@ -179,6 +179,8 @@ export interface FundResponse {
   asOfDate: string;
   holdingsDate: string;
   stale: boolean;
+  /** Set by the API when the latest diff spans a gap (see API PR #144): not a one-day change. */
+  catchUpSince?: string | null;
   holdingsCount: number;
   optionsCount: number;
   totalWeight: number;
