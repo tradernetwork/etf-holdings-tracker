@@ -185,7 +185,8 @@ def test_get_full_payload_does_not_re_compute_changes(data_with_fixtures, monkey
 
     monkeypatch.setattr(data_with_fixtures, "compute_daily_changes_with_options", counting_with)
     monkeypatch.setattr(data_with_fixtures, "compute_daily_changes", counting_without)
-    data_with_fixtures.get_full_payload()
+    # __wrapped__: the uncached computation (the per-snapshot memo would otherwise answer from cache).
+    data_with_fixtures.get_full_payload.__wrapped__()
     total = counter["with_options"] + counter["no_options"]
     assert total == 1, (
         f"compute_daily_changes* was called {total} times in total — "

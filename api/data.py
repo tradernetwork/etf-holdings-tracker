@@ -7,12 +7,14 @@ authoritative source of truth; `etf-dashboard/lib/holdings.ts` is deprecated
 (review #10).
 """
 
+import copy
 import csv
 import functools
 import math
 import os
 import re
-from collections import defaultdict
+import threading
+from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
 from typing import Any
 
@@ -1483,6 +1485,123 @@ def _filter_streaks_by_category(streaks: dict[tuple[str, str], int],
     return {k: v for k, v in streaks.items() if get_fund_category(k[0]) == category}
 
 
+# ─── Per-snapshot result memo ────────────────────────────────────────────────
+# get_signals / get_briefing / get_full_payload recompute everything per request
+# (~3s warm: _compute_streaks alone re-parses and re-diffs ten CSVs, and the
+# 5-slot CSV cache thrashes on that ten-file scan). The answer only changes when
+# the data does, so cache the FULL result keyed on a signature of the history
+# files it can read: directory mtime plus (date, mtime_ns, size) of the newest
+# _SIGNATURE_FILES files. That is the same (mtime, size) notion _read_csv_cached
+# and _fund_aum_map already use, so a same-day re-scrape (rewritten file) and a
+# new day's file both invalidate. Two uvicorn workers each keep their own memo.
+_SIGNATURE_FILES = 12          # _compute_streaks reads 10; latest-vs-previous reads 2
+_MEMO_MAX = 16
+_memo: "OrderedDict[tuple, tuple]" = OrderedDict()   # key -> (signature, value)
+_memo_lock = threading.Lock()
+_memo_key_locks: dict[tuple, threading.Lock] = {}
+
+
+def snapshot_signature() -> tuple:
+    """Changes whenever a history file the memoized results read is added or rewritten."""
+    try:
+        dir_mtime = os.stat(HISTORY_DIR).st_mtime_ns
+    except OSError:
+        return (HISTORY_DIR, None, ())
+    parts = []
+    for d in get_available_dates()[:_SIGNATURE_FILES]:
+        try:
+            st = os.stat(os.path.join(HISTORY_DIR, f'holdings_{d}.csv'))
+            parts.append((d, st.st_mtime_ns, st.st_size))
+        except OSError:
+            parts.append((d, None, None))
+    return (HISTORY_DIR, dir_mtime, tuple(parts))
+
+
+def _memoize_per_snapshot(fn):
+    """Memoize a pure, keyword-parameterised data function per snapshot signature.
+
+    Returns a deep copy so callers (REST, MCP, notifications) may mutate the
+    result freely. `fn.__wrapped__` is the uncached original. Entries from an
+    older signature are dropped on insert and the table is size-bounded.
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        sig = snapshot_signature()
+        key = (fn.__name__, args, tuple(sorted(kwargs.items())))
+        with _memo_lock:
+            hit = _memo.get(key)
+            if hit is not None and hit[0] == sig:
+                _memo.move_to_end(key)
+                return copy.deepcopy(hit[1])
+            klock = _memo_key_locks.setdefault(key, threading.Lock())
+        with klock:                       # one computation per key; others wait for it
+            with _memo_lock:
+                hit = _memo.get(key)
+                if hit is not None and hit[0] == sig:
+                    return copy.deepcopy(hit[1])
+            value = fn(*args, **kwargs)
+            with _memo_lock:
+                for k in [k for k, (s, _) in _memo.items() if s != sig]:
+                    del _memo[k]          # stale snapshot: free it
+                _memo[key] = (sig, value)
+                _memo.move_to_end(key)
+                while len(_memo) > _MEMO_MAX:
+                    _memo.popitem(last=False)
+            return copy.deepcopy(value)
+    return wrapper
+
+
+def clear_result_memo() -> None:
+    with _memo_lock:
+        _memo.clear()
+
+
+def prewarm_snapshot_caches() -> None:
+    """Compute the common requests so the first real one is instant."""
+    for category in (None, 'active-equity'):
+        get_full_payload(category=category)
+        get_briefing(category=category)
+        get_signals(category=category)
+
+
+class SnapshotPrewarmer:
+    """Background thread: prewarm at startup and again whenever the snapshot
+    signature changes (a data-only sync adds a CSV with NO restart, so this is
+    what keeps the first post-sync request fast). Each uvicorn worker runs its
+    own. Failures are swallowed: prewarming is an optimisation, never a dependency."""
+
+    def __init__(self, interval_s: float = 30.0, on_error=None):
+        self._interval = interval_s
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._on_error = on_error or (lambda e: None)
+        self._last: tuple | None = None
+
+    def _tick(self) -> None:
+        try:
+            sig = snapshot_signature()
+            if sig != self._last:
+                prewarm_snapshot_caches()
+                self._last = sig
+        except Exception as e:  # noqa: BLE001
+            self._on_error(e)
+
+    def _run(self) -> None:
+        while not self._stop.is_set():
+            self._tick()
+            self._stop.wait(self._interval)
+
+    def start(self) -> None:
+        if self._thread is None:
+            self._thread = threading.Thread(target=self._run, name="snapshot-prewarm", daemon=True)
+            self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+
+
+
+@_memoize_per_snapshot
 def _compute_streaks(max_days: int = 10) -> dict[tuple[str, str], int]:
     """
     Read up to `max_days` of history files and compute consecutive-day
@@ -1859,6 +1978,7 @@ def _divergences_from(changes: list[dict]) -> list[dict]:
 
 
 # ─── Public wrappers (each still callable standalone) ──────────────
+@_memoize_per_snapshot
 def get_signals(*, category: str | None = None) -> dict:
     """Top buying/selling signals with conviction scores.
 
@@ -2016,6 +2136,7 @@ def get_activity(period: str = 'daily', *, category: str | None = None) -> dict:
     return _activity_from(_filter_by_category(changes, category))
 
 
+@_memoize_per_snapshot
 def get_briefing(*, category: str | None = None) -> dict:
     """Pre-market briefing — top moves, multi-provider convergence, streaks, options."""
     changes = _filter_by_category(compute_daily_changes_with_options(), category)
@@ -2613,6 +2734,7 @@ def get_tickers_index(limit: int = 100, sort: str = 'funds', *,
     return rows[:limit]
 
 
+@_memoize_per_snapshot
 def get_full_payload(*, category: str | None = None) -> dict:
     """
     Complete API payload — the single endpoint everything else can be derived from.

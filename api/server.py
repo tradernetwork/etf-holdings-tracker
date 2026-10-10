@@ -135,9 +135,15 @@ mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
 async def lifespan(_app: FastAPI):
     auth.init_db()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
+    # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
+    prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
+    if prewarmer:
+        prewarmer.start()
     # The MCP sub-app needs its own lifespan run (FastAPI doesn't do it for mounts).
     async with mcp_app.lifespan(_app):
         yield
+    if prewarmer:
+        prewarmer.stop()
     # graceful shutdown — close any pooled connections
     auth.close_all_connections()
     log.info("shutdown_complete")

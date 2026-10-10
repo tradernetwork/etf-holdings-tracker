@@ -9,6 +9,9 @@ import sys
 
 import pytest
 
+# The background snapshot prewarmer would parse real history during unrelated tests.
+os.environ.setdefault("TT_PREWARM", "0")
+
 # Make `import api.data` work when running pytest from repo root.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
