@@ -3,7 +3,7 @@
  * Kept free of React so they can be unit tested.
  */
 import { formatPp, formatShares, resolveUsd, sectorLabel } from "./format";
-import { partitionSignificant } from "./significance";
+import { isSignificant, partitionSignificant } from "./significance";
 import type {
   Change,
   Category,
@@ -172,7 +172,10 @@ export function pickHero(divergences: Divergence[] | undefined, signals: Signals
   const sectorFor = (t: string) =>
     sig(t)?.sector || signals?.changes.find((c) => c.ticker === t && c.sector)?.sector || "";
 
-  const d = divergences?.find((x) => x.buyingFunds.length > 0 && x.sellingFunds.length > 0);
+  // A countercase only counts when BOTH sides pass the API's significance rule;
+  // a -0.00x pp "reduction" is price drift, not opposition.
+  const sigSides = (fs: { fund: string; weightDelta: number }[]) => fs.filter((f) => isSignificant(f.fund, f.weightDelta));
+  const d = divergences?.find((x) => sigSides(x.buyingFunds).length > 0 && sigSides(x.sellingFunds).length > 0);
   if (d) {
     const s = sig(d.ticker);
     return {
@@ -180,14 +183,16 @@ export function pickHero(divergences: Divergence[] | undefined, signals: Signals
       name: d.name,
       sector: sectorFor(d.ticker),
       countercase: true,
-      added: d.buyingFunds.slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
-      reduced: d.sellingFunds.slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      added: sigSides(d.buyingFunds).slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      reduced: sigSides(d.sellingFunds).slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
       streak: s?.streak ? { days: s.streak, direction: s.direction } : null,
     };
   }
   const top = signals?.signals.buying[0];
   if (!top) return null;
-  const rows = top.fundDetails.map((f) => ({ fund: f.fund, delta: f.activeWeightDelta }));
+  const rows = top.fundDetails
+    .filter((f) => isSignificant(f.fund, f.activeWeightDelta))
+    .map((f) => ({ fund: f.fund, delta: f.activeWeightDelta }));
   return {
     ticker: top.ticker,
     name: top.name,
