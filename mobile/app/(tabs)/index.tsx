@@ -114,6 +114,12 @@ export default function Today() {
                   <Text style={styles.name}>
                     {k.fundCount} funds from {k.providerCount} {k.providerCount === 1 ? "provider" : "providers"} entered since {formatShortDate(k.firstEntry)}
                   </Text>
+                  <View style={styles.chips}>
+                    {k.funds.slice(0, 6).map((f) => (
+                      <View key={f} style={styles.chip}><Text style={styles.chipText}>{f}</Text></View>
+                    ))}
+                    {k.funds.length > 6 && <Text style={styles.name}>+{k.funds.length - 6}</Text>}
+                  </View>
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
                   <Mono bold style={{ color: c.accent, fontSize: 15 }}>{k.usd != null ? formatUsd(k.usd) : "—"}</Mono>
@@ -197,6 +203,9 @@ const makeStyles = (c: Palette) =>
     sub: { color: c.textMuted, fontFamily: fonts.body, fontSize: 12 },
     tiles: { flexDirection: "row", gap: spacing.sm },
     name: { color: c.textSecondary, fontFamily: fonts.body, fontSize: 12 },
+    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 },
+    chip: { borderColor: c.border, borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, backgroundColor: c.canvas },
+    chipText: { color: c.textSecondary, fontFamily: fonts.monoBold, fontSize: 11 },
     worthRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderBottomColor: c.border, borderBottomWidth: 1 },
     worthMark: { width: 48, height: 44, borderRadius: 10, backgroundColor: c.card, borderColor: c.border, borderWidth: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
     worthMarkText: { color: c.textPrimary, fontFamily: fonts.monoBold, fontSize: 12 },

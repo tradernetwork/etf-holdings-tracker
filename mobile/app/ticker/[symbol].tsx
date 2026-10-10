@@ -2,10 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { MinorAdjustments } from "@/components/minor-adjustments";
 import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { ApiError } from "@/lib/api";
-import { evidenceNote } from "@/lib/derive";
+import { evidenceNote, tickerEvidence } from "@/lib/derive";
+import { isSignificant } from "@/lib/significance";
 import { cleanName, formatPp, formatUsdValue, formatWeight, freshnessLabel, resolveUsd, sectorLabel } from "@/lib/format";
 import { useTicker } from "@/lib/queries";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
@@ -45,9 +47,7 @@ export default function TickerScreen() {
   const holdings = t.holdings.filter((h) => !h.isOption).sort((a, b) => b.weight - a.weight);
   const aumByFund = new Map(t.holdings.map((h) => [h.fund, h.aum]));
   const providerByFund = new Map(t.holdings.map((h) => [h.fund, h.provider]));
-  const eq = t.changes.filter((ch) => !ch.isOption && ch.activeWeightDelta !== 0);
-  const added = eq.filter((ch) => ch.activeWeightDelta > 0).sort((a, b) => b.activeWeightDelta - a.activeWeightDelta);
-  const reduced = eq.filter((ch) => ch.activeWeightDelta < 0).sort((a, b) => a.activeWeightDelta - b.activeWeightDelta);
+  const { added, reduced, minor } = tickerEvidence(t.changes);
   const evidence = [...added.slice(0, EVIDENCE_PER_SIDE), ...reduced.slice(0, EVIDENCE_PER_SIDE)];
   const hiddenEvidence = added.length + reduced.length - evidence.length;
   const changeByFund = new Map(t.changes.filter((ch) => !ch.isOption).map((ch) => [ch.fund, ch]));
@@ -82,13 +82,14 @@ export default function TickerScreen() {
 
       <SectionHeader title="Opposite moves" right={<Hint>active weight, percentage points</Hint>} />
       {evidence.length === 0 ? (
-        <Card><Note>No fund changed its {symbol} position in the latest files. Older disclosures are marked below.</Note></Card>
+        <Card><Note>No fund made a significant move in {symbol} in the latest files. Older disclosures are marked below.</Note></Card>
       ) : (
         evidence.map((ch) => (
           <EvidenceCard key={ch.fund} change={ch} provider={providerByFund.get(ch.fund)} aumBillions={aumByFund.get(ch.fund) ?? null} />
         ))
       )}
-      {hiddenEvidence > 0 && <Hint>+{hiddenEvidence} smaller moves not shown</Hint>}
+      {hiddenEvidence > 0 && <Hint>+{hiddenEvidence} more significant {hiddenEvidence === 1 ? "move" : "moves"} not shown</Hint>}
+      <MinorAdjustments rows={minor} labelKey="fund" />
 
       <SectionHeader title="Who holds it" right={holdings.length > HOLDERS_COLLAPSED ? (
         <Pressable onPress={() => setShowAll((v) => !v)} accessibilityRole="button" style={{ minHeight: MIN_TAP, justifyContent: "center" }}>
@@ -110,7 +111,7 @@ export default function TickerScreen() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Mono bold style={{ fontSize: 15 }}>{formatWeight(h.weight)}</Mono>
-                {ch && ch.activeWeightDelta !== 0
+                {ch && isSignificant(ch.fund, ch.activeWeightDelta)
                   ? <Mono style={{ fontSize: 11, color: deltaColor(ch.activeWeightDelta, c) }}>{formatPp(ch.activeWeightDelta)}</Mono>
                   : <Hint>fund allocation</Hint>}
               </View>

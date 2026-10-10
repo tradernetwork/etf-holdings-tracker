@@ -81,6 +81,7 @@ const CORP_CASE: Record<string, string> = {
   INC: "Inc", CO: "Co", CORP: "Corp", LTD: "Ltd", PLC: "Plc", LLC: "LLC", LP: "LP",
   HOLDINGS: "Holdings", GROUP: "Group", CORPORATION: "Corporation", COMPANY: "Company",
 };
+const KEEP_UPPER = new Set(["REIT", "ETF", "NASDAQ", "USA", "AI"]);
 const MINOR = new Set(["OF", "AND", "THE", "&", "DE", "DEL", "LA"]);
 
 /**
@@ -110,7 +111,7 @@ export function cleanName(raw: string | null | undefined): string {
       if (CORP_CASE[w]) return CORP_CASE[w];
       if (i > 0 && MINOR.has(w)) return w === "&" ? w : w.toLowerCase();
       // Short all-caps tokens are usually acronyms (SAP, UBS, AG, NV).
-      if (w.length <= 3 && /^[A-Z]+$/.test(w)) return w;
+      if ((w.length <= 3 || KEEP_UPPER.has(w)) && /^[A-Z]+$/.test(w)) return w;
       return w
         .split("/")
         .map((p) => (CORP_CASE[p] ? CORP_CASE[p] : p.charAt(0) + p.slice(1).toLowerCase()))

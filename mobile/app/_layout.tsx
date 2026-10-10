@@ -9,7 +9,9 @@ import {
 } from "@expo-google-fonts/space-grotesk";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Stack } from "expo-router";
+import { Pressable } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -61,8 +63,20 @@ function ThemedStack() {
     headerStyle: { backgroundColor: c.canvas },
     headerTintColor: c.textPrimary,
     headerShadowVisible: false,
-    headerBackButtonDisplayMode: "minimal" as const,
     headerTitleStyle: { fontFamily: fonts.bodyBold },
+    // Always show a chevron (a deep link / web reload has no history to pop): back if
+    // there is somewhere to go, otherwise to Today.
+    headerLeft: () => (
+      <Pressable
+        onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        hitSlop={8}
+        style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8 }}
+      >
+        <Ionicons name="chevron-back" size={26} color={c.textPrimary} />
+      </Pressable>
+    ),
   };
   return (
     <>

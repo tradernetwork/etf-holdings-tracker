@@ -3,6 +3,7 @@
  * Kept free of React so they can be unit tested.
  */
 import { formatPp, formatShares, resolveUsd, sectorLabel } from "./format";
+import { partitionSignificant } from "./significance";
 import type {
   Change,
   Category,
@@ -61,6 +62,8 @@ export interface ConsensusCard {
   name: string;
   fundCount: number;
   providerCount: number;
+  /** Funds that entered, in entry order. */
+  funds: string[];
   firstEntry: string;
   /** Dollars behind the entries, and whether we had to estimate them. */
   usd: number | null;
@@ -100,6 +103,7 @@ export function consensusCards(
       name: p.name,
       fundCount: entries.length,
       providerCount: new Set(entries.map((e) => e.provider)).size,
+      funds: entries.map((e) => e.fund),
       firstEntry: p.firstEntry,
       usd: known > 0 ? usd : null,
       estimated,
@@ -221,4 +225,18 @@ export function alsoWorthLook(signals: SignalsResponse | undefined, excludeTicke
       delta: sumActive(s),
     };
   });
+}
+
+/**
+ * Ticker evidence: equity changes split into significant added/reduced moves
+ * (per the API's thresholds) and a pile of smaller adjustments.
+ */
+export function tickerEvidence(changes: Change[]): { added: Change[]; reduced: Change[]; minor: Change[] } {
+  const eq = changes.filter((c) => !c.isOption && c.activeWeightDelta !== 0);
+  const { significant, minor } = partitionSignificant(eq);
+  return {
+    added: significant.filter((c) => c.activeWeightDelta > 0).sort((a, b) => b.activeWeightDelta - a.activeWeightDelta),
+    reduced: significant.filter((c) => c.activeWeightDelta < 0).sort((a, b) => a.activeWeightDelta - b.activeWeightDelta),
+    minor: minor.sort((a, b) => Math.abs(b.activeWeightDelta) - Math.abs(a.activeWeightDelta)),
+  };
 }

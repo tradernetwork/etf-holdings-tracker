@@ -36,7 +36,7 @@ export function Screen({
     <ScrollView
       style={styles.screen}
       contentContainerStyle={{
-        paddingTop: topInset ? insets.top + spacing.lg : spacing.md,
+        paddingTop: topInset ? insets.top + spacing.lg : spacing.xs,
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.xxl,
         gap: spacing.md,

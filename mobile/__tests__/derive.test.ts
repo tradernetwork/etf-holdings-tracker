@@ -5,6 +5,7 @@ import {
   consensusCards,
   evidenceNote,
   pickHero,
+  tickerEvidence,
   convictionFractions,
   mergeSectorFlow,
   splitEvidence,
@@ -76,6 +77,7 @@ describe("consensusCards", () => {
     );
     expect(cards).toHaveLength(1);
     expect(cards[0].fundCount).toBe(3);
+    expect(cards[0].funds).toEqual(["A1", "A2", "A3"]);
     expect(cards[0].estimated).toBe(true);
     expect(cards[0].usd).toBeCloseTo(0.01 * 10e9 + 0.02 * 5e9 + 0.01 * 1e9, 0);
   });
@@ -138,4 +140,19 @@ describe("pickHero / alsoWorthLook", () => {
     expect(rows[0]).toMatchObject({ title: "A new position", sub: "CGGO entered DE" });
     expect(rows[1].title).toBe("Allocation reduced");
   });
+});
+
+test("tickerEvidence applies the API's per-fund significance thresholds", () => {
+  const r = tickerEvidence([
+    ch({ fund: "ARKK", activeWeightDelta: 0.015 }),   // concentrated: needs 0.02 -> minor
+    ch({ fund: "ARKK", activeWeightDelta: 0.02 }),    // exactly at threshold -> significant
+    ch({ fund: "AVUS", activeWeightDelta: -0.0104 }), // broad: 0.01 -> significant
+    ch({ fund: "AVUS", activeWeightDelta: -0.004 }),  // minor
+    ch({ fund: "CMAG", activeWeightDelta: 0.001 }),   // minor
+    ch({ fund: "CGGO", activeWeightDelta: 0.5959 }),
+    ch({ fund: "OPT", activeWeightDelta: 3, isOption: true }),
+  ]);
+  expect(r.added.map((c) => c.fund)).toEqual(["CGGO", "ARKK"]);
+  expect(r.reduced.map((c) => c.fund)).toEqual(["AVUS"]);
+  expect(r.minor).toHaveLength(3);
 });

@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { MinorAdjustments } from "@/components/minor-adjustments";
 import { Badge, Card, ErrorNote, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, ThinBar, Tappable } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { changesForFund } from "@/lib/derive";
+import { partitionSignificant } from "@/lib/significance";
 import { cleanName, formatPp, formatShortDate, formatUsd, formatUsdValue, formatWeight, fundAumUsd, resolveUsd } from "@/lib/format";
 import { useFund } from "@/lib/queries";
 import { deltaColor, display, fonts, radii, spacing, type Palette } from "@/lib/theme";
@@ -36,7 +38,7 @@ export default function FundScreen() {
   const f = q.data;
   const aum = fundAumUsd(f);
   // The fund payload's changes are filtered again here: a row for another fund must never show on this screen.
-  const changes = changesForFund(f.recentChanges, f.fund);
+  const { significant: changes, minor } = partitionSignificant(changesForFund(f.recentChanges, f.fund));
   const top = f.topHoldings.slice(0, HOLDINGS_SHOWN);
   const maxW = Math.max(0.0001, ...top.map((h) => h.weight));
   const income = f.category === "option-income";
@@ -80,7 +82,7 @@ export default function FundScreen() {
         <>
           <SectionHeader title="Today's changes" right={<Hint>active weight</Hint>} />
           {changes.length === 0 ? (
-            <Card><Note>No position changes in the latest file.</Note></Card>
+            <Card><Note>No significant position changes in the latest file.</Note></Card>
           ) : (
             <View>
               {changes.slice(0, CHANGES_SHOWN).map((ch) => {
@@ -103,9 +105,10 @@ export default function FundScreen() {
                   </Tappable>
                 );
               })}
-              {changes.length > CHANGES_SHOWN && <Hint style={{ paddingTop: spacing.sm }}>+{changes.length - CHANGES_SHOWN} smaller changes</Hint>}
+              {changes.length > CHANGES_SHOWN && <Hint style={{ paddingTop: spacing.sm }}>+{changes.length - CHANGES_SHOWN} more significant changes</Hint>}
             </View>
           )}
+          <MinorAdjustments rows={minor} labelKey="ticker" />
         </>
       )}
 

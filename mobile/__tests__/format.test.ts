@@ -91,6 +91,11 @@ describe("cleanName", () => {
     ["Robinhood Markets Inc - A", "Robinhood Markets Inc"],
     ["Shopify Inc -", "Shopify Inc"],
     ["Tempus AI Inc-cl A", "Tempus AI Inc"],
+    ["Tempus AI Inc-CL A", "Tempus AI Inc"],
+    ["Space Exploration Techn-cl A", "Space Exploration Techn"],
+    ["Foo Holdings Cl A", "Foo Holdings"],
+    ["WISDOMTREE REIT FUND", "Wisdomtree REIT Fund"],
+    ["JAMES HARDIE IND PLC", "James Hardie IND Plc"],
   ];
   it.each(cases)("%s -> %s", (raw, expected) => {
     expect(cleanName(raw)).toBe(expected);
