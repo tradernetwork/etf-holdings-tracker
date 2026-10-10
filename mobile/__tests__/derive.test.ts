@@ -125,6 +125,12 @@ describe("pickHero / alsoWorthLook", () => {
     expect(hero?.added[0]).toEqual({ fund: "CGGO", delta: 0.596 });
     expect(hero?.reduced[0]).toEqual({ fund: "AVUS", delta: -0.01 });
   });
+  it("ignores an insignificant opposing move (no countercase)", () => {
+    const div = [{ ticker: "AAPL", name: "Apple", buyingFunds: [{ fund: "CGGO", weightDelta: 0.596 }], sellingFunds: [{ fund: "ARKK", weightDelta: -0.012 }] }] as Divergence[];
+    // ARKK is a concentrated fund: 0.012 pp is under its 0.02 pp threshold.
+    const hero = pickHero(div, resp([sig("AAPL", "buying", 0.6)], []));
+    expect(hero).toMatchObject({ ticker: "AAPL", countercase: false, reduced: [] });
+  });
   it("falls back to the top buy when there is no divergence", () => {
     const hero = pickHero([], resp([sig("DE", "buying", 0.3)], []));
     expect(hero).toMatchObject({ ticker: "DE", countercase: false, reduced: [] });
