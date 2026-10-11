@@ -213,3 +213,53 @@ export function legMeta(leg: PositionLeg, opened?: string): string {
     leg.upsideRoomPct != null ? (leg.upsideRoomPct >= 0 ? `${leg.upsideRoomPct.toFixed(1)}% upside room` : `ITM by ${Math.abs(leg.upsideRoomPct).toFixed(1)}%`) : null,
   ].filter(Boolean).join(" · ");
 }
+
+// ---- coverage class and data notices ------------------------------------------------
+
+export type CoverageClass = "full" | "partial" | "none";
+/** Same buckets as the coverage filter: >=90 covered, (0,90) partly, else uncovered (unknown counts as none). */
+export const coverageClass = (pct: number | null | undefined): CoverageClass => {
+  const c = pct ?? 0;
+  return c >= 90 ? "full" : c > 0 ? "partial" : "none";
+};
+export const COVERAGE_CLASS_LABEL: Record<CoverageClass, string> = { full: "Covered", partial: "Partly covered", none: "Uncovered" };
+
+export interface Notice {
+  key: string;
+  tone: "warn" | "info";
+  title: string;
+  body: string;
+}
+
+/**
+ * Data the website states as part of the page (not footnotes): the invisible intraday-income-leg disclosure
+ * and the quote-suppressed spot warning. Wording follows app/income/[fund] and fund-positions.
+ */
+export function incomeNotices(inc: { fund: string; incomeLegVisible?: boolean; positions?: IncomePosition[] } | undefined): Notice[] {
+  if (!inc) return [];
+  const out: Notice[] = [];
+  if (inc.incomeLegVisible === false) {
+    out.push({
+      key: "invisible",
+      tone: "warn",
+      title: "We can show you what this fund owns. We cannot show you what it sold.",
+      body: `${inc.fund} writes contracts that open and expire inside a single session. An end-of-day holdings file, which is all any fund publishes, structurally cannot contain one. Across every snapshot we hold, this fund has shown zero written options. That's the strategy working as designed, not a gap in our data. The long exposure below is real; the income leg is invisible to everyone, including us.`,
+    });
+  }
+  if ((inc.positions ?? []).some((p) => p.spotSuppressed)) {
+    const names = inc.positions!.filter((p) => p.spotSuppressed).map((p) => p.ticker).join(", ");
+    out.push({
+      key: "suppressed",
+      tone: "warn",
+      title: "Quote suppressed",
+      body: `For ${names}, the fund's own mark and our quote feed disagree by more than 5%, so we suppress the derived numbers (price, coverage math) rather than show them wrong.`,
+    });
+  }
+  return out;
+}
+
+/** Message when there is no stock book to measure coverage against. */
+export const noCoverageMessage = (incomeLegVisible: boolean | undefined): string =>
+  incomeLegVisible === false
+    ? "This fund writes its income options intraday, so they never appear in an end-of-day holdings file. Coverage cannot be measured."
+    : "No stock position to cover in the latest snapshot.";

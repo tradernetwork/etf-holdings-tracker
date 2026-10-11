@@ -104,6 +104,8 @@ export interface IncomeFundResponse {
   archetype?: string;
   archetypeLabel?: string;
   archetypeSummary?: string;
+  /** False when the fund writes intraday options that never appear in an end-of-day file (e.g. QDTE). */
+  incomeLegVisible?: boolean;
   asOfDate: string;
   sleeves?: { equity: number; treasury: number; cash: number; swap: number; optionsLong: number; optionsShort: number };
   positions?: IncomePosition[];

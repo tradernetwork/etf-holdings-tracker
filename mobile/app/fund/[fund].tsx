@@ -9,7 +9,7 @@ import {
 } from "@/components/fund/book-rows";
 import { ChangeRow, StreakRow } from "@/components/fund/changes-rows";
 import { FactsCard, GradeHeader, MetricBlock, PeerCard } from "@/components/fund/effectiveness-view";
-import { ExpiryHeader, IncomeSummary, LegRow, OtherPositionRow, PositionCard, optionKeyOf } from "@/components/fund/income-rows";
+import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, optionKeyOf } from "@/components/fund/income-rows";
 import { RotationView } from "@/components/fund/rotation-view";
 import { Card, ErrorNote, Hint, Loading, Mono, Note, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -26,7 +26,7 @@ import { splitPeriod, PERIOD_LABEL } from "@/lib/fundChanges";
 import { ROTATION_FUNDS, type ChangePeriod, type IncomePosition, type OptionActivityDay, type OptionTrade, type OtherPosition } from "@/lib/fundExtras";
 import { useEffectiveness, useFundChanges, useIncomeFund, usePeers, useRotation } from "@/lib/fundQueries";
 import {
-  COVERAGE_LABEL, DEFAULT_DIR, deriveRows, expiryLadder, filterRows, filtersActive, liveLegCount, NO_FILTERS, openedDates, optionOnlyPositions, SORT_LABEL,
+  COVERAGE_LABEL, DEFAULT_DIR, deriveRows, incomeNotices, expiryLadder, filterRows, filtersActive, liveLegCount, NO_FILTERS, openedDates, optionOnlyPositions, SORT_LABEL,
   sortRows, sectorsOf, topSector, TOGGLE_LABEL, type Coverage, type PosFilters, type PosSort, type Toggle,
 } from "@/lib/incomeBook";
 import { useFund, useFundBook } from "@/lib/queries";
@@ -157,7 +157,7 @@ export default function FundScreen() {
       if (incomeBook) {
         if (group === "stock") {
           const data: Item[] = filtered.map((row) => ({ t: "pos", row }));
-          if (filtered.length === 0) data.push({ t: "node", id: "nomatch", node: <Note>No positions match these filters.</Note> });
+          if (filtered.length === 0) data.push({ t: "node", id: "nomatch", node: <Note>{posRows.length === 0 ? "No stock positions: this fund's book is option legs, T-bills and cash." : "No positions match these filters."}</Note> });
           out.push({ key: "positions", title: "Stocks & option legs", subtitle: `${filtered.length} of ${posRows.length}`, data });
         } else if (group === "expiry") {
           const ladder = expiryLadder(filtered);
@@ -343,9 +343,11 @@ export default function FundScreen() {
       {tabs.length > 1 ? <Segmented options={tabs.map((t) => ({ value: t, label: TAB_LABEL[t] }))} value={activeTab} onChange={setTab} /> : null}
       {activeTab === "changes" ? <Segmented options={(["daily", "weekly", "monthly"] as const).map((p) => ({ value: p, label: PERIOD_LABEL[p] }))} value={period} onChange={setPeriod} /> : null}
 
+      {income && (activeTab === "positions" || activeTab === "activity") ? incomeNotices(inc).map((n) => <NoticeCard key={n.key} n={n} />) : null}
+
       {activeTab === "positions" ? (
         <>
-          {incomeBook ? <IncomeSummary summary={inc!.positionsSummary!} legCount={liveLegCount(inc!.positions!)} topSector={topSector(posRows)} shortBook={inc!.archetype === "short-equity"} /> : null}
+          {incomeBook ? <IncomeSummary summary={inc!.positionsSummary!} legCount={liveLegCount(inc!.positions!)} topSector={topSector(posRows)} shortBook={inc!.archetype === "short-equity"} incomeLegVisible={inc!.incomeLegVisible} archetype={{ label: inc!.archetypeLabel, summary: inc!.archetypeSummary }} /> : null}
           <AllocationBar book={book} onPress={jumpTo} />
           {book.expiredHidden > 0 ? <Hint>{book.expiredHidden} expired option {book.expiredHidden === 1 ? "leg is" : "legs are"} hidden from the contract list.</Hint> : null}
           {incomeBook ? (

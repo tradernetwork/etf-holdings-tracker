@@ -5,7 +5,7 @@ import { Badge, Card, Hint, Mono, ThinBar } from "@/components/ui";
 import { formatCount, formatShares, formatUsd } from "@/lib/format";
 import type { IncomePosition, OtherPosition, PositionLeg, PositionsSummary } from "@/lib/fundExtras";
 import { formatExpiry, formatStrike, normalizeOptionType } from "@/lib/book";
-import { legMeta, qtyNote, ROLE_LABEL, type PosRow } from "@/lib/incomeBook";
+import { COVERAGE_CLASS_LABEL, coverageClass, legMeta, noCoverageMessage, qtyNote, ROLE_LABEL, type Notice, type PosRow } from "@/lib/incomeBook";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
@@ -23,9 +23,12 @@ export function CoverageBar({ pct }: { pct: number | null }) {
   const c = useTheme();
   if (pct == null) return <Hint>—</Hint>;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-      <Mono style={{ fontSize: 12 }}>{Math.round(pct)}%</Mono>
-      <View style={{ width: 44 }}><ThinBar fraction={Math.min(1, pct / 100)} color={coverageTone(pct, c)} height={5} /></View>
+    <View style={{ gap: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Mono style={{ fontSize: 12 }}>{Math.round(pct)}%</Mono>
+        <View style={{ width: 44 }}><ThinBar fraction={Math.min(1, pct / 100)} color={coverageTone(pct, c)} height={5} /></View>
+      </View>
+      <Hint>{COVERAGE_CLASS_LABEL[coverageClass(pct)]}</Hint>
     </View>
   );
 }
@@ -91,7 +94,7 @@ export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened:
       </Pressable>
       <View style={styles.stats}>
         <Stat label="Qty" value={formatCount(p.totalShares) + (p.totalShares < 0 ? " short" : "")} />
-        <Stat label="Price" value={p.spotSuppressed ? "n/a" : price(p.price)} />
+        <Stat label="Price" value={p.spotSuppressed ? "⚠ n/a" : price(p.price)} color={p.spotSuppressed ? c.isNew : undefined} />
         <Stat label="Δ today" value={r.sharesDelta == null ? "—" : formatShares(r.sharesDelta)} color={r.sharesDelta == null ? undefined : r.sharesDelta > 0 ? c.buy : c.sell} />
         <View style={styles.stat}><Hint>Covered</Hint><CoverageBar pct={p.coveragePct} /></View>
         <View style={styles.stat}><Hint>Upside</Hint><UpsideText pct={r.upside} /></View>
@@ -129,12 +132,13 @@ export function ExpiryHeader({ expiry, dte, count }: { expiry: string; dte: numb
 }
 
 /** Covered / uncovered / synthetic composition + stock exposure + stat strip. */
-export function IncomeSummary({ summary, legCount, topSector, shortBook }: { summary: PositionsSummary; legCount: number; topSector: string | null; shortBook: boolean }) {
+export function IncomeSummary({ summary, legCount, topSector, shortBook, incomeLegVisible, archetype }: { summary: PositionsSummary; legCount: number; topSector: string | null; shortBook: boolean; incomeLegVisible?: boolean; archetype?: { label?: string; summary?: string } }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   return (
     <Card style={{ gap: spacing.sm }}>
       <Text style={styles.title}>Positions</Text>
+      {archetype?.label ? <Text style={styles.line}><Text style={{ color: c.textPrimary, fontFamily: fonts.bodyBold }}>{archetype.label}</Text>{archetype.summary ? `: ${archetype.summary}` : ""}</Text> : null}
       {summary.coveredPct != null ? (
         <>
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg, rowGap: 2 }}>
@@ -151,7 +155,7 @@ export function IncomeSummary({ summary, legCount, topSector, shortBook }: { sum
           </Hint>
         </>
       ) : (
-        <Hint>No stock book to measure coverage against: {money(summary.stockExposureValue)} of stock exposure.</Hint>
+        <Hint>{noCoverageMessage(incomeLegVisible)}</Hint>
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg, rowGap: 2 }}>
         <Hint><Mono style={{ fontSize: 12 }}>{summary.stockPositions}</Mono> stocks</Hint>
@@ -180,6 +184,21 @@ export function OtherPositionRow({ o }: { o: OtherPosition }) {
   );
 }
 
+/** A data notice (invisible income leg, suppressed quote) shown as part of the page, not a footnote. */
+export function NoticeCard({ n }: { n: Notice }) {
+  const c = useTheme();
+  const styles = useStyles(makeStyles);
+  return (
+    <View style={[styles.notice, { borderColor: n.tone === "warn" ? c.warnBorder : c.border, backgroundColor: n.tone === "warn" ? c.warnBg : c.card }]}>
+      <Ionicons name="eye-off-outline" size={20} color={c.warnText} style={{ marginTop: 1 }} />
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={{ color: c.warnText, fontFamily: fonts.bodyBold, fontSize: 14 }}>{n.title}</Text>
+        <Text style={{ color: c.warnText, fontFamily: fonts.body, fontSize: 13, lineHeight: 19 }}>{n.body}</Text>
+      </View>
+    </View>
+  );
+}
+
 export type { IncomePosition };
 
 const makeStyles = (c: Palette) =>
@@ -194,5 +213,6 @@ const makeStyles = (c: Palette) =>
     expTitle: { ...display, color: c.textPrimary, fontSize: 18, letterSpacing: -0.4 },
     title: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 15 },
     line: { color: c.textSecondary, fontFamily: fonts.body, fontSize: 13 },
+    notice: { flexDirection: "row", gap: spacing.md, borderWidth: 1, borderRadius: radii.card, padding: spacing.lg },
     split: { flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", backgroundColor: c.border },
   });

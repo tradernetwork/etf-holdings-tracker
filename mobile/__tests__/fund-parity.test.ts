@@ -4,7 +4,7 @@ import { gradeTone, metricCards, peerComparison, scoreTone, weightLines, effecti
 import { deltaOf, splitPeriod } from "../lib/fundChanges";
 import type { Effectiveness, IncomeFundResponse, OptionActivityDay, RotationData } from "../lib/fundExtras";
 import {
-  deriveRows, expiryLadder, filterRows, legMeta, NO_FILTERS, openedDates, openedLabel, optionOnlyPositions, qtyNote, sectorsOf, sortRows, topSector, liveLegCount, filtersActive,
+  coverageClass, incomeNotices, noCoverageMessage, deriveRows, expiryLadder, filterRows, legMeta, NO_FILTERS, openedDates, openedLabel, optionOnlyPositions, qtyNote, sectorsOf, sortRows, topSector, liveLegCount, filtersActive,
 } from "../lib/incomeBook";
 import type { Change } from "../lib/types";
 import avuvChanges from "./fixtures/avuv-changes-weekly.json";
@@ -13,6 +13,7 @@ import mstyEff from "./fixtures/msty-effectiveness.json";
 import mstyIncome from "./fixtures/msty-income.json";
 import peers from "./fixtures/peers.json";
 import ultyRotation from "./fixtures/ulty-rotation.json";
+import qdteIncome from "./fixtures/qdte-income.json";
 
 // Fixtures are live-API captures (2026-10-09/10 snapshots).
 const msty = mstyIncome as unknown as IncomeFundResponse;
@@ -189,5 +190,33 @@ describe("period changes (website ActiveEquityBody)", () => {
     expect(s.increased).toHaveLength(1);
     expect(s.entrances).toHaveLength(1);
     expect(deltaOf(ch({ activeWeightDelta: null, weightDelta: 0.2 }))).toBe(0.2);
+  });
+});
+
+describe("data notices and coverage class (QDTE: intraday income leg is invisible)", () => {
+  const qd = qdteIncome as unknown as IncomeFundResponse;
+  it("QDTE shows the invisible-income-leg disclosure as data", () => {
+    expect(qd.incomeLegVisible).toBe(false);
+    const n = incomeNotices(qd);
+    expect(n.map((x) => x.key)).toEqual(["invisible"]);
+    expect(n[0].title).toBe("We can show you what this fund owns. We cannot show you what it sold.");
+    expect(n[0].body).toContain("QDTE writes contracts that open and expire inside a single session");
+    expect(qd.positionsSummary!.coveredPct).toBeNull();
+    expect(noCoverageMessage(qd.incomeLegVisible)).toMatch(/intraday.*Coverage cannot be measured/);
+    expect(noCoverageMessage(true)).toBe("No stock position to cover in the latest snapshot.");
+  });
+  it("MSTY (legs visible, no suppressed quote) has no notices", () => {
+    expect(incomeNotices(msty)).toEqual([]);
+    expect(incomeNotices(undefined)).toEqual([]);
+  });
+  it("a suppressed quote becomes a named warning", () => {
+    const n = incomeNotices({ fund: "X", incomeLegVisible: true, positions: [{ ...msty.positions![0], ticker: "ABC", spotSuppressed: true }] });
+    expect(n).toHaveLength(1);
+    expect(n[0].title).toBe("Quote suppressed");
+    expect(n[0].body).toContain("ABC");
+    expect(n[0].body).toContain("more than 5%");
+  });
+  it("coverage class uses the filter's buckets", () => {
+    expect([coverageClass(100), coverageClass(90), coverageClass(89.9), coverageClass(1), coverageClass(0), coverageClass(null)]).toEqual(["full", "full", "partial", "partial", "none", "none"]);
   });
 });
