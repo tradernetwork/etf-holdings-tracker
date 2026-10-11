@@ -29,7 +29,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import structlog
-from fastapi import FastAPI, HTTPException, Query, Request, Depends, Header
+from fastapi import FastAPI, Response, HTTPException, Query, Request, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
@@ -493,12 +493,23 @@ def get_activity(request: Request, period: str = Query("daily", pattern="^(daily
 
 @app.get("/api/v1/holdings", tags=["public"])
 @limiter.limit("30/minute")
-def get_all_holdings(request: Request):
+def get_all_holdings(
+    request: Request,
+    response: Response,
+    fund: Optional[str] = Query(None, description="Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash). Omit for every fund (heavy, ~9 MB)."),
+):
     """
     Every latest holding row across every tracked fund, with today's
     weightDelta / sharesDelta attached. Heavy payload — limited to 30/minute.
+    Pass `fund` for a single fund's book; the response then carries `fund` and an
+    `X-Fund-Filter` header, so a client can tell (from the headers alone) that the
+    filter was honoured before it downloads a body.
     """
-    return data.get_all_holdings()
+    if fund is not None:
+        if not _TICKER_PATTERN.match(fund):
+            raise HTTPException(status_code=400, detail="Invalid fund ticker format")
+        response.headers["X-Fund-Filter"] = fund.upper()
+    return data.get_all_holdings(fund=fund)
 
 
 @app.get("/api/v1/funds", tags=["public"])

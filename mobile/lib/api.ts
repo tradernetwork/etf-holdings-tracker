@@ -4,11 +4,13 @@
  * (minus Clerk auth and the offline write-queue: nothing here is ever written).
  */
 import type { paths } from "./generated/api-types";
+import { fetchWithRetry } from "./retry";
 import type {
   Category,
   Divergence,
   FundResponse,
   FundsResponse,
+  HoldingsResponse,
   LayeringResponse,
   SectorsResponse,
   SignalsResponse,
@@ -75,7 +77,33 @@ async function request<T>(
   }
 }
 
+/**
+ * One fund's FULL book (stocks, option legs, Treasuries, cash) from GET /api/v1/holdings?fund=.
+ * A server that predates the `fund` filter ignores it and would send every fund's rows (~9 MB), so we
+ * read the headers first: only a server that answers with `X-Fund-Filter: <fund>` gets its body
+ * downloaded. Anything else is aborted and reported as null, and the caller falls back to /fund/{fund}.
+ */
+async function fetchFundBook(fund: string, signal?: AbortSignal): Promise<HoldingsResponse | null> {
+  const ctrl = new AbortController();
+  signal?.addEventListener("abort", () => ctrl.abort());
+  const url = `${API_BASE}/api/v1/holdings?fund=${encodeURIComponent(fund)}`;
+  let res: Response;
+  try {
+    res = await fetchWithRetry(fetch, url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+  } catch (e) {
+    throw new NetworkError(e instanceof Error ? e.message : "network error");
+  }
+  if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => ""));
+  if ((res.headers.get("X-Fund-Filter") ?? "").toUpperCase() !== fund.toUpperCase()) {
+    ctrl.abort(); // unfiltered (or header not readable): don't pull the whole book
+    return null;
+  }
+  const body = (await res.json()) as HoldingsResponse;
+  return body.fund?.toUpperCase() === fund.toUpperCase() ? body : null;
+}
+
 export const api = {
+  fundBook: fetchFundBook,
   signals: (category?: Category, signal?: AbortSignal) =>
     request<SignalsResponse>("/api/v1/signals", { category }, signal),
   funds: (signal?: AbortSignal) => request<FundsResponse>("/api/v1/funds", {}, signal),

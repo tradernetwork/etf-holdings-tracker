@@ -27,3 +27,7 @@ export const useTicker = (symbol: string) =>
 
 export const useFund = (fund: string) =>
   useQuery({ queryKey: ["fund", fund], queryFn: ({ signal }) => api.fund(fund, signal), staleTime: STALE_MS });
+
+/** The fund's full book, or null when the server can't filter yet (the screen then falls back to /fund/{fund}). */
+export const useFundBook = (fund: string) =>
+  useQuery({ queryKey: ["fund-book", fund], queryFn: ({ signal }) => api.fundBook(fund, signal), staleTime: STALE_MS });

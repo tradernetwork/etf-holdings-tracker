@@ -2,6 +2,8 @@ import {
   cleanName,
   formatPp,
   formatShares,
+  formatCount,
+  formatWeight,
   formatShortDate,
   formatUsd,
   formatUsdValue,
@@ -144,4 +146,19 @@ describe("formatShares", () => {
     expect(formatShares(0)).toBe("0");
     expect(formatShares(null)).toBe("—");
   });
+});
+
+test("formatCount groups digits without a sign", () => {
+  expect(formatCount(1441915)).toBe("1,441,915");
+  expect(formatCount(-9400)).toBe("9,400");
+  expect(formatCount(null)).toBe("—");
+});
+
+test("formatWeight never prints -0.00%", () => {
+  expect(formatWeight(1.7794)).toBe("1.78%");
+  expect(formatWeight(0)).toBe("0.00%");
+  expect(formatWeight(0.0035)).toBe("<0.01%");
+  expect(formatWeight(-0.0035)).toBe("\u2212<0.01%");
+  expect(formatWeight(-7.817)).toBe("-7.82%");
+  expect(formatWeight(null)).toBe("—");
 });

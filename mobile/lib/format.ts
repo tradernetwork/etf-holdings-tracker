@@ -21,6 +21,8 @@ export function formatPp(value: number | null | undefined, opts: { sign?: boolea
 /** A plain weight percentage (share of a fund's book): 1.7794 -> "1.78%". */
 export function formatWeight(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
+  // A tiny non-zero weight reads "<0.01%", never a misleading "-0.00%".
+  if (value !== 0 && Math.abs(value) < 0.005) return `${value < 0 ? MINUS : ""}<0.01%`;
   return `${value.toFixed(2)}%`;
 }
 
@@ -175,4 +177,10 @@ export function formatShares(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   const body = Math.abs(Math.round(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return `${value < 0 ? MINUS : value > 0 ? "+" : ""}${body}`;
+}
+
+/** Unsigned grouped integer: 1441915 -> "1,441,915". */
+export function formatCount(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return Math.round(Math.abs(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
