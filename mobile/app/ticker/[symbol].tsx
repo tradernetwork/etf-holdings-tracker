@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { OptionHolders } from "@/components/ticker/OptionHolders";
 import { MinorAdjustments } from "@/components/minor-adjustments";
 import { TickerOptions } from "@/components/options/TickerOptions";
 import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
@@ -124,6 +125,8 @@ export default function TickerScreen() {
           );
         })}
       </View>
+
+      <OptionHolders symbol={symbol} holdings={t.holdings} changes={t.changes} />
 
       <TickerOptions symbol={symbol} />
 

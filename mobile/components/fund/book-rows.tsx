@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Badge, Card, Hint, Mono } from "@/components/ui";
+import { Card, Hint, Mono } from "@/components/ui";
 import {
-  optionSubtitle, optionTitle, sideLabel, valueText, type AllocKey, type Book, type Bucket, type OptionGroup, type OptionLine, type SortKey, type StockLine,
+  valueText, type AllocKey, type Book, type Bucket, type OptionGroup, type SortKey, type StockLine,
 } from "@/lib/book";
 import { cleanName, formatCount, formatPp, formatShares, formatUsd, formatWeight } from "@/lib/format";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
@@ -150,31 +150,7 @@ export function OptionGroupHeader({ group }: { group: OptionGroup }) {
   );
 }
 
-export function OptionRow({ line }: { line: OptionLine }) {
-  const c = useTheme();
-  const styles = useStyles(makeStyles);
-  const dc = line.contractsDelta;
-  return (
-    <View style={styles.row}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={styles.rowTitle}>{optionTitle(line.underlying, line.type, line.strike)}</Text>
-        <Hint>{optionSubtitle(line.expiry, line.dte, line.flex)}</Hint>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <Badge label={line.short ? "SHORT" : "LONG"} color={line.short ? c.isNew : c.accent} />
-          <Hint>{sideLabel(line.contracts).replace(/^(Long|Short) · /, "")}</Hint>
-          {line.chip ? <Badge label={line.chip.label} color={line.chip.label === "ITM" ? c.buy : c.textMuted} /> : null}
-        </View>
-      </View>
-      <View style={{ alignItems: "flex-end", gap: 2 }}>
-        <Mono bold style={{ fontSize: 14, color: line.value.usd !== null && line.value.usd < 0 ? c.isNew : c.textPrimary }}>{valueText(line.value)}</Mono>
-        <Hint>{formatWeight(line.weight)} of fund</Hint>
-        <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: dc === null || dc === 0 ? c.textMuted : deltaColor(dc, c) }}>
-          {dc === null ? "—" : dc === 0 ? "no change" : `${formatShares(dc)} ct`}
-        </Text>
-      </View>
-    </View>
-  );
-}
+export { OptionRow } from "@/components/fund/option-row";
 
 export function ActivityBox({ lines }: { lines: string[] }) {
   const styles = useStyles(makeStyles);
