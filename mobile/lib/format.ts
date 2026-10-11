@@ -184,3 +184,10 @@ export function formatCount(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return Math.round(Math.abs(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+/** "1,200 → 1,500 sh" from a change's previous/current share counts; null when neither is reported. A new position starts at 0, an exit ends at 0. */
+export function formatShareMove(previous: number | null | undefined, current: number | null | undefined): string | null {
+  if (previous == null && current == null) return null;
+  const f = (v: number | null | undefined) => (v == null ? "—" : Math.round(v).toLocaleString("en-US"));
+  return `${f(previous)} → ${f(current)} sh`;
+}

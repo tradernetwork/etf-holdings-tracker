@@ -17,6 +17,7 @@ import { useTheme } from "@/lib/theme-context";
 import { fonts, deltaColor } from "@/lib/theme";
 import {
   cleanName,
+  formatShareMove,
   formatPp,
   formatWeight,
   formatUsdValue,
@@ -158,6 +159,7 @@ function ChangeDetails({
 }) {
   const c = useTheme(),
     kind = moveType(row);
+  const shareMove = formatShareMove(row.previousShares, row.currentShares);
   const money = resolveUsd({
     apiUsd: row.activeFlowUsd,
     weightPercent: row.activeWeightDelta,
@@ -199,6 +201,7 @@ function ChangeDetails({
       >
         {formatWeight(row.previousWeight)} → {formatWeight(row.currentWeight)}
       </Text>
+      {shareMove ? <Hint>{shareMove}</Hint> : null}
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Mono bold style={{ color: deltaColor(row.activeWeightDelta, c) }}>
           {formatPp(row.activeWeightDelta)}

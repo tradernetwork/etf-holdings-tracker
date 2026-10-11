@@ -38,8 +38,8 @@ export function kpis(s: TodayStats | undefined): Kpi[] {
     { key: "pc", label: "Put/call ratio", value: s.putCallRatio == null ? "—" : String(s.putCallRatio), blurb: "Option put contracts divided by call contracts across tracked funds. Above 1.0 leans bearish hedging; below 1.0 leans call exposure." },
   ];
   if (s.optionsContracts != null) out.push({ key: "opts", label: "Option contracts", value: s.optionsContracts.toLocaleString("en-US"), blurb: "Option legs held across the tracked funds." });
-  if (s.newPositionsToday != null) out.push({ key: "new", label: "New today", value: String(s.newPositionsToday), blurb: "Brand-new fund positions opened today: a tracked fund went from 0 to holding something." });
-  if (s.exitsToday != null) out.push({ key: "exits", label: "Exits today", value: String(s.exitsToday), blurb: "Positions fully closed today: a tracked fund went from holding to zero." });
+  if (s.newPositionsToday != null) out.push({ key: "new", label: "New positions", value: String(s.newPositionsToday), blurb: "Brand-new fund positions opened today: a tracked fund went from 0 to holding something." });
+  if (s.exitsToday != null) out.push({ key: "exits", label: "Exits", value: String(s.exitsToday), blurb: "Positions fully closed today: a tracked fund went from holding to zero." });
   return out;
 }
 
@@ -62,6 +62,22 @@ export function signalSummary(s: Pick<FullSignal, "totalWeightDelta" | "fundCoun
 export function fundPositionUsd(f: Pick<SignalFund, "currentWeight" | "aumUsd" | "aum">): number | null {
   const aum = f.aumUsd ?? (f.aum != null ? f.aum * 1e9 : null);
   return aum == null ? null : Math.round((f.currentWeight / 100) * aum);
+}
+
+/** One fund's estimated move in dollars: active weight change x its AUM (the website's "AUM x weight delta"); null when AUM is unknown. */
+export function fundFlowUsd(f: Pick<SignalFund, "activeWeightDelta" | "aumUsd" | "aum">): number | null {
+  const aum = f.aumUsd ?? (f.aum != null ? f.aum * 1e9 : null);
+  return aum == null ? null : Math.round((f.activeWeightDelta / 100) * aum);
+}
+
+/** A signal's estimated active-flow dollars: the sum over funds with a known AUM (unknown funds add nothing, never zero); null when none is known. */
+export function signalFlowUsd(s: Pick<FullSignal, "fundDetails">): number | null {
+  let total = 0, known = 0;
+  for (const f of s.fundDetails) {
+    const v = fundFlowUsd(f);
+    if (v != null) { total += v; known++; }
+  }
+  return known === 0 ? null : total;
 }
 
 export const usdOrDash = (v: number | null | undefined): string => (v == null ? "—" : formatUsd(v));

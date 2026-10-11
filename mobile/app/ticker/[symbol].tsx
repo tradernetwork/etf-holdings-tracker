@@ -10,9 +10,10 @@ import { TickerOptions } from "@/components/options/TickerOptions";
 import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { ApiError } from "@/lib/api";
+import { inFile, latestFileDate } from "@/lib/when";
 import { evidenceNote, tickerEvidence } from "@/lib/derive";
 import { isSignificant } from "@/lib/significance";
-import { cleanName, formatPp, formatUsdValue, formatWeight, freshnessLabel, resolveUsd, sectorLabel } from "@/lib/format";
+import { cleanName, formatPp, formatShareMove, formatUsd, formatUsdValue, formatWeight, freshnessLabel, resolveUsd, sectorLabel } from "@/lib/format";
 import { useTicker } from "@/lib/queries";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -57,7 +58,7 @@ export default function TickerScreen() {
   const changeByFund = new Map(t.changes.filter((ch) => !ch.isOption).map((ch) => [ch.fund, ch]));
   const shown = showAll ? holdings : holdings.slice(0, HOLDERS_COLLAPSED);
   const following = isFollowing("ticker", symbol);
-  const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : "No change today.";
+  const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : `No change ${inFile(latestFileDate(t.holdings))}.`;
 
   return (
     <Screen topInset={false}>
@@ -109,7 +110,10 @@ export default function TickerScreen() {
             <Tappable key={h.fund} onPress={() => router.push(`/fund/${encodeURIComponent(h.fund)}`)} style={styles.holderRow}>
               <Monogram label={h.fund} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={styles.holderTitle}>{h.fund}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={styles.holderTitle}>{h.fund}</Text>
+                  {ch?.type === "NEW" ? <Badge label="NEW" color={c.isNew} /> : ch?.type === "REMOVED" ? <Badge label="EXIT" color={c.sell} /> : null}
+                </View>
                 <View style={{ flexDirection: "row", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                   <Hint>{h.provider} · {shares == null ? "Shares unknown" : `${shares.toLocaleString()} shares`}</Hint>
                   <FreshnessLabel freshness={freshnessLabel({ stale: h.stale, date: h.fileDate })} />
@@ -117,6 +121,7 @@ export default function TickerScreen() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Mono bold style={{ fontSize: 15 }}>{formatWeight(h.weight)}</Mono>
+                {h.positionUsd != null && Math.abs(h.positionUsd) >= 1e6 ? <Hint>est. {formatUsd(h.positionUsd)}</Hint> : null}
                 {ch && isSignificant(ch.fund, ch.activeWeightDelta)
                   ? <Mono style={{ fontSize: 11, color: deltaColor(ch.activeWeightDelta, c) }}>{formatPp(ch.activeWeightDelta)}</Mono>
                   : <Hint>fund allocation</Hint>}
@@ -162,6 +167,7 @@ function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provid
           Fund weight <Text style={styles.stepVal}>{formatWeight(change.previousWeight)}</Text> → <Text style={[styles.stepVal, { color: c.textPrimary }]}>{formatWeight(change.currentWeight)}</Text>
           {usd.usd != null ? <Text style={{ color: c.textMuted }}>  ·  {formatUsdValue(usd)} flow</Text> : null}
         </Text>
+        {formatShareMove(change.previousShares, change.currentShares) ? <Hint>{formatShareMove(change.previousShares, change.currentShares)}</Hint> : null}
         <Text style={styles.evNote}>{evidenceNote(change)}</Text>
       </Card>
     </Tappable>

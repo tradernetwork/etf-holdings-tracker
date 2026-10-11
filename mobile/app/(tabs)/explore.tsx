@@ -6,7 +6,9 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { OptionsTeaser } from "@/components/options/OptionsTeaser";
 import { Card, ErrorNote, FreshnessLabel, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
-import { formatUsd, freshnessLabel, fundAumUsd } from "@/lib/format";
+import { formatPp, formatUsd, freshnessLabel, fundAumUsd } from "@/lib/format";
+import { buildFundActivity, buildTopMovers, directoryHeadline, FUND_SORTS, sortFunds, type DirectoryFund, type FundSort } from "@/lib/fundDirectory";
+import { useChanges } from "@/lib/discovery/api";
 import { useFunds } from "@/lib/queries";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -28,6 +30,10 @@ export default function Explore() {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [provider, setProvider] = useState("all");
   const [sheet, setSheet] = useState(false);
+  const [sort, setSort] = useState<FundSort>("aum");
+  const daily = useChanges("daily");
+  const movers = useMemo(() => buildTopMovers(daily.data?.changes ?? []), [daily.data]);
+  const activity = useMemo(() => buildFundActivity(daily.data?.changes ?? []), [daily.data]);
 
   const all = funds.data?.funds ?? [];
   const providers = useMemo(() => [...new Set(all.map((f) => f.provider))].sort(), [all]);
@@ -48,9 +54,9 @@ export default function Explore() {
     const m = new Map<string, FundSummary[]>();
     for (const f of visible) m.set(f.provider, [...(m.get(f.provider) ?? []), f]);
     return [...m.entries()]
-      .map(([name, list]) => ({ name, list: list.sort((a, b) => (b.aum ?? 0) - (a.aum ?? 0)) }))
-      .sort((a, b) => (b.list[0].aum ?? 0) - (a.list[0].aum ?? 0));
-  }, [visible]);
+      .map(([name, list]) => ({ name, list: sortFunds(list as DirectoryFund[], sort) as (FundSummary & DirectoryFund)[] }))
+      .sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : (b.list.reduce((t, f) => t + (f.aum ?? 0), 0)) - (a.list.reduce((t, f) => t + (f.aum ?? 0), 0)));
+  }, [visible, sort]);
 
   const activeFilters = (category !== "all" ? 1 : 0) + (provider !== "all" ? 1 : 0);
   const reset = () => { setCategory("all"); setProvider("all"); };
@@ -109,6 +115,16 @@ export default function Explore() {
       {funds.data && (
         <>
           <SectionHeader title="Funds" right={<Text style={styles.hint}>{visible.length} of {all.length}</Text>} />
+          <Text style={styles.hint}>{directoryHeadline(visible as DirectoryFund[])}</Text>
+          <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
+            <Text style={styles.sortLabel}>SORT</Text>
+            {FUND_SORTS.map((o) => (
+              <Pressable key={o.value} onPress={() => setSort(o.value)} accessibilityRole="button" accessibilityState={{ selected: sort === o.value }} style={[styles.sortChip, sort === o.value && { backgroundColor: c.border }]}>
+                <Text style={[styles.sortText, sort === o.value && { color: c.textPrimary }]}>{o.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {daily.isLoading ? null : daily.isError ? <Text style={styles.hint}>Top moves unavailable right now.</Text> : null}
           {groups.length === 0 && <Card><Note>No funds match. Try clearing the search or filters.</Note></Card>}
           {groups.map((g) => (
             <View key={g.name} style={{ gap: spacing.xs }}>
@@ -118,6 +134,11 @@ export default function Explore() {
                   <Tappable key={f.fund} onPress={() => router.push(`/fund/${encodeURIComponent(f.fund)}`)} style={styles.fundRow}>
                     <View style={{ flex: 1, gap: 2 }}>
                       <Mono bold style={{ fontSize: 16 }}>{f.fund}</Mono>
+                      <Text style={styles.hint}>
+                        {f.holdingsCount ?? "—"} holdings{f.optionsCount ? ` · +${f.optionsCount} options` : ""}
+                        {f.topHolding ? ` · top ${f.topHolding.ticker} ${f.topHolding.weight.toFixed(1)}%` : ""}
+                      </Text>
+                      <MoveLine mover={movers.get(f.fund)} act={activity.get(f.fund)} />
                       <FreshnessLabel freshness={freshnessLabel({ stale: f.stale, date: f.lastHoldingsDate })} />
                     </View>
                     <View style={{ alignItems: "flex-end" }}>
@@ -148,9 +169,25 @@ export default function Explore() {
   );
 }
 
+function MoveLine({ mover, act }: { mover?: { ticker: string; delta: number; type: string }; act?: { buys: number; sells: number } }) {
+  const c = useTheme();
+  if (!mover) return null;
+  const up = mover.delta > 0;
+  return (
+    <Text style={{ color: c.textMuted, fontFamily: fonts.body, fontSize: 11 }}>
+      Top move <Text style={{ color: up ? c.buy : c.sell, fontFamily: fonts.monoBold }}>{up ? "▲" : "▼"} {mover.ticker} {formatPp(mover.delta)}</Text>
+      {mover.type === "NEW" ? " NEW" : mover.type === "REMOVED" ? " EXIT" : ""}
+      {act && (act.buys > 0 || act.sells > 0) ? ` · ${act.buys}↑ ${act.sells}↓` : ""}
+    </Text>
+  );
+}
+
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
   title: { color: c.textPrimary, ...display, fontSize: 30 },
+  sortLabel: { color: c.textMuted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 0.8, marginRight: 4 },
+  sortChip: { minHeight: 32, paddingHorizontal: 10, justifyContent: "center", borderRadius: radii.pill },
+  sortText: { color: c.textMuted, fontFamily: fonts.bodyMedium, fontSize: 12 },
   searchRow: { flexDirection: "row", gap: spacing.sm },
   search: {
     flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: MIN_TAP,

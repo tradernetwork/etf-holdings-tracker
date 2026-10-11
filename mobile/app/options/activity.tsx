@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
@@ -7,7 +8,7 @@ import { ShowMore } from "@/components/options/parts";
 import { Card, ErrorNote, Hint, Loading, Note, Screen, Segmented } from "@/components/ui";
 import { useFunds } from "@/lib/queries";
 import {
-  activeFilterCount, DEFAULT_ACTIVITY_FILTERS, filterActivity, groupByProvider, PERIOD_LABEL, signalLabel, sortActivity,
+  activeFilterCount, categoryParam, DEFAULT_ACTIVITY_FILTERS, filterActivity, groupByProvider, PERIOD_LABEL, signalLabel, sortActivity,
   type ActivityFilters,
 } from "@/lib/options/logic";
 import { useOptionActivity } from "@/lib/options/queries";
@@ -23,7 +24,8 @@ export default function OptionActivityScreen() {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const [period, setPeriod] = useState<ActivityPeriod>("daily");
-  const [filters, setFilters] = useState<ActivityFilters>(DEFAULT_ACTIVITY_FILTERS);
+  const params = useLocalSearchParams<{ category?: string }>();
+  const [filters, setFilters] = useState<ActivityFilters>({ ...DEFAULT_ACTIVITY_FILTERS, category: categoryParam(params.category) });
   const [sheet, setSheet] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const activity = useOptionActivity(period);

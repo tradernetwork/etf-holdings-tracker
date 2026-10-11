@@ -5,6 +5,7 @@ import { FundCard } from "@/components/income/DirectoryParts";
 import { Card, ErrorNote, Hint, Loading, Note, Screen, Tappable } from "@/components/ui";
 import { formatAsOfLong, groupByArchetype, SORT_OPTIONS, type DirectorySort } from "@/lib/incomeDirectory";
 import { useIncomeDirectory } from "@/lib/incomeDirectoryQueries";
+import { dayWord } from "@/lib/when";
 import { formatPutCall, useStats } from "@/lib/stats";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -32,8 +33,8 @@ export default function IncomeDirectory() {
         {pc ? <View style={styles.pc} accessibilityLabel={`Put call ratio ${pc}`}><Text style={styles.pcLabel}>P/C Ratio</Text><Text style={styles.pcValue}>{pc}</Text></View> : null}
       </View>
 
-      <Tappable onPress={() => router.push("/options")}>
-        <Card><Text style={styles.link}>Today's options activity →</Text><Hint>Contracts the income funds opened, closed and rolled, by provider.</Hint></Card>
+      <Tappable onPress={() => router.push("/options/activity?category=option-income")}>
+        <Card><Text style={styles.link}>Option activity · income funds →</Text><Hint>Contracts the income funds opened, closed and rolled in the {dayWord(q.data?.asOfDate)} file, by provider.</Hint></Card>
       </Tappable>
 
       {q.isLoading && <Loading />}

@@ -34,3 +34,12 @@ export const rotationTitle = (d: RotationData): string => `${d.groupBy.charAt(0)
 /** Groups currently held, with their weight. */
 export const currentBars = (d: RotationData): { group: string; weight: number }[] =>
   sortedGroups(d).map((g) => ({ group: g, weight: d.currentThemes[g] || 0 })).filter((x) => x.weight > 0);
+
+/** The API's churn `rate` is a 0..1 fraction (ULTI 0.62), the website prints round(rate * 100) = "62%". */
+export const churnPercent = (rate: number): number => Math.round(Math.min(1, Math.max(0, rate)) * 100);
+
+/** Weekly-drift cells print their weight only from 5% up (the website's rule); smaller ones stay tappable. */
+export const cellLabel = (w: number): string => (w >= 5 ? w.toFixed(0) : "");
+
+/** "Bitcoin miners · 2026-07-21: 5.5%" - the website's tooltip, which is a tap detail here. */
+export const cellDetail = (group: string, date: string, w: number): string => `${group} · ${date}: ${w.toFixed(1)}%`;

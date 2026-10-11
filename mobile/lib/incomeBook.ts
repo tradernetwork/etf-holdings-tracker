@@ -78,10 +78,10 @@ export type Coverage = "all" | "full" | "partial" | "none";
 export type Toggle = "synthetic" | "itm" | "expiring" | "changed";
 
 export const SORT_LABEL: Record<PosSort, string> = {
-  symbol: "Symbol", qty: "Qty", price: "Price", value: "Mkt value", nav: "% NAV", delta: "Δ today", coverage: "Covered", upside: "Upside room", dte: "DTE",
+  symbol: "Symbol", qty: "Qty", price: "Price", value: "Mkt value", nav: "% NAV", delta: "Δ latest", coverage: "Covered", upside: "Upside room", dte: "DTE",
 };
 export const COVERAGE_LABEL: Record<Coverage, string> = { all: "All", full: "Covered", partial: "Partly covered", none: "Uncovered" };
-export const TOGGLE_LABEL: Record<Toggle, string> = { synthetic: "Synthetic", itm: "Call in the money", expiring: "Expiring ≤ 7d", changed: "Changed today" };
+export const TOGGLE_LABEL: Record<Toggle, string> = { synthetic: "Synthetic", itm: "Call in the money", expiring: "Expiring ≤ 7d", changed: "Changed in latest file" };
 
 /** The direction a sort starts in: text and "soonest" columns ascending, money columns biggest-first. */
 export const DEFAULT_DIR: Record<PosSort, "asc" | "desc"> = {

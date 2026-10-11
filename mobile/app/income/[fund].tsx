@@ -121,12 +121,13 @@ function SleeveBarView({ bar, sleeves }: { bar: ReturnType<typeof sleeveBar>; sl
   );
 }
 
-function Cell({ label, value, color }: { label: string; value: string; color?: string }) {
+function Cell({ label, value, color, note }: { label: string; value: string; color?: string; note?: string | null }) {
   const styles = useStyles(makeStyles);
   return (
     <View style={styles.cell}>
       <Text style={styles.cellLabel}>{label}</Text>
       <Mono style={{ fontSize: 13, color }}>{value}</Mono>
+      {note ? <Text style={styles.cellNote}>{note}</Text> : null}
     </View>
   );
 }
@@ -146,7 +147,7 @@ function BookRowCard({ r }: { r: BookRowView }) {
           <Cell label="Shares" value={r.shares} />
           <Cell label="Spot" value={r.spot} color={r.spotSuppressed ? c.isNew : undefined} />
           <Cell label="Strike" value={r.strike} color={r.capped ? c.sell : undefined} />
-          <Cell label="DTE" value={r.dte} />
+          <Cell label="DTE" value={r.dte} note={r.dteNote} />
           <Cell label="Room" value={r.room} color={toneColor(r.roomTone, c)} />
           <Cell label="Cov" value={r.covered} />
         </View>
@@ -172,5 +173,6 @@ const makeStyles = (c: Palette) =>
     legend: { color: c.textSecondary, fontFamily: fonts.mono, fontSize: 11 },
     cells: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg, rowGap: spacing.sm },
     cell: { minWidth: 64, gap: 1 },
+    cellNote: { color: c.textMuted, fontFamily: fonts.body, fontSize: 9 },
     cellLabel: { color: c.textMuted, fontFamily: fonts.bodyBold, fontSize: 10, letterSpacing: 0.8 },
   });

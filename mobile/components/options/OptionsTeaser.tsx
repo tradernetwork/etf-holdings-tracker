@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Text, View } from "react-native";
 import { Card, Hint, Tappable } from "@/components/ui";
+import { useStats } from "@/lib/stats";
+import { inFile } from "@/lib/when";
 import { useOptionActivity, useOptionListings } from "@/lib/options/queries";
 import { fonts, spacing } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -11,13 +13,14 @@ export function OptionsTeaser() {
   const c = useTheme();
   const act = useOptionActivity("daily");
   const listings = useOptionListings();
+  const stats = useStats();
   const n = act.data?.optionsActivity.length;
   const latest = listings.data?.latest;
   const newCount = latest
     ? Object.keys(latest.diff.optionable.new).length + Object.keys(latest.diff.weeklyEtfs.new).length + Object.keys(latest.diff.weeklyEquities.new).length
     : null;
   const bits = [
-    n != null ? `${n.toLocaleString("en-US")} option ${n === 1 ? "contract" : "contracts"} changed today` : null,
+    n != null ? `${n.toLocaleString("en-US")} option ${n === 1 ? "contract" : "contracts"} changed ${inFile(stats.data?.asOfDate)}` : null,
     newCount != null ? `${newCount} new on CBOE's list` : null,
   ].filter(Boolean);
   return (
