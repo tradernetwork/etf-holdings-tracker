@@ -57,7 +57,9 @@ export async function loadCompleteChanges(
     first.snapshot === undefined
   ) {
     if (first.count < 5000) return { ...first, truncated: false };
-    return completeChanges(first, await funds(), load);
+    return completeChanges(first, await funds(), (filter) =>
+      load({ limit: 5000, ...filter }),
+    );
   }
   validatePage(first, 1);
   const responses = [first];

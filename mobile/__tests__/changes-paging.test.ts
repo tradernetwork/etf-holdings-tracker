@@ -50,6 +50,7 @@ test("old-server fallback still completes provider/fund capped rows", async () =
   const result = await loadCompleteChanges(
     async (query) => {
       seen.push(query);
+      expect(query.limit).toBe(5000); // Old servers otherwise silently return their default 50.
       if (!query.provider && !query.fund) return { ...changes, count: 5000 };
       return { ...changes, count: changes.changes.length };
     },
