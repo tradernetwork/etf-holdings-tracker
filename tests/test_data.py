@@ -698,3 +698,28 @@ def test_no_sector_facets_differ_only_by_case_or_whitespace():
         seen = {}
         for n in names:
             assert seen.setdefault(key(n), n) == n, f'{n!r} vs {seen[key(n)]!r}'
+
+
+def test_get_all_holdings_fund_filter_returns_that_funds_identical_rows(data_with_fixtures):
+    everything = data_with_fixtures.get_all_holdings()
+    arkk = data_with_fixtures.get_all_holdings(fund="arkk")
+    assert arkk["fund"] == "ARKK"
+    assert "fund" not in everything
+    expected = [r for r in everything["holdings"] if r["fund"] == "ARKK"]
+    assert expected and arkk["holdings"] == expected      # byte-for-byte the same rows
+    assert arkk["count"] == len(expected)
+    assert data_with_fixtures.get_all_holdings(fund="NOPE")["holdings"] == []
+
+
+def test_holdings_endpoint_fund_param_and_header():
+    pytest = __import__("pytest")
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+    from api.server import app
+    c = TestClient(app)
+    r = c.get("/api/v1/holdings?fund=arkk")
+    assert r.status_code == 200
+    assert r.headers["x-fund-filter"] == "ARKK"
+    body = r.json()
+    assert body["fund"] == "ARKK" and all(h["fund"] == "ARKK" for h in body["holdings"])
+    assert c.get("/api/v1/holdings?fund=bad!!").status_code == 400

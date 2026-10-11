@@ -2178,13 +2178,21 @@ def get_briefing(*, category: str | None = None) -> dict:
     return _briefing_from(signals, activity, streaks)
 
 
-def get_all_holdings() -> dict:
+def get_all_holdings(fund: str | None = None) -> dict:
     """
     Return every latest holding row across every tracked fund, enriched with
     today's weightDelta + sharesDelta. Used by the dashboard's full-holdings
     page (review #10 finale).
+
+    `fund` restricts the result to one fund's full book (stocks, option legs,
+    Treasuries, cash). Rows are IDENTICAL to the same rows of the unfiltered call;
+    the filter only avoids shipping (and building) the other ~20k rows. The
+    response then also carries `fund`.
     """
     latest = get_latest_holdings()
+    only_fund = fund.upper() if fund else None     # `fund` is reused as the loop variable below
+    if only_fund:
+        latest = [r for r in latest if r.get('ETF Ticker', '') == only_fund]
     # Build a prev-day map keyed on (fund, ticker) for delta computation.
     prev_map: dict[tuple[str, str], dict] = {}
     for r in get_previous_holdings():
@@ -2234,11 +2242,14 @@ def get_all_holdings() -> dict:
                 'expiry': None, 'contracts': None, 'isFlex': None,
             }),
         })
-    return {
+    out = {
         'asOfDate': as_of,
         'count': len(rows),
         'holdings': rows,
     }
+    if only_fund:
+        out['fund'] = only_fund
+    return out
 
 
 def get_fund_detail(fund: str) -> dict | None:

@@ -177,7 +177,67 @@ export interface FundTopHolding {
   activeWeightDelta?: number | null;
   positionUsd?: number | null;
 }
+/** A row of /api/v1/holdings (one fund's book when filtered with ?fund=). */
+export interface HoldingRow {
+  fund: string;
+  ticker: string;
+  name: string;
+  sector?: string;
+  weight: number;
+  positionUsd?: number | null;
+  /** Shares, or signed CONTRACTS for an option leg (negative = written). */
+  shares: number;
+  /** null on a catch-up fund (API #144). */
+  weightDelta: number | null;
+  sharesDelta: number | null;
+  catchUpSince?: string | null;
+  isOption: boolean;
+  marketValue: number | null;
+  fileDate?: string | null;
+  stale?: boolean;
+  underlying?: string | null;
+  optionType?: string | null;
+  strike?: number | null;
+  expiry?: string | null;
+  contracts?: number | null;
+  isFlex?: boolean | null;
+}
+export interface HoldingsResponse {
+  asOfDate: string;
+  count: number;
+  /** Echoed when the server honoured ?fund=. */
+  fund?: string;
+  holdings: HoldingRow[];
+}
+
+/** An option leg from /api/v1/fund/{fund} optionHoldings. */
+export interface FundOptionHolding {
+  ticker: string;
+  name: string;
+  weight: number;
+  positionUsd?: number | null;
+  shares: number;
+  optionType: string;
+  underlying: string;
+  strike: number;
+  expiry: string;
+  dte?: number | null;
+  moneyness?: number | null;
+  underlyingPrice?: number | null;
+  isFlex?: boolean | null;
+  marketValue?: number | null;
+}
+export interface OptionRoll {
+  underlying: string;
+  optionType: string;
+  closed: { strike: number; expiry: string }[];
+  opened: { strike: number; expiry: string }[];
+}
+
 export interface FundResponse {
+  /** All option legs (the equity list above is top-20 only). */
+  optionHoldings?: FundOptionHolding[];
+  optionRolls?: OptionRoll[];
   fund: string;
   provider: string;
   category: Category;
