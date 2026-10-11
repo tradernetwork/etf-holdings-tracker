@@ -1,0 +1,18 @@
+{
+  "fund": "IDVO",
+  "provider": "Amplify",
+  "category": "option-income",
+  "aum": 1.4230836,
+  "aumUsd": 1423083600,
+  "holdingsCount": 49,
+  "optionsCount": 10,
+  "topHolding": {
+    "ticker": "TSM",
+    "weight": 6.0624
+  },
+  "lastHoldingsDate": "2026-10-09",
+  "stale": false,
+  "refreshed": true,
+  "catchUp": false,
+  "catchUpSince": null
+}

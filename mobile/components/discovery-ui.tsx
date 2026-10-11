@@ -1,7 +1,10 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { router } from "expo-router";
 import {
   FlatList,
+  SectionList,
+  type SectionListData,
+  type SectionListRenderItem,
   Pressable,
   Text,
   TextInput,
@@ -100,6 +103,7 @@ export function ListPage<T>({
   onRefresh,
   children,
   empty = "No rows match these filters.",
+  dense = false,
 }: {
   data: T[];
   header: ReactNode;
@@ -109,6 +113,7 @@ export function ListPage<T>({
   onRefresh?: () => void;
   children?: ReactNode;
   empty?: string;
+  dense?: boolean;
 }) {
   const c = useTheme(),
     insets = useSafeAreaInsets();
@@ -127,7 +132,7 @@ export function ListPage<T>({
           paddingHorizontal: 18,
           paddingTop: 8,
           paddingBottom: insets.bottom + 28,
-          gap: 10,
+          gap: dense ? 0 : 10,
         }}
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 10 }}>{header}</View>
@@ -142,7 +147,7 @@ export function ListPage<T>({
     </View>
   );
 }
-export function ChangeCard({
+function ChangeDetails({
   row,
   fund,
   onPress,
@@ -208,12 +213,248 @@ export function ChangeCard({
           })}
         />
       )}
-      <Hint>
-        {row.activeWeightDelta == null
-          ? "One-day change unknown; never counted as a move."
-          : "Active weight · drift adjusted"}
-        {fund?.catchUp ? " · fund refreshed after a carried-forward gap" : ""}
-      </Hint>
+      {row.activeWeightDelta == null && (
+        <Hint>One-day change unknown; never counted as a move.</Hint>
+      )}
+      {fund?.catchUp && (
+        <Hint>Fund refreshed after a carried-forward gap.</Hint>
+      )}
     </Card>
+  );
+}
+
+/** Two-line broker row; details remain available on expansion, never deleted. */
+export function DenseRow({
+  label,
+  top,
+  bottom,
+  rightTop,
+  rightBottom,
+  expanded,
+  onPress,
+  children,
+}: {
+  label: string;
+  top: ReactNode;
+  bottom: ReactNode;
+  rightTop: ReactNode;
+  rightBottom: ReactNode;
+  expanded: boolean;
+  onPress: () => void;
+  children?: ReactNode;
+}) {
+  const c = useTheme();
+  return (
+    <View
+      style={{
+        borderBottomWidth: 1,
+        borderColor: c.border,
+        backgroundColor: c.canvas,
+      }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ expanded }}
+        onPress={onPress}
+        style={{
+          height: 64,
+          justifyContent: "center",
+          gap: 5,
+          paddingHorizontal: 2,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              overflow: "hidden",
+            }}
+          >
+            {top}
+          </View>
+          {rightTop}
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>{bottom}</View>
+          {rightBottom}
+        </View>
+      </Pressable>
+      {expanded && (
+        <View style={{ paddingVertical: 8, gap: 8 }}>{children}</View>
+      )}
+    </View>
+  );
+}
+export function RowBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <Text
+      style={{
+        fontFamily: fonts.mono,
+        fontSize: 9,
+        lineHeight: 13,
+        color,
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 3,
+        paddingHorizontal: 3,
+      }}
+    >
+      {label}
+    </Text>
+  );
+}
+export function ChangeCard({
+  row,
+  fund,
+  onPress,
+}: {
+  row: Change;
+  fund?: FundSummary & { catchUp?: boolean; catchUpSince?: string | null };
+  onPress?: () => void;
+}) {
+  const c = useTheme(),
+    [expanded, setExpanded] = useState(false),
+    kind = moveType(row);
+  const money = resolveUsd({
+    apiUsd: row.activeFlowUsd,
+    weightPercent: row.activeWeightDelta,
+    aumBillions: fund?.aum,
+  });
+  const provider = fund?.provider ?? "Provider unknown";
+  return (
+    <DenseRow
+      label={`${row.ticker}, ${kind}, ${formatPp(row.activeWeightDelta)}, ${row.fund}, ${provider}, ${formatWeight(row.previousWeight)} to ${formatWeight(row.currentWeight)}, ${formatUsdValue(money)} flow${fund?.stale ? ", older disclosure" : ""}. ${expanded ? "Collapse" : "Expand"} details`}
+      expanded={expanded}
+      onPress={() => setExpanded(!expanded)}
+      top={
+        <>
+          <Mono bold style={{ fontSize: 14 }}>
+            {row.ticker}
+          </Mono>
+          <RowBadge
+            label={kind}
+            color={
+              kind === "NEW" ? c.isNew : deltaColor(row.activeWeightDelta, c)
+            }
+          />
+          {fund?.stale && <RowBadge label="STALE" color={c.stale} />}
+        </>
+      }
+      rightTop={
+        <Mono
+          bold
+          style={{ fontSize: 13, color: deltaColor(row.activeWeightDelta, c) }}
+        >
+          {formatPp(row.activeWeightDelta)}
+        </Mono>
+      }
+      bottom={
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 11,
+              fontFamily: fonts.body,
+              color: c.textSecondary,
+            }}
+          >
+            {row.fund} · {provider}
+          </Text>
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: fonts.mono,
+              color: c.textSecondary,
+            }}
+          >
+            {formatWeight(row.previousWeight)} →{" "}
+            {formatWeight(row.currentWeight)}
+          </Text>
+        </View>
+      }
+      rightBottom={
+        <Text
+          style={{ fontSize: 11, fontFamily: fonts.mono, color: c.textMuted }}
+        >
+          {formatUsdValue(money)} flow
+        </Text>
+      }
+    >
+      <ChangeDetails row={row} fund={fund} onPress={onPress} />
+    </DenseRow>
+  );
+}
+export function SectionPage<T extends { id: string }>({
+  sections,
+  header,
+  renderItem,
+  refreshing,
+  onRefresh,
+  children,
+  showHeaders = true,
+}: {
+  sections: SectionListData<T, { title: string }>[];
+  header: ReactNode;
+  renderItem: SectionListRenderItem<T, { title: string }>;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  children?: ReactNode;
+  showHeaders?: boolean;
+}) {
+  const c = useTheme(),
+    insets = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, backgroundColor: c.canvas }}>
+      <SectionList
+        sections={sections}
+        renderItem={renderItem}
+        keyExtractor={(r) => r.id}
+        stickySectionHeadersEnabled={showHeaders}
+        initialNumToRender={15}
+        windowSize={7}
+        keyboardShouldPersistTaps="handled"
+        refreshing={refreshing ?? false}
+        onRefresh={onRefresh}
+        contentContainerStyle={{
+          paddingHorizontal: 18,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 28,
+        }}
+        ListHeaderComponent={
+          <View style={{ gap: 8, marginBottom: 8 }}>{header}</View>
+        }
+        renderSectionHeader={({ section }) =>
+          showHeaders ? (
+            <View
+              accessibilityRole="header"
+              testID={`discovery-section-${section.title}`}
+              style={{
+                backgroundColor: c.canvas,
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderColor: c.border,
+              }}
+            >
+              <Text
+                style={{
+                  color: c.textSecondary,
+                  fontFamily: fonts.bodyBold,
+                  fontSize: 12,
+                }}
+              >
+                {section.title}
+              </Text>
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={<Note>No rows match these filters.</Note>}
+      />
+      {children}
+    </View>
   );
 }

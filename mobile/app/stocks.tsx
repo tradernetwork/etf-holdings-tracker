@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
 import { router } from "expo-router";
 import { View } from "react-native";
-import { Action, ListPage, Search, Title } from "@/components/discovery-ui";
 import {
-  Card,
+  Action,
+  ListPage,
+  Search,
+  Title,
+  DenseRow,
+  RowBadge,
+} from "@/components/discovery-ui";
+import {
   Hint,
   Mono,
   Badge,
@@ -60,6 +66,7 @@ export default function Stocks() {
   const patch = (v: Partial<StockFilters>) => setF((old) => ({ ...old, ...v }));
   return (
     <ListPage
+      dense
       data={rows}
       keyFor={(r) => r.ticker}
       refreshing={q.isRefetching}
@@ -121,7 +128,47 @@ export default function Stocks() {
         </>
       }
       renderItem={({ item: r, index }) => (
-        <Card>
+        <DenseRow
+          label={`${r.ticker}, ${r.fundCount} funds, ${formatPp(r.netChange)}, ${formatWeight(r.totalWeight)} total weight, ${r.distinctProviders ?? "unknown"} families, ${r.newEntryFunds.length} new fund entries, ${r.exitFunds?.length ?? 0} exits, ${r.streak ?? "unknown"} day streak. ${expanded === r.ticker ? "Collapse" : "Expand"} stock details`}
+          expanded={expanded === r.ticker}
+          onPress={() => setExpanded(expanded === r.ticker ? null : r.ticker)}
+          top={
+            <>
+              <Mono bold style={{ fontSize: 14 }}>
+                {index + 1}. {r.ticker}
+              </Mono>
+              {!!r.newEntryFunds?.length && (
+                <RowBadge
+                  label={`NEW ${r.newEntryFunds.length}`}
+                  color={c.isNew}
+                />
+              )}
+              {!!r.exitFunds?.length && (
+                <RowBadge label={`EXIT ${r.exitFunds.length}`} color={c.sell} />
+              )}
+              {Math.abs(r.streak ?? 0) >= 2 && (
+                <RowBadge
+                  label={`${Math.abs(r.streak!)}d`}
+                  color={r.streak! > 0 ? c.buy : c.sell}
+                />
+              )}
+              {(r.distinctProviders ?? 0) >= 2 && (
+                <RowBadge label={`${r.distinctProviders}F`} color={c.accent} />
+              )}
+            </>
+          }
+          rightTop={
+            <Mono style={{ fontSize: 13, color: deltaColor(r.netChange, c) }}>
+              {formatPp(r.netChange)}
+            </Mono>
+          }
+          bottom={
+            <Hint>
+              {r.fundCount} funds · {formatWeight(r.totalWeight)} total weight
+            </Hint>
+          }
+          rightBottom={<Hint>Details {expanded === r.ticker ? "−" : "+"}</Hint>}
+        >
           <Tappable
             onPress={() =>
               router.push(`/ticker/${encodeURIComponent(r.ticker)}`)
@@ -189,7 +236,7 @@ export default function Stocks() {
               ))}
             </View>
           )}
-        </Card>
+        </DenseRow>
       )}
     >
       <FilterSheet
