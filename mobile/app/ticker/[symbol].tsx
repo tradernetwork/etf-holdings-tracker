@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MinorAdjustments } from "@/components/minor-adjustments";
+import { TickerOptions } from "@/components/options/TickerOptions";
 import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { ApiError } from "@/lib/api";
@@ -119,6 +120,8 @@ export default function TickerScreen() {
           );
         })}
       </View>
+
+      <TickerOptions symbol={symbol} />
 
       <Hint style={{ marginTop: spacing.md }}>Source name: {t.name}</Hint>
     </Screen>
