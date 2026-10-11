@@ -85,7 +85,7 @@ describe("sleeves", () => {
   });
   it("trusts the server's assetClass for non-equity rows, and still catches money-market funds it calls equity", () => {
     const fg = msty.holdings.find((r) => r.ticker === "FGXXX")!;
-    expect(fg.assetClass).toBe("equity"); // the server's other slip (reported)
+    // Captured before the server fix (money-market funds were classed "equity"); the guard still puts it in cash.
     expect(sleeveOf(fg)).toBe("cash");
     expect(sleeveOf({ isOption: false, name: "WEEKLYPAY SWAP", ticker: "X", assetClass: "swap" })).toBe("swap");
     expect(sleeveOf({ isOption: false, name: "Something", ticker: "Y", assetClass: "other" })).toBe("cash");

@@ -22,8 +22,9 @@ export function sleeveOf(r: Pick<HoldingRow, "isOption" | "name" | "ticker"> & {
   // Pathward Financial's real ticker is CASH, so a ticker/class of "cash" is only trusted for non-company names.
   const looksLikeCompany = /\b(INC|CORP|CO|LTD|PLC|COMMON STOCK)\b/.test(name);
   const nameHint = [...SWAP_HINTS, ...TREASURY_HINTS, ...CASH_HINTS].some((h) => name.includes(h));
-  // The server's assetClass (API #156) is used for the non-equity classes, but it has two known slips this guards:
-  // a company whose ticker is CASH (classed "cash"), and money-market funds like FGXXX (classed "equity").
+  // The server's assetClass (API #156) is authoritative for the non-equity classes, and since the money-market fix it
+  // also classes FGXXX-style funds as cash. The two guards below stay for older servers: a company whose ticker is
+  // CASH (Pathward, once classed "cash") and money-market funds an older server called "equity" (handled by the hints).
   if (r.assetClass === "treasury" || r.assetClass === "cash" || r.assetClass === "swap" || r.assetClass === "other") {
     if (looksLikeCompany && !nameHint) return "stock";
     return r.assetClass === "other" ? "cash" : r.assetClass;

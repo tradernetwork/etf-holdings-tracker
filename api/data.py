@@ -2197,6 +2197,28 @@ def is_cash_placeholder(ticker: str, name: str) -> bool:
 
 
 
+# Money-market / government-obligations FUNDS held as the cash sleeve (FGXXX, FIGXX, AGPXX, CMQXX, Goldman
+# FS Treasury Obligations ...). They are funds, not stocks, so they must read as cash everywhere. Names are
+# matched with phrases (never a bare "CASH"/"TREASURY"/"FUND": EUROCASH, FirstCash, Treasury Wine Estates and
+# the closed-end funds YYY holds are real equities).
+_MONEY_MARKET_NAME_RE = re.compile(
+    r'(GOVERNMENT|GOVT|GOV|TREASURY|TRSY)\s+OBLIG|MONEY\s+MARKET|\bMMKT\b|\bMM\b|'
+    r'(TREASURY|GOVERNMENT|GOVT)\s+(PLUS\s+)?PORTFOLIO|GOVERNMENT\s*(&|AND)\s*AGENCY|'
+    r'CENTRAL\s+CASH\s+FUN|LIQUID\s+ASSETS|MONEY\s+FUND', re.I)
+_STOCK_NAME_RE = re.compile(r'COMMON STOCK|\bORD\b|\bADR\b|\bETF\b', re.I)
+
+
+def is_money_market(ticker: str, name: str) -> bool:
+    """A money-market / government-obligations fund line (cash), not a stock.
+
+    A known money-market ticker (allowlist, or the 5-letter-XX shape rule above), or a name that says so. A name that reads as a
+    common stock never matches, so real companies are not swept up."""
+    if _STOCK_NAME_RE.search(name or ''):
+        return False
+    t = (ticker or '').strip().upper()
+    return _is_money_market(t) or bool(_MONEY_MARKET_NAME_RE.search(name or ''))   # ticker rule: the junk-ticker allowlist/shape above
+
+
 def holding_asset_class(r: dict) -> str:
     """equity | option | cash | treasury | swap | other, from the CSV's own typing.
 
@@ -2215,7 +2237,8 @@ def holding_asset_class(r: dict) -> str:
     if ht == 'treasury' or ticker == 'TBILL' or 'treasury bill' in name or 'treasury note' in name or 'treasury bond' in name:
         return 'treasury'
     if ht in _CASH_TYPES or st in ('cash & equivalent', 'spot fx', 'sweep investment vehicle') \
-            or is_cash_placeholder(ticker, r.get('Name') or '') or name.startswith('cash'):
+            or is_cash_placeholder(ticker, r.get('Name') or '') or name.startswith('cash') \
+            or is_money_market(ticker, r.get('Name') or ''):
         return 'cash'
     if ht in ('', 'equity') and ticker not in ('OTHER', ''):
         return 'equity'
