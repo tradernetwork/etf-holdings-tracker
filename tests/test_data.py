@@ -722,4 +722,4 @@ def test_holdings_endpoint_fund_param_and_header():
     assert r.headers["x-fund-filter"] == "ARKK"
     body = r.json()
     assert body["fund"] == "ARKK" and all(h["fund"] == "ARKK" for h in body["holdings"])
-    assert c.get("/api/v1/holdings?fund=bad!!").status_code == 400
+    assert c.get("/api/v1/holdings?fund=bad!!").status_code == 422   # all /holdings validation is 422

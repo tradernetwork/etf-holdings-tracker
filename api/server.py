@@ -504,7 +504,7 @@ _HOLDINGS_CSV_COLUMNS = (
 def get_all_holdings(
     request: Request,
     response: Response,
-    fund: Optional[str] = Query(None, description="Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash); case-insensitive, 400 on a malformed ticker. Omit for every fund."),
+    fund: Optional[str] = Query(None, description="Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash); case-insensitive, 422 on a malformed ticker. Omit for every fund."),
     asset: Optional[str] = Query(None, pattern="^(equity|option|cash|treasury|swap|other)$", description="Restrict to one asset class (`assetClass` on each row)."),
     q: Optional[str] = Query(None, max_length=64, description="Case-insensitive substring of ticker, name or option underlying."),
     sort: Optional[str] = Query(None, pattern="^(value|weight|delta|absdelta|expiry)$", description="value = marketValue, weight, delta = activeWeightDelta (signed), absdelta = its magnitude, expiry = option expiry. Rows with no value always sort last. Omit for the natural file order."),
@@ -526,7 +526,7 @@ def get_all_holdings(
     """
     if fund is not None:
         if not _TICKER_PATTERN.match(fund):
-            raise HTTPException(status_code=400, detail="Invalid fund ticker format")
+            raise HTTPException(status_code=422, detail="Invalid fund ticker format")
         # Lets a client confirm from the headers alone that the filter was honoured.
         response.headers["X-Fund-Filter"] = fund.upper()
     as_of, rows = data.query_holdings(fund=fund, asset=asset, q=q, sort=sort, desc=(dir == "desc"))
