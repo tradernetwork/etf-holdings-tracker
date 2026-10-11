@@ -33,6 +33,12 @@ const config: ExpoConfig = {
     // No ads, no ad SDKs (funnel-guard): keep the advertising-ID permission out
     // even if a transitive dependency tries to add it.
     blockedPermissions: ["com.google.android.gms.permission.AD_ID"],
+    // Push needs Firebase Cloud Messaging inside the APK: expo-notifications cannot mint an Expo push
+    // token on Android without google-services.json ("Did you configure `googleServicesFile`?").
+    // Supplied as an EAS file variable (GOOGLE_SERVICES_JSON, or a local path when building locally) so
+    // the file stays out of git; unset today, so the native config is unchanged.
+    // See docs/NOTIFICATIONS_GO_LIVE.md.
+    ...(process.env.GOOGLE_SERVICES_JSON ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON } : {}),
   },
   // Web is for previews only (react-native-web). Single-page output; set
   // EXPO_BASE_URL (e.g. /previews/app) when hosting under a sub-path.
