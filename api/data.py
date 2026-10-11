@@ -1535,7 +1535,7 @@ def snapshot_signature(depth: int = _SIGNATURE_FILES) -> tuple:
     return (HISTORY_DIR, dir_mtime, tuple(parts))
 
 
-def _memoize_per_snapshot(fn=None, *, depth=None):
+def _memoize_per_snapshot(fn=None, *, depth=None, copy_result=True):
     """Memoize a pure, keyword-parameterised data function per snapshot signature.
 
     `depth` is an int, or a callable (args, kwargs) -> int giving how many of the
@@ -1543,6 +1543,9 @@ def _memoize_per_snapshot(fn=None, *, depth=None):
     deep copy so callers (REST, MCP, notifications) may mutate the result freely.
     `fn.__wrapped__` is the uncached original. Entries of the same depth from an
     older signature are dropped on insert, and the table is size-bounded.
+    `copy_result=False` returns the SHARED cached object (callers must treat it as
+    read-only and copy what they hand out): used for the large full-ranked-list
+    entries that many `limit` slices are cut from.
     """
     def decorate(fn):
         @functools.wraps(fn)
@@ -1554,13 +1557,13 @@ def _memoize_per_snapshot(fn=None, *, depth=None):
                 hit = _memo.get(key)
                 if hit is not None and hit[0] == sig:
                     _memo.move_to_end(key)
-                    return copy.deepcopy(hit[2])
+                    return copy.deepcopy(hit[2]) if copy_result else hit[2]
                 klock = _memo_key_locks.setdefault(key, threading.Lock())
             with klock:                       # one computation per key; others wait for it
                 with _memo_lock:
                     hit = _memo.get(key)
                     if hit is not None and hit[0] == sig:
-                        return copy.deepcopy(hit[2])
+                        return copy.deepcopy(hit[2]) if copy_result else hit[2]
                 value = fn(*args, **kwargs)
                 with _memo_lock:
                     for k in [k for k, (s_, d_, _) in _memo.items() if d_ == n and s_ != sig]:
@@ -1569,7 +1572,7 @@ def _memoize_per_snapshot(fn=None, *, depth=None):
                     _memo.move_to_end(key)
                     while len(_memo) > _MEMO_MAX:
                         _memo.popitem(last=False)
-                return copy.deepcopy(value)
+                return copy.deepcopy(value) if copy_result else value
         return wrapper
     return decorate(fn) if fn is not None else decorate
 
@@ -1782,7 +1785,7 @@ def _compute_streaks(max_days: int = 10) -> dict[tuple[str, str], int]:
     return streaks
 
 
-def _signals_from(changes: list[dict], streaks: dict[tuple[str, str], int] | None = None) -> dict:
+def _signals_from(changes: list[dict], streaks: dict[tuple[str, str], int] | None = None, *, limit: int | None = 10) -> dict:
     """
     Compute top buying/selling signals from a precomputed changes list.
 
@@ -1886,9 +1889,11 @@ def _signals_from(changes: list[dict], streaks: dict[tuple[str, str], int] | Non
     # - 'convictionScore' (new, dashboard-shaped) is the additive richer score
     # We sort by convictionScore since that's what the dashboard uses.
     signals.sort(key=lambda x: -x['convictionScore'])
+    # `limit` only truncates the one shared ranking: None returns every signal, in
+    # exactly the order the default top-10 is cut from.
     return {
-        'buying': [s for s in signals if s['direction'] == 'buying'][:10],
-        'selling': [s for s in signals if s['direction'] == 'selling'][:10],
+        'buying': [s for s in signals if s['direction'] == 'buying'][:limit],
+        'selling': [s for s in signals if s['direction'] == 'selling'][:limit],
     }
 
 
@@ -1958,6 +1963,8 @@ def _briefing_from(
     signals: dict,
     activity: dict,
     streaks: dict[tuple[str, str], int],
+    *,
+    everything: bool = False,
 ) -> dict:
     """
     Pre-market briefing: top buys/sells, multi-provider convergence, active
@@ -1970,7 +1977,9 @@ def _briefing_from(
     cross_fund = sorted(
         [s for s in buying + selling if s.get('providerCount', 0) >= 2],
         key=lambda s: -s.get('convictionScore', 0),
-    )[:5]
+    )
+    if not everything:
+        cross_fund = cross_fund[:5]
 
     notable_options: list[dict] = []
     for r in activity.get('optionsActivity', [])[:5]:
@@ -1992,11 +2001,13 @@ def _briefing_from(
     ]
     active_streaks.sort(key=lambda s: -s['days'])
 
+    # everything=True keeps the full ranked lists (the `limit` slices are cut from
+    # these); the default keeps today's 3 / 3 / 5 / 10.
     return {
-        'topBuys': buying[:3],
-        'topSells': selling[:3],
+        'topBuys': buying if everything else buying[:3],
+        'topSells': selling if everything else selling[:3],
         'crossFundConvergence': cross_fund,
-        'activeStreaks': active_streaks[:10],
+        'activeStreaks': active_streaks if everything else active_streaks[:10],
         'notableOptions': notable_options,
     }
 
@@ -2261,6 +2272,66 @@ def get_briefing(*, category: str | None = None) -> dict:
     signals = _signals_from([c for c in changes if not c.get('isOption')], streaks)
     activity = _activity_from(changes)
     return _briefing_from(signals, activity, streaks)
+
+
+# ─── `limit`: the same ranking, cut longer ───────────────────────────────────────
+# The default endpoints keep their fixed top-N (and stay byte-identical). A request with
+# `limit` is served from ONE full ranked payload per snapshot and category, memoized once
+# and shared; each limit is just a slice of it, so different limits never multiply
+# compute or memory. Only the default (no limit) is prewarmed.
+MAX_LIMIT = 200
+
+
+@_memoize_per_snapshot(copy_result=False)
+def _full_payload_everything(*, category: str | None = None) -> dict:
+    """get_full_payload with every signal / briefing list untruncated. Shared: read-only."""
+    changes_all = _filter_by_category(compute_daily_changes_with_options(), category)
+    changes_eq = [c for c in changes_all if not c.get('isOption')]
+    streaks = _filter_streaks_by_category(_compute_streaks(), category)
+    signals = _signals_from(changes_eq, streaks, limit=None)
+    activity = _activity_from(changes_all)
+    return {
+        '_meta': {
+            'endpoint': '/api/v1/signals',
+            'description': 'TickerTrace public API — institutional ETF activity signals.',
+            'source': 'FastAPI + FastMCP',
+        },
+        'asOfDate': get_as_of_date(),
+        'category': category,
+        'stats': get_global_stats(changes_eq),
+        'signals': signals,
+        'changes': changes_eq[:50],
+        'sectorFlow': _sector_flow_from(changes_eq),
+        'divergences': _divergences_from(changes_eq),
+        'briefing': _briefing_from(signals, activity, streaks, everything=True),
+        'activity': activity,
+        'catchUp': get_catch_up_funds(),
+    }
+
+
+def _slice_briefing(b: dict, limit: int) -> dict:
+    return {**b, 'topBuys': b['topBuys'][:limit], 'topSells': b['topSells'][:limit],
+            'crossFundConvergence': b['crossFundConvergence'][:limit], 'activeStreaks': b['activeStreaks'][:limit]}
+
+
+def get_full_payload_limited(*, category: str | None = None, limit: int) -> dict:
+    """/api/v1/signals with `limit` per list. Same order as the default; `limit` is echoed back."""
+    full = _full_payload_everything(category=category)
+    return copy.deepcopy({
+        **full,
+        'limit': limit,
+        'signals': {'buying': full['signals']['buying'][:limit], 'selling': full['signals']['selling'][:limit]},
+        'briefing': _slice_briefing(full['briefing'], limit),
+    })
+
+
+def get_signals_limited(*, category: str | None = None, limit: int) -> dict:
+    full = _full_payload_everything(category=category)['signals']
+    return copy.deepcopy({'buying': full['buying'][:limit], 'selling': full['selling'][:limit]})
+
+
+def get_briefing_limited(*, category: str | None = None, limit: int) -> dict:
+    return copy.deepcopy({**_slice_briefing(_full_payload_everything(category=category)['briefing'], limit), 'limit': limit})
 
 
 _CASH_TYPES = {'cash', 'cash_fx', 'money_market'}

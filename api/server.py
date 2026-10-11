@@ -258,7 +258,11 @@ def health():
 
 @app.get("/api/v1/signals", tags=["public"])
 @limiter.limit("60/minute")
-def get_signals(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def get_signals(
+    request: Request,
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
+    limit: Optional[int] = Query(None, ge=1, le=200, description="Entries per ranked list (signals buying/selling, briefing topBuys/topSells/crossFundConvergence/activeStreaks). Omit for the default top lists (10 signals each side; briefing 3/3/5/10). The order is identical; a larger limit only extends it. Echoed back as `limit` when given, so a client can tell an older server ignored it."),
+):
     """
     Full signal payload — conviction-scored buys/sells, daily changes,
     sector flow, divergences. Fully open, no API key required.
@@ -272,6 +276,8 @@ def get_signals(request: Request, category: Optional[str] = Query(None, pattern=
     option-income fund's stock book is collateral for its overlay and churns by
     design, so its daily deltas are mechanics, not a view on the company.
     """
+    if limit is not None:
+        return data.get_full_payload_limited(category=category, limit=limit)
     return data.get_full_payload(category=category)
 
 
@@ -475,11 +481,17 @@ def get_layering_patterns(
 
 @app.get("/api/v1/briefing", tags=["public"])
 @limiter.limit("60/minute")
-def get_briefing(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction.")):
+def get_briefing(
+    request: Request,
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction."),
+    limit: Optional[int] = Query(None, ge=1, le=200, description="Entries per list (topBuys, topSells, crossFundConvergence, activeStreaks). Omit for 3 / 3 / 5 / 10. Same order; a larger limit only extends it."),
+):
     """
     Pre-market briefing — top buys, top sells, multi-provider convergence,
     active streaks, and notable new option positions.
     """
+    if limit is not None:
+        return data.get_briefing_limited(category=category, limit=limit)
     return data.get_briefing(category=category)
 
 

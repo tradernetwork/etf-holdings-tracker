@@ -3,8 +3,9 @@ import { todayApi } from "./api";
 
 const STALE_MS = 5 * 60 * 1000;
 
-export const useTodayFull = (category: string | undefined) =>
-  useQuery({ queryKey: ["today-full", category ?? "all"], queryFn: ({ signal }) => todayApi.full(category, signal), staleTime: STALE_MS });
+/** `limit` asks for longer ranked lists; an older server ignores it (see listState). */
+export const useTodayFull = (category: string | undefined, limit?: number) =>
+  useQuery({ queryKey: ["today-full", category ?? "all", limit ?? 0], queryFn: ({ signal }) => todayApi.full(category, limit, signal), staleTime: STALE_MS });
 
 export const useLayeringFull = (windowDays: number, minFunds: number) =>
   useQuery({

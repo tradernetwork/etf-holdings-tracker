@@ -76,6 +76,8 @@ export interface FullDivergence {
 export interface SectorFlowEntry { sector: string; delta: number }
 
 export interface TodayFull {
+  /** Echoed by servers that honour `?limit=`; absent on older servers (they return the fixed top lists). */
+  limit?: number;
   asOfDate: string;
   category: string | null;
   stats: TodayStats;

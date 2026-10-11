@@ -22,7 +22,7 @@ async function get<T>(path: string, query: Record<string, string | number | unde
 
 export const todayApi = {
   /** The whole Today payload: every list the API serves (signals, briefing, divergences, sector flow, KPIs). */
-  full: (category?: string, signal?: AbortSignal) => get<TodayFull>("/api/v1/signals", { category }, signal),
+  full: (category?: string, limit?: number, signal?: AbortSignal) => get<TodayFull>("/api/v1/signals", { category, limit }, signal),
   /** Layering with the website's controls. `limit` up to 100 returns every pattern the server found. */
   layering: (p: { windowDays: number; minFunds: number; limit: number }, signal?: AbortSignal) =>
     get<LayeringFull>("/api/v1/layering-patterns", { window_days: p.windowDays, min_funds: p.minFunds, limit: p.limit }, signal),

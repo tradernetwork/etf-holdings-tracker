@@ -1,7 +1,8 @@
 import layeringFx from "./fixtures/layering-full.json";
 import todayFx from "./fixtures/today-full.json";
+import todayLimitFx from "./fixtures/today-full-limit200.json";
 import {
-  allSectorFlow, businessDaysBehind, convText, fundPositionUsd, isStaleAsOf, kpis, signalStreak, signalSummary, staleMessage,
+  allSectorFlow, businessDaysBehind, convText, coverageText, FULL_LIMIT, listState, PAGE_STEP, fundPositionUsd, isStaleAsOf, kpis, signalStreak, signalSummary, staleMessage,
   streakLabel, strengthText,
 } from "../lib/today/logic";
 import type { LayeringFull, TodayFull } from "../lib/today/types";
@@ -108,5 +109,43 @@ describe("layering (live /layering-patterns, min_funds=2)", () => {
   it("keeps combined AUM and the estimated position as different quantities", () => {
     const p = layering.patterns.find((x) => x.positionUsdTotal != null)!;
     expect(p.consensusAum * 1e9).toBeGreaterThan(p.positionUsdTotal!);
+  });
+});
+
+describe("?limit= and the Show more step", () => {
+  const ext = todayLimitFx as unknown as TodayFull;
+  it("a server that honours the limit echoes it and sends the longer lists (live data shape)", () => {
+    expect(ext.limit).toBe(FULL_LIMIT);
+    expect(ext.signals.buying.length).toBeGreaterThan(today.signals.buying.length);
+    // the first ten are exactly the default top ten, in the same order
+    expect(ext.signals.buying.slice(0, 10).map((s) => s.ticker)).toEqual(today.signals.buying.map((s) => s.ticker));
+    expect(ext.briefing.activeStreaks.length).toBeGreaterThan(today.briefing.activeStreaks.length);
+    expect(ext.briefing.topBuys.length).toBe(ext.signals.buying.length);
+  });
+  it("an older server sends no echo and a fixed top list: never claimed as complete", () => {
+    expect(today.limit).toBeUndefined();
+    const st = listState(today.signals.buying.length, PAGE_STEP, FULL_LIMIT, today.limit);
+    expect(st.coverage).toBe("fixed");
+    expect(coverageText("buying signals", st, FULL_LIMIT)).toMatch(/fixed top list/);
+    expect(coverageText("buying signals", st, FULL_LIMIT)).not.toMatch(/complete/);
+  });
+  it("says complete only when the limit was echoed and the list is shorter than the limit", () => {
+    const whole = listState(ext.signals.buying.length, PAGE_STEP, FULL_LIMIT, ext.limit);
+    expect(whole.coverage).toBe("complete");
+    expect(coverageText("buying signals", whole, FULL_LIMIT)).toMatch(/complete ranked list/);
+    const capped = listState(FULL_LIMIT, PAGE_STEP, FULL_LIMIT, FULL_LIMIT);
+    expect(capped.coverage).toBe("capped");
+    expect(coverageText("buying signals", capped, FULL_LIMIT)).toMatch(/200-row cap/);
+    // an echo of a DIFFERENT limit is not our request being honoured
+    expect(listState(50, PAGE_STEP, FULL_LIMIT, 10).coverage).toBe("fixed");
+  });
+  it("reveals PAGE_STEP rows at a time and counts what is hidden", () => {
+    let st = listState(77, PAGE_STEP, FULL_LIMIT, FULL_LIMIT);
+    expect([st.visible, st.hidden, st.nextStep]).toEqual([25, 52, 25]);
+    st = listState(77, 75, FULL_LIMIT, FULL_LIMIT);
+    expect([st.visible, st.hidden, st.nextStep]).toEqual([75, 2, 2]);
+    st = listState(77, 100, FULL_LIMIT, FULL_LIMIT);
+    expect([st.visible, st.hidden, st.nextStep]).toEqual([77, 0, 0]);
+    expect(listState(0, PAGE_STEP, FULL_LIMIT, FULL_LIMIT).visible).toBe(0);
   });
 });
