@@ -3017,7 +3017,7 @@ def _stock_history_index(history_days: int = 30) -> dict:
         horizons[period] = dates[min(len(dates), _changes_signature_depth(period)) - 1]
     out = {}
     for ticker in universe:
-        history = [(dt, round(snapshots[dt][0].get(ticker, 0), 4),
+        history = [(dt, round(snapshots[dt][0].get(ticker, 0.0), 4),
                     snapshots[dt][1].get(ticker, 0)) for dt in ordered]
         # Stitch backward from the real latest exposure. A catch-up jump changes the
         # level, not the daily trading series; earlier levels shift only for tickers
@@ -3028,13 +3028,13 @@ def _stock_history_index(history_days: int = 30) -> dict:
             cur_date, prev_date = ordered[i], ordered[i - 1]
             cw, pw, caught = pair(cur_date, prev_date)
             if caught:
-                raw_step = snapshots[cur_date][0].get(ticker, 0) - snapshots[prev_date][0].get(ticker, 0)
-                guarded_step = cw.get(ticker, 0) - pw.get(ticker, 0)
+                raw_step = snapshots[cur_date][0].get(ticker, 0.0) - snapshots[prev_date][0].get(ticker, 0.0)
+                guarded_step = cw.get(ticker, 0.0) - pw.get(ticker, 0.0)
                 adjustment = raw_step - guarded_step
                 correction += adjustment
                 adjusted = adjusted or bool(adjustment)
             if correction:
-                history[i - 1] = (prev_date, round(snapshots[prev_date][0].get(ticker, 0) + correction, 4),
+                history[i - 1] = (prev_date, round(snapshots[prev_date][0].get(ticker, 0.0) + correction, 4),
                                   history[i - 1][2])
         streak = 0
         for i in range(len(history) - 1, 0, -1):
@@ -3042,14 +3042,14 @@ def _stock_history_index(history_days: int = 30) -> dict:
             if delta > 0.001 and streak >= 0: streak += 1
             elif delta < -0.001 and streak <= 0: streak -= 1
             else: break
-        cur = round(snapshots[dates[0]][0].get(ticker, 0), 4)
+        cur = round(snapshots[dates[0]][0].get(ticker, 0.0), 4)
         deltas = {}
         raw_deltas = {}
         for period, prev_date in horizons.items():
             cw, pw, caught = pair(dates[0], prev_date)
             # Legacy uses rounded current weight minus unrounded previous weight.
-            now = round(cw.get(ticker, 0), 4) if caught else cur
-            raw_deltas[period] = now - pw.get(ticker, 0)
+            now = round(cw.get(ticker, 0.0), 4) if caught else cur
+            raw_deltas[period] = now - pw.get(ticker, 0.0)
             deltas[period] = round(raw_deltas[period], 4)
         out[ticker] = {'history': tuple(history), 'institutional': {
             'blendedWeight': cur, **deltas,

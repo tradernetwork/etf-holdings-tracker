@@ -142,3 +142,17 @@ def test_prewarm_warms_the_same_history_index_requests_use(monday_history):
     data.get_stock_detail('TER')
     keys = [k for k in data._memo if k[0] == '_stock_history_index']
     assert len(keys) == 1, keys
+
+
+def test_absent_days_serialize_as_float_zero_like_before(tmp_path, monkeypatch):
+    """Byte identity: a ticker that was not held on an earlier day has blendedWeight 0.0 (float), never the int 0."""
+    write_day(tmp_path / 'holdings_2026-10-08.csv', [('AVUV', 'OLD', 1, 'True', '2026-10-08')])
+    write_day(tmp_path / 'holdings_2026-10-09.csv', [('AVUV', 'OLD', 1, 'True', '2026-10-09'), ('AVUV', 'FRESH', 2, 'True', '2026-10-09')])
+    monkeypatch.setattr(data, 'HISTORY_DIR', str(tmp_path))
+    monkeypatch.setattr(data, 'get_fund_aum', lambda f: 1.0)
+    data._available_dates.cache_clear()
+    h = data.get_stock_detail('FRESH')['history']
+    assert h[0]['blendedWeight'] == 0 and isinstance(h[0]['blendedWeight'], float)
+    assert json.dumps(h[0]).count('0.0') >= 1 and '"blendedWeight": 0,' not in json.dumps(h[0])
+    inst = data.get_stock_detail('FRESH')['institutional']
+    assert all(isinstance(inst[k], float) for k in ('blendedWeight', 'daily', 'weekly', 'monthly'))
