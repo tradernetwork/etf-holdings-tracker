@@ -1,3 +1,7 @@
+import { Action } from "@/components/discovery-ui";
+import { TrendPreview } from "@/components/institutional-trend";
+import { useChanges } from "@/lib/discovery/api";
+import { dailyMoveCounts } from "@/lib/discovery/derive";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
@@ -7,7 +11,7 @@ import {
   Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Segmented, StatTile, Tappable,
 } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
-import { addReduceCounts, alsoWorthLook, consensusCards, convictionFractions, mergeSectorFlow, pickHero } from "@/lib/derive";
+import { alsoWorthLook, consensusCards, convictionFractions, mergeSectorFlow, pickHero } from "@/lib/derive";
 import { cleanName, formatPp, formatShortDate, formatUsd, sectorShort } from "@/lib/format";
 import { useDivergences, useFunds, useLayering, useSectors, useSignals } from "@/lib/queries";
 import { deltaColor, display, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
@@ -27,16 +31,17 @@ export default function Today() {
   const { category, setCategory } = useAppState();
   const signals = useSignals(category);
   const funds = useFunds();
+  const completeChanges = useChanges("daily");
   const layering = useLayering();
   const divergences = useDivergences(category);
   const sectors = useSectors(category);
 
   const refresh = () => {
-    signals.refetch(); funds.refetch(); layering.refetch(); divergences.refetch(); sectors.refetch();
+    signals.refetch(); completeChanges.refetch(); funds.refetch(); layering.refetch(); divergences.refetch(); sectors.refetch();
   };
   const asOf = signals.data?.asOfDate;
   const stats = signals.data?.stats;
-  const counts = addReduceCounts(signals.data?.changes);
+  const counts = dailyMoveCounts(completeChanges.data, asOf, category);
   const ratio = counts && counts.reduced > 0 ? (counts.added / counts.reduced).toFixed(2) : "—";
 
   const hero = pickHero(divergences.data, signals.data);
@@ -98,10 +103,12 @@ export default function Today() {
         <View style={styles.tiles}>
           <StatTile label="New" value={String(stats.newPositionsToday)} color={c.isNew} />
           <StatTile label="Exits" value={String(stats.exitsToday)} color={c.sell} />
-          <StatTile label="Add/Cut" value={ratio} color={c.buy} />
+          <StatTile label={completeChanges.data?.truncated ? "Add/Cut (capped)" : "Add/Cut"} value={ratio} color={c.buy} />
         </View>
       )}
 
+      <Action onPress={() => router.push("/changes")}>View all changes →</Action>
+      <TrendPreview />
       {consensus.length > 0 && (
         <>
           <SectionHeader title="Consensus" right={<Hint>last {layering.data?.windowDays ?? 7} days</Hint>} />

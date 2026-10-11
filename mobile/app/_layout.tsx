@@ -103,6 +103,13 @@ function ThemedStack() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.canvas } }}>
         <Stack.Screen name="ticker/[symbol]" options={detail} />
         <Stack.Screen name="fund/[fund]" options={detail} />
+
+        <Stack.Screen name="changes" options={{ ...detail, title: "Changes" }} />
+        <Stack.Screen name="stocks" options={{ ...detail, title: "Stocks" }} />
+        <Stack.Screen name="activity" options={{ ...detail, title: "Activity matrix" }} />
+        <Stack.Screen name="institutional" options={{ ...detail, title: "Combined institutional book" }} />
+        <Stack.Screen name="trend" options={{ ...detail, title: "Institutional trend" }} />
+        <Stack.Screen name="evidence/[symbol]" options={{ ...detail, title: "All evidence" }} />
         <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
       </Stack>
       <OptInSheet />
