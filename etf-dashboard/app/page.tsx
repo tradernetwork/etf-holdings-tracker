@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 11, 2026"
+            tag="feature"
+            title="Five thousand changes was not the whole book"
+            desc="The mobile changes explorer had to ask one provider at a time to get past the API's 5,000-row cap. Now /changes has optional pages and a snapshot token, so the full daily book loads in a handful of bounded requests without rebuilding the diff each time. Old callers still get their usual 50 rows; CSV export gets the lot. If a scrape lands halfway through, we ask you to reload instead of quietly stapling two days together."
+          />
+          <ChangelogEntry
+            date="October 11, 2026"
             tag="bugfix"
             title="The options activity tables had been empty, and nobody told us"
             desc="Options activity on the dashboard and the Income page, plus the 'notable options' line in the briefing, quietly showed nothing. Option contracts have ugly tickers on purpose (MSTR 261016C00095000), and the filter that hides junk like CASH and CUSIPs was eating every one of them before they could be listed. We'd already taught the change engine about that exception and forgot the activity bucketer. Fixed: today's contract-level adds, closes and rolls are back, with a test so an option can't be mistaken for junk again."
