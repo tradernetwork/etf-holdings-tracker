@@ -6,7 +6,7 @@ import { Chip } from "@/components/options/parts";
 import { Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { formatPp, formatShortDate, sectorShort } from "@/lib/format";
-import { allSectorFlow, kpis, staleMessage } from "@/lib/today/logic";
+import { allSectorFlow, coverageText, FULL_LIMIT, kpis, listState, PAGE_STEP, staleMessage } from "@/lib/today/logic";
 import { useTodayFull } from "@/lib/today/queries";
 import { display, fonts, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -23,13 +23,26 @@ export default function TodayInFull() {
   const styles = useStyles(makeStyles);
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const { category } = useAppState();
-  const q = useTodayFull(category === "all" ? undefined : category);
+  const q = useTodayFull(category === "all" ? undefined : category, FULL_LIMIT);
   const [tab, setTab] = useState<Tab>(TABS.find((t) => t.value === tabParam)?.value ?? "buys");
   const d = q.data;
   const flow = useMemo(() => allSectorFlow(d?.sectorFlow), [d]);
   const maxFlow = Math.max(0.0001, ...flow.map((f) => Math.abs(f.delta)));
   const stale = staleMessage(d?.asOfDate);
   const catchUp = Object.entries(d?.catchUp ?? {});
+  // Each ranked list reveals PAGE_STEP rows at a time ("Show more"); the caption only says "complete"
+  // when the server echoed the limit and sent fewer rows than asked (an older server just sends its fixed top list).
+  const [shown, setShown] = useState<Record<string, number>>({});
+  const rows = <T,>(key: string, list: T[]) => {
+    const st = listState(list.length, shown[key] ?? PAGE_STEP, FULL_LIMIT, d?.limit);
+    return { st, items: list.slice(0, st.visible) };
+  };
+  const more = (key: string, st: ReturnType<typeof listState>) =>
+    st.hidden > 0 ? (
+      <Tappable onPress={() => setShown((m) => ({ ...m, [key]: st.visible + PAGE_STEP }))}>
+        <Card style={{ alignItems: "center" }}><Text style={{ color: c.accent, fontFamily: fonts.bodyBold, fontSize: 14 }}>Show {st.nextStep} more · {st.hidden} hidden</Text></Card>
+      </Tappable>
+    ) : null;
 
   return (
     <Screen topInset={false} refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
@@ -49,36 +62,55 @@ export default function TodayInFull() {
             {TABS.map((t) => <Chip key={t.value} label={t.label} on={tab === t.value} onPress={() => setTab(t.value)} />)}
           </View>
 
-          {tab === "buys" && (
+          {tab === "buys" && (() => {
+            const { st, items } = rows("buys", d.signals.buying);
+            return (
+              <>
+                <Hint>{coverageText("buying signals", st, FULL_LIMIT)} Active weight, percentage points.</Hint>
+                {st.total === 0 && <Card><Note>No buying signals in this category for the latest data.</Note></Card>}
+                {items.map((s, i) => <SignalDetailCard key={s.ticker} s={s} rank={i + 1} />)}
+                {more("buys", st)}
+              </>
+            );
+          })()}
+          {tab === "sells" && (() => {
+            const { st, items } = rows("sells", d.signals.selling);
+            return (
+              <>
+                <Hint>{coverageText("selling signals", st, FULL_LIMIT)} Active weight, percentage points.</Hint>
+                {st.total === 0 && <Card><Note>No selling signals in this category for the latest data.</Note></Card>}
+                {items.map((s, i) => <SignalDetailCard key={s.ticker} s={s} rank={i + 1} />)}
+                {more("sells", st)}
+              </>
+            );
+          })()}
+          {tab === "briefing" && (() => {
+            const tb = rows("tb", d.briefing.topBuys), ts = rows("ts", d.briefing.topSells);
+            const cf = rows("cf", d.briefing.crossFundConvergence), sk = rows("sk", d.briefing.activeStreaks);
+            return (
             <>
-              <Hint>{d.signals.buying.length} buying signals, ranked by conviction. Active weight, percentage points.</Hint>
-              {d.signals.buying.length === 0 && <Card><Note>No buying signals in this category for the latest data.</Note></Card>}
-              {d.signals.buying.map((s, i) => <SignalDetailCard key={s.ticker} s={s} rank={i + 1} />)}
-            </>
-          )}
-          {tab === "sells" && (
-            <>
-              <Hint>{d.signals.selling.length} selling signals, ranked by conviction. Active weight, percentage points.</Hint>
-              {d.signals.selling.length === 0 && <Card><Note>No selling signals in this category for the latest data.</Note></Card>}
-              {d.signals.selling.map((s, i) => <SignalDetailCard key={s.ticker} s={s} rank={i + 1} />)}
-            </>
-          )}
-          {tab === "briefing" && (
-            <>
-              <SectionHeader title="Top buys" right={<Hint>{d.briefing.topBuys.length}</Hint>} />
-              {d.briefing.topBuys.map((s, i) => <SignalDetailCard key={`tb-${s.ticker}`} s={s} rank={i + 1} />)}
-              {d.briefing.topBuys.length === 0 && <Card><Note>None.</Note></Card>}
-              <SectionHeader title="Top sells" right={<Hint>{d.briefing.topSells.length}</Hint>} />
-              {d.briefing.topSells.map((s, i) => <SignalDetailCard key={`ts-${s.ticker}`} s={s} rank={i + 1} />)}
-              {d.briefing.topSells.length === 0 && <Card><Note>None.</Note></Card>}
-              <SectionHeader title="Multi-provider" right={<Hint>{d.briefing.crossFundConvergence.length}</Hint>} />
-              {d.briefing.crossFundConvergence.length === 0 && <Card><Note>No cross-provider signals.</Note></Card>}
-              {d.briefing.crossFundConvergence.map((s, i) => <SignalDetailCard key={`cf-${s.ticker}`} s={s} rank={i + 1} />)}
-              <SectionHeader title="Active streaks" right={<Hint>{d.briefing.activeStreaks.length}</Hint>} />
+              <SectionHeader title="Top buys" right={<Hint>{tb.st.total}</Hint>} />
+              <Hint>{coverageText("top buys", tb.st, FULL_LIMIT)}</Hint>
+              {tb.items.map((s, i) => <SignalDetailCard key={`tb-${s.ticker}`} s={s} rank={i + 1} />)}
+              {tb.st.total === 0 && <Card><Note>None.</Note></Card>}
+              {more("tb", tb.st)}
+              <SectionHeader title="Top sells" right={<Hint>{ts.st.total}</Hint>} />
+              <Hint>{coverageText("top sells", ts.st, FULL_LIMIT)}</Hint>
+              {ts.items.map((s, i) => <SignalDetailCard key={`ts-${s.ticker}`} s={s} rank={i + 1} />)}
+              {ts.st.total === 0 && <Card><Note>None.</Note></Card>}
+              {more("ts", ts.st)}
+              <SectionHeader title="Multi-provider" right={<Hint>{cf.st.total}</Hint>} />
+              <Hint>{coverageText("multi-provider signals", cf.st, FULL_LIMIT)}</Hint>
+              {cf.st.total === 0 && <Card><Note>No cross-provider signals.</Note></Card>}
+              {cf.items.map((s, i) => <SignalDetailCard key={`cf-${s.ticker}`} s={s} rank={i + 1} />)}
+              {more("cf", cf.st)}
+              <SectionHeader title="Active streaks" right={<Hint>{sk.st.total}</Hint>} />
+              <Hint>{coverageText("streaks (3+ days)", sk.st, FULL_LIMIT)}</Hint>
               <Card style={{ paddingVertical: spacing.xs }}>
-                {d.briefing.activeStreaks.length === 0 && <Note>No active streaks.</Note>}
-                {d.briefing.activeStreaks.map((s) => <StreakRow key={`${s.fund}-${s.ticker}`} s={s} />)}
+                {sk.st.total === 0 && <Note>No active streaks.</Note>}
+                {sk.items.map((x) => <StreakRow key={`${x.fund}-${x.ticker}`} s={x} />)}
               </Card>
+              {more("sk", sk.st)}
               <SectionHeader title="New options" right={<Tappable onPress={() => router.push("/options/activity")}><Text style={{ color: c.accent, fontFamily: fonts.bodyBold, fontSize: 12 }}>All option activity ↗</Text></Tappable>} />
               {d.briefing.notableOptions.length === 0 && <Card><Note>No notable new options.</Note></Card>}
               {d.briefing.notableOptions.map((o, i) => (
@@ -93,7 +125,8 @@ export default function TodayInFull() {
                 </Tappable>
               ))}
             </>
-          )}
+            );
+          })()}
           {tab === "divergences" && (
             <>
               <Hint>{d.divergences.length} stocks where one side of the book is buying and another selling.</Hint>

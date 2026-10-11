@@ -75,3 +75,43 @@ export const signalStreak = (s: Pick<FullSignal, "streak">): string | null =>
 
 /** Layering strength as the website's 0-100 integer. */
 export const strengthText = (n: number): string => String(Math.round(n));
+
+// ---- ranked lists with a "Show more" step ---------------------------------------------
+
+/** The longest list the app asks the server for. */
+export const FULL_LIMIT = 200;
+/** Rows revealed per "Show more" tap. */
+export const PAGE_STEP = 25;
+
+export interface ListState {
+  /** How many rows to render now. */
+  visible: number;
+  total: number;
+  /** Rows still hidden behind "Show more". */
+  hidden: number;
+  /** Next step's size (<= PAGE_STEP). */
+  nextStep: number;
+  /**
+   * What the server is known to have sent:
+   *  - "complete": it echoed our limit and sent fewer rows than that, so this IS the whole list.
+   *  - "capped": it echoed the limit and filled it, so there may be more beyond it.
+   *  - "fixed": it did not echo the limit (an older server): a fixed top list, never claimed as "all".
+   */
+  coverage: "complete" | "capped" | "fixed";
+}
+
+export function listState(total: number, shown: number, requestedLimit: number, echoedLimit: number | undefined): ListState {
+  const visible = Math.min(Math.max(shown, 0), total);
+  const hidden = total - visible;
+  const honored = echoedLimit === requestedLimit;
+  const coverage: ListState["coverage"] = !honored ? "fixed" : total < requestedLimit ? "complete" : "capped";
+  return { visible, total, hidden, nextStep: Math.min(PAGE_STEP, hidden), coverage };
+}
+
+/** The one-line caption above a ranked list. Never says "all" unless the server vouched for it. */
+export function coverageText(noun: string, st: ListState, limit: number): string {
+  const n = st.total;
+  if (st.coverage === "complete") return `${n} ${noun}, the complete ranked list.`;
+  if (st.coverage === "capped") return `Top ${n} ${noun} (the ${limit}-row cap), ranked by conviction.`;
+  return `${n} ${noun}: this server returns a fixed top list, so there may be more than shown.`;
+}

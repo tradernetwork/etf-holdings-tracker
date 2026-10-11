@@ -22,6 +22,8 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 - [/api/v1/funds](https://api.tickertrace.pro/api/v1/funds): all tracked funds
 - [/api/v1/stats](https://api.tickertrace.pro/api/v1/stats): global stats, including the fund count and as-of date
 
+`/api/v1/signals` and `/api/v1/briefing` also take `limit` (1 to 200): the same ranked order, just longer lists (signals buying and selling, briefing top buys/sells, multi-provider and streaks). Omit it for the usual top lists; the response echoes `limit` when you send one.
+
 Most list endpoints accept `category=active-equity|option-income` to separate stock-pickers from option-income funds. More endpoints (institutional flow, income funds, layering patterns, signal performance, options listings) are in the OpenAPI spec.
 
 ## Dollar estimates and category-filtered briefings
