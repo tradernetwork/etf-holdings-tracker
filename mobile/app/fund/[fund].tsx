@@ -271,6 +271,8 @@ export default function FundScreen() {
 
     if (activeTab === "rotation") {
       if (rotQ.isLoading) return [{ key: "load", title: "", data: [{ t: "node", id: "l", node: <Loading /> }] }];
+      // A 404 means the API has no rotation report for this fund (it lists the ones that do): say so, don't offer a retry.
+      if (rotQ.error instanceof ApiError && rotQ.error.status === 404) return [{ key: "none", title: "", data: [{ t: "node", id: "n", node: <Note>No rotation report for {symbol}. Reports exist for {Array.from(ROTATION_FUNDS).join(" and ")}.</Note> }] }];
       if (rotQ.isError || !rotQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote message="Couldn't load the rotation report." onRetry={() => rotQ.refetch()} /> }] }];
       return [{ key: "rot", title: "", data: [{ t: "node", id: "rot", node: <RotationView d={rotQ.data} /> }] }];
     }
