@@ -5,6 +5,7 @@ Operator tooling for the notifications go-live test. Runs INSIDE the api contain
     docker compose exec -T api python -m api.notification_ops queue-test        # exactly one device registered
     docker compose exec -T api python -m api.notification_ops queue-test --device 1a2b3c4d
     docker compose exec -T api python -m api.notification_ops purge --yes       # delete every device + its data
+    docker compose exec -T api python -m api.notification_ops purge --device 1a2b3c4d --yes   # delete one device
 
 Nothing here sends a push: `queue-test` only queues the fixed test message, which the normal worker
 (`python -m api.notification_job`, run by the 15-minute sync hook) delivers. Output never contains a
@@ -53,10 +54,17 @@ def queue_test(prefix=None):
     return device_id, _queue(device_id)
 
 
-def purge():
+def purge(prefix=None):
+    """Delete every device (or the one whose id starts with `prefix`); follows, outbox and quotas cascade."""
     with store.connect() as db:
+        if prefix:
+            ids = [r['id'] for r in db.execute('SELECT id FROM devices') if r['id'].startswith(prefix)]
+            if len(ids) != 1:
+                raise SystemExit(f'expected exactly one device for prefix {prefix!r}, found {len(ids)}')
+            db.execute('DELETE FROM devices WHERE id=?', (ids[0],))
+            return 1
         n = db.execute('SELECT COUNT(*) FROM devices').fetchone()[0]
-        db.execute('DELETE FROM devices')        # follows / outbox / quotas cascade
+        db.execute('DELETE FROM devices')
     return n
 
 
@@ -68,6 +76,7 @@ def main(argv=None):
     q.add_argument('--device')
     p = sub.add_parser('purge')
     p.add_argument('--yes', action='store_true')
+    p.add_argument('--device', help='only the device whose id starts with this prefix (see `status`)')
     a = ap.parse_args(argv)
     if a.cmd == 'status':
         print(status())
@@ -77,7 +86,7 @@ def main(argv=None):
     elif a.cmd == 'purge':
         if not a.yes:
             raise SystemExit('refusing without --yes')
-        print(f'deleted {purge()} device(s) and all their follows / outbox rows')
+        print(f'deleted {purge(a.device)} device(s) and all their follows / outbox rows')
     return 0
 
 

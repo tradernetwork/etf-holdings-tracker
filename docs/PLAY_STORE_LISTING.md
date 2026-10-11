@@ -68,7 +68,7 @@ Notes on the data in the screenshots: the date shown is the data date (2026-10-0
 | Collected/shared? | Collected: yes. Shared: **no** (transfer to a service provider processing on our behalf is not "sharing" under Google's definition) |
 | Optional? | No (required for updates to work) |
 | Encrypted in transit | Yes (HTTPS) |
-| Users can request deletion | Yes: email admin@tradermatrix.pro (the identifier is anonymous and held by Expo, not by us) |
+| Users can request deletion | Yes, by email to admin@tradermatrix.pro, but note the identifier is anonymous and held by Expo, not by us: we cannot look it up for a user, and Expo's own deletion process applies |
 | Personal info, financial info, location, contacts, messages, photos, audio, health, web browsing, app activity, app info and performance (crash/diagnostics) | **Not collected** |
 | Advertising ID | Not collected, AD_ID permission removed |
 | Account creation | None. Data deletion URL not required |
@@ -79,7 +79,7 @@ Add to Release A:
 |---|---|---|---|---|---|
 | **Device or other IDs**: push token and random device ID | Yes | App functionality (the daily digest) | No (Expo push service and Google FCM process it as service providers) | **Yes**, off until the user turns it on | stored on our server; 180-day idle expiry |
 | **App activity: Other actions**: the list of followed funds/stocks | Yes | App functionality | No | Yes | only sent when notifications are on; stored with the device record |
-Deletion: in-app, **Settings > "Clear my follows"** or turning notifications off deletes the server record immediately; also by email. "Data is processed ephemerally": no. "Committed to Play Families policy": no. "Independent security review": no.
+Deletion: in-app, **Settings > "Clear my follows"** or turning notifications off deletes the server record immediately when the phone is online. We cannot look a device up by name or email (we hold neither), so email requests are answered by pointing to the in-app path; expiry after 180 days without use covers uninstalled apps. "Data is processed ephemerally": no. "Committed to Play Families policy": no. "Independent security review": no.
 
 These are our best reading of Google's categories; Google is the arbiter, and a reviewer may ask to reclassify "Other actions" or the per-install ID. If in doubt, declare more rather than less.
 
@@ -89,5 +89,5 @@ The live policy said the Android app "is the same site in a wrapper", and descri
 - Intro: applies to the site and to the native Android app; where they differ the sections say so. Last updated date set to October 11, 2026.
 - "Usage analytics" is scoped to **the website only**.
 - New section **The Android app**: no ads/analytics/tracking libraries; follows, theme, notification setting stored on the phone; the update service receives app version, platform, a random per-install identifier and the IP address.
-- New section **Notifications (optional)**: off until enabled; registers a random device ID, the Expo push token, a hashed access secret and the follow list; used only for the digest; no name/email/phone/ad ID/location/portfolio; delivered via Expo's push service and Google FCM; unsent digests expire after 24 h, sent records deleted after 30 days, idle registrations after 180 days; delete via Settings ("Clear my follows" or turn notifications off) or by email; anonymous per-token enrollment counter until the UTC-day boundary; backups rotated within 30 days.
+- New section **Notifications (optional)**: off until enabled; registers a random device ID, the Expo push token, a hashed access secret and the follow list; used only for the digest; no name/email/phone/ad ID/location/portfolio; delivered via Expo's push service and Google FCM; unsent digests dropped after 24 h, digest records deleted after 30 days, registrations after 180 days without use (a delivered digest counts as use); delete via Settings ("Clear my follows" or turn notifications off; needs the phone online); one-way token-hash enrollment counter removed shortly after the UTC-day boundary; no deletion by name/email because we hold neither; no backups of our own (provider snapshots may persist deleted rows until they rotate). Every claim is mapped to code in the PR #170 thread.
 The policy text is already accurate for Release A (it describes notifications as optional and off); it should go live **before or with** the first store release, and in any case before the notifications flag is turned on.

@@ -146,6 +146,9 @@ def send_pending(now, deadline=None):
                 continue
             if ticket:
                 db.execute("UPDATE outbox SET status='accepted',ticket=?,ticket_at=?,lease_until=0 WHERE id=?", (ticket,now,row['id']))
+                # A digest Expo accepted means this install is alive: renew the 180-day idle clock, so a
+                # phone that only ever RECEIVES digests (no follow edits) is not deleted as "unused".
+                db.execute('UPDATE devices SET updated=? WHERE id=?', (now, row['device_id']))
                 sent += 1
             else:
                 attempts = row['attempts'] + 1
