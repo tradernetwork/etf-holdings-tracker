@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Badge, Hint, Mono } from "@/components/ui";
 import { optionSubtitle, optionTitle, sideLabel, valueText, type OptionLine } from "@/lib/book";
+import { expiryInfo, expirySubtitle } from "@/lib/expiry";
 import { formatShares, formatWeight } from "@/lib/format";
 import { deltaColor, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -22,11 +23,14 @@ export function OptionRow({ line, showWeight = true, note, plain }: {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const dc = line.contractsDelta;
+  const exp = expiryInfo({ expiry: line.expiry, asOf: line.asOf, fileDte: line.dte });
+  const subtitle = line.asOf ? expirySubtitle(exp, line.expiry, line.flex) : optionSubtitle(line.expiry, line.dte, line.flex);
   return (
-    <View style={[styles.row, plain && styles.plain]}>
+    <View style={[styles.row, plain && styles.plain, exp.expired && { opacity: 0.6 }]}>
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={styles.title}>{optionTitle(line.underlying, line.type, line.strike)}</Text>
-        <Hint>{optionSubtitle(line.expiry, line.dte, line.flex)}</Hint>
+        <Hint style={exp.expired ? { color: c.textMuted, fontStyle: "italic" } : undefined}>{subtitle}</Hint>
+        {exp.fileNote ? <Hint style={{ opacity: 0.8 }}>{exp.fileNote}</Hint> : null}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <Badge label={line.short ? "SHORT" : "LONG"} color={line.short ? c.isNew : c.accent} />
           <Hint>{sideLabel(line.contracts).replace(/^(Long|Short) · /, "")}</Hint>

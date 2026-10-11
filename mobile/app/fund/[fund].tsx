@@ -9,7 +9,7 @@ import {
 } from "@/components/fund/book-rows";
 import { ChangeRow, StreakRow } from "@/components/fund/changes-rows";
 import { FactsCard, GradeHeader, MetricBlock, PeerCard } from "@/components/fund/effectiveness-view";
-import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, optionKeyOf } from "@/components/fund/income-rows";
+import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, SnapshotDate, optionKeyOf } from "@/components/fund/income-rows";
 import { RotationView } from "@/components/fund/rotation-view";
 import { Card, ErrorNote, Hint, Loading, Mono, Note, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -375,7 +375,7 @@ export default function FundScreen() {
   );
 
   return (
-    <>
+    <SnapshotDate.Provider value={inc?.asOfDate ?? f.asOfDate ?? null}>
       <SectionList<Item, Section>
         ref={listRef}
         style={styles.root}
@@ -407,7 +407,7 @@ export default function FundScreen() {
         <OptionGroup<PosSort> label="Sort by" value={posSort} onChange={setPosSort} options={(Object.keys(SORT_LABEL) as PosSort[]).map((k) => ({ value: k, label: SORT_LABEL[k] }))} />
         <OptionGroup<"default" | "asc" | "desc"> label="Direction" value={posDir} onChange={setPosDir} options={[{ value: "default", label: "Default for this column" }, { value: "asc", label: "Ascending ↑" }, { value: "desc", label: "Descending ↓" }]} />
       </FilterSheet>
-    </>
+    </SnapshotDate.Provider>
   );
 }
 

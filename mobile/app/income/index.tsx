@@ -3,21 +3,19 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FundCard } from "@/components/income/DirectoryParts";
 import { Card, ErrorNote, Hint, Loading, Note, Screen, Tappable } from "@/components/ui";
-import { groupByArchetype, SORT_OPTIONS, type DirectorySort } from "@/lib/incomeDirectory";
+import { formatAsOfLong, groupByArchetype, SORT_OPTIONS, type DirectorySort } from "@/lib/incomeDirectory";
 import { useIncomeDirectory } from "@/lib/incomeDirectoryQueries";
+import { formatPutCall, useStats } from "@/lib/stats";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
-
-function longDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
-}
 
 /** Premium Sellers: the website's /income, grouped by what each income fund structurally is. */
 export default function IncomeDirectory() {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const q = useIncomeDirectory();
+  const stats = useStats();
+  const pc = formatPutCall(stats.data?.putCallRatio);
   const [archetype, setArchetype] = useState("all");
   const [sort, setSort] = useState<DirectorySort>("aum");
   const all = useMemo(() => (q.data ? groupByArchetype(q.data) : []), [q.data]);
@@ -29,7 +27,10 @@ export default function IncomeDirectory() {
       <Text style={styles.lede}>
         Funds that sell options for income. Their stock book churns by design — it's collateral for the overlay, not conviction — so none of the conviction scoring on the stock-picker side applies here. The option book is the story.
       </Text>
-      {q.data && <Hint>{longDate(q.data.asOfDate)} · {q.data.fundCount} funds · {q.data.archetypes.length} distinct structures</Hint>}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" }}>
+        {q.data ? <Hint>{formatAsOfLong(q.data.asOfDate)} · {q.data.fundCount} funds · {q.data.archetypes.length} distinct structures</Hint> : <View />}
+        {pc ? <View style={styles.pc} accessibilityLabel={`Put call ratio ${pc}`}><Text style={styles.pcLabel}>P/C Ratio</Text><Text style={styles.pcValue}>{pc}</Text></View> : null}
+      </View>
 
       <Tappable onPress={() => router.push("/options")}>
         <Card><Text style={styles.link}>Today's options activity →</Text><Hint>Contracts the income funds opened, closed and rolled, by provider.</Hint></Card>
@@ -97,5 +98,8 @@ const makeStyles = (c: Palette) =>
     chip: { minHeight: MIN_TAP - 8, paddingHorizontal: 12, justifyContent: "center", borderRadius: radii.pill, borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
     chipText: { color: c.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 12 },
     secHead: { borderLeftWidth: 2, paddingLeft: spacing.md, gap: 4, marginTop: spacing.md },
+    pc: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: c.border, backgroundColor: c.card, borderRadius: radii.pill, paddingHorizontal: 10, minHeight: 28 },
+    pcLabel: { color: c.textMuted, fontFamily: fonts.body, fontSize: 12 },
+    pcValue: { color: c.textPrimary, fontFamily: fonts.monoBold, fontSize: 13 },
     secTitle: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 16, flexShrink: 1 },
   });
