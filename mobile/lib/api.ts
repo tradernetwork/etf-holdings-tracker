@@ -45,7 +45,7 @@ export class NetworkError extends Error {
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-async function request<T>(
+export async function request<T>(
   path: GetPath,
   query?: Record<string, string | number | undefined>,
   signal?: AbortSignal,

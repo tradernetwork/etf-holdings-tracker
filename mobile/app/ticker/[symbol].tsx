@@ -1,3 +1,5 @@
+import { StockHistory } from "@/components/stock-history";
+import { Action } from "@/components/discovery-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -80,7 +82,8 @@ export default function TickerScreen() {
         </View>
       </View>
 
-      <SectionHeader title="Opposite moves" right={<Hint>active weight, percentage points</Hint>} />
+      <StockHistory symbol={symbol} />
+      <SectionHeader title="Opposite moves" right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
       {evidence.length === 0 ? (
         <Card><Note>No fund made a significant move in {symbol} in the latest files. Older disclosures are marked below.</Note></Card>
       ) : (
@@ -99,13 +102,14 @@ export default function TickerScreen() {
       <View>
         {shown.map((h) => {
           const ch = changeByFund.get(h.fund);
+          const shares = (h as typeof h & { shares?: number | null }).shares;
           return (
             <Tappable key={h.fund} onPress={() => router.push(`/fund/${encodeURIComponent(h.fund)}`)} style={styles.holderRow}>
               <Monogram label={h.fund} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={styles.holderTitle}>{h.fund}</Text>
                 <View style={{ flexDirection: "row", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                  <Hint>{h.provider}</Hint>
+                  <Hint>{h.provider} · {shares == null ? "Shares unknown" : `${shares.toLocaleString()} shares`}</Hint>
                   <FreshnessLabel freshness={freshnessLabel({ stale: h.stale, date: h.fileDate })} />
                 </View>
               </View>

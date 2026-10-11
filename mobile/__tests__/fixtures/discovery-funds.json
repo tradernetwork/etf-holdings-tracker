@@ -1,0 +1,144 @@
+{
+  "funds": [
+    {
+      "fund": "AIEQ",
+      "provider": "Amplify",
+      "category": "active-equity",
+      "aum": 0.11507843,
+      "aumUsd": 115078430,
+      "holdingsCount": 159,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "AVGO",
+        "weight": 9.3998
+      },
+      "lastHoldingsDate": "2026-10-09",
+      "stale": false,
+      "refreshed": true,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "AMDY",
+      "provider": "YieldMax",
+      "category": "option-income",
+      "aum": 0.5033627415899999,
+      "aumUsd": 503362742,
+      "holdingsCount": 0,
+      "optionsCount": 6,
+      "topHolding": null,
+      "lastHoldingsDate": "2026-10-09",
+      "stale": false,
+      "refreshed": true,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "AMZY",
+      "provider": "YieldMax",
+      "category": "option-income",
+      "aum": 0.214448185,
+      "aumUsd": 214448185,
+      "holdingsCount": 0,
+      "optionsCount": 4,
+      "topHolding": null,
+      "lastHoldingsDate": "2026-10-09",
+      "stale": false,
+      "refreshed": true,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "ARKF",
+      "provider": "ARK Invest",
+      "category": "active-equity",
+      "aum": 1.1022407961599998,
+      "aumUsd": 1102240796,
+      "holdingsCount": 38,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "SHOP",
+        "weight": 9.6501
+      },
+      "lastHoldingsDate": "2026-09-25",
+      "stale": true,
+      "refreshed": false,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "ARKG",
+      "provider": "ARK Invest",
+      "category": "active-equity",
+      "aum": 2.17894034606,
+      "aumUsd": 2178940346,
+      "holdingsCount": 32,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "TWST",
+        "weight": 9.9399
+      },
+      "lastHoldingsDate": "2026-09-25",
+      "stale": true,
+      "refreshed": false,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "ARKK",
+      "provider": "ARK Invest",
+      "category": "active-equity",
+      "aum": 8.758936034029999,
+      "aumUsd": 8758936034,
+      "holdingsCount": 42,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "TSLA",
+        "weight": 9.1737
+      },
+      "lastHoldingsDate": "2026-09-25",
+      "stale": true,
+      "refreshed": false,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "ARKQ",
+      "provider": "ARK Invest",
+      "category": "active-equity",
+      "aum": 1.9538001425099998,
+      "aumUsd": 1953800143,
+      "holdingsCount": 37,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "TSLA",
+        "weight": 10.9089
+      },
+      "lastHoldingsDate": "2026-09-25",
+      "stale": true,
+      "refreshed": false,
+      "catchUp": false,
+      "catchUpSince": null
+    },
+    {
+      "fund": "ARKW",
+      "provider": "ARK Invest",
+      "category": "active-equity",
+      "aum": 1.9026313166900002,
+      "aumUsd": 1902631317,
+      "holdingsCount": 36,
+      "optionsCount": 0,
+      "topHolding": {
+        "ticker": "TSLA",
+        "weight": 7.505
+      },
+      "lastHoldingsDate": "2026-09-25",
+      "stale": true,
+      "refreshed": false,
+      "catchUp": false,
+      "catchUpSince": null
+    }
+  ],
+  "asOfDate": "2026-10-09",
+  "category": null
+}

@@ -1,3 +1,4 @@
+import { Action } from "@/components/discovery-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
@@ -57,6 +58,7 @@ export default function Explore() {
   return (
     <Screen refreshing={funds.isRefetching} onRefresh={() => funds.refetch()}>
       <Text style={styles.title}>Explore</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Action onPress={() => router.push("/changes")}>Changes →</Action><Action onPress={() => router.push("/stocks")}>Stocks →</Action><Action onPress={() => router.push("/trend")}>Institutional trend →</Action></View>
 
       <View style={styles.searchRow}>
         <View style={styles.search}>

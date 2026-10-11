@@ -1,0 +1,94 @@
+{
+  "asOfDate": "2026-10-09",
+  "fundCount": 62,
+  "tickers": [
+    {
+      "ticker": "MU",
+      "name": "MICRON TECHNOLOGY INC COMMON STOCK USD.1",
+      "sector": "Information Technology",
+      "blendedWeight": 3.1416,
+      "daily": -0.0828,
+      "weekly": -0.0464,
+      "monthly": 2.1935,
+      "fundCount": 10,
+      "signal": "distribution-starting"
+    },
+    {
+      "ticker": "A005930",
+      "name": "Samsung Electronics Co Ltd",
+      "sector": "",
+      "blendedWeight": 2.2527,
+      "daily": 0.0205,
+      "weekly": 0.0619,
+      "monthly": 2.0958,
+      "fundCount": 4,
+      "signal": "accumulating"
+    },
+    {
+      "ticker": "A000660",
+      "name": "SK HYNIX INC COMMON STOCK KRW5000.0",
+      "sector": "Information Technology",
+      "blendedWeight": 2.5812,
+      "daily": 0.0165,
+      "weekly": -0.082,
+      "monthly": 1.7434,
+      "fundCount": 6,
+      "signal": "accumulating"
+    },
+    {
+      "ticker": "CXMT",
+      "name": "CXMT CORPORATION",
+      "sector": "",
+      "blendedWeight": 0.3926,
+      "daily": -0.0313,
+      "weekly": -0.0073,
+      "monthly": 0.3926,
+      "fundCount": 1,
+      "signal": "distribution-starting"
+    },
+    {
+      "ticker": "SNDK",
+      "name": "SANDISK CORP COMMON STOCK",
+      "sector": "Information Technology",
+      "blendedWeight": 0.3968,
+      "daily": -0.0085,
+      "weekly": -0.0169,
+      "monthly": 0.3715,
+      "fundCount": 4,
+      "signal": "distribution-starting"
+    },
+    {
+      "ticker": "STX",
+      "name": "STRIKE ENERGY LTD COMMON STOCK",
+      "sector": "Energy",
+      "blendedWeight": 0.5927,
+      "daily": -0.0123,
+      "weekly": -0.1055,
+      "monthly": 0.3317,
+      "fundCount": 10,
+      "signal": "distribution-starting"
+    },
+    {
+      "ticker": "META",
+      "name": "META PLATFORMS INC CLASS A COMMON STOCK USD.000006",
+      "sector": "Communication Services",
+      "blendedWeight": 2.0106,
+      "daily": 0.0094,
+      "weekly": -0.0318,
+      "monthly": 0.3097,
+      "fundCount": 15,
+      "signal": "accumulating"
+    },
+    {
+      "ticker": "WDC",
+      "name": "WESTERN DIGITAL CORP COMMON STOCK USD.01",
+      "sector": "Information Technology",
+      "blendedWeight": 0.4042,
+      "daily": -0.0022,
+      "weekly": -0.0475,
+      "monthly": 0.2544,
+      "fundCount": 6,
+      "signal": "distribution-starting"
+    }
+  ]
+}
