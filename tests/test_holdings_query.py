@@ -99,7 +99,7 @@ def test_bad_params_are_rejected_and_csv_export_is_uncapped(book, client):
     assert client.get('/api/v1/holdings', params={'asset': 'bonds'}).status_code == 422
     assert client.get('/api/v1/holdings', params={'sort': 'nope'}).status_code == 422
     assert client.get('/api/v1/holdings', params={'size': 501}).status_code == 422
-    assert client.get('/api/v1/holdings', params={'fund': '../x'}).status_code == 400   # #155's contract
+    assert client.get('/api/v1/holdings', params={'fund': '../x'}).status_code == 422   # one status for every bad /holdings value
     r = client.get('/api/v1/holdings', params={'format': 'csv', 'size': 2, 'page': 2})   # page/size ignored
     assert r.headers['content-type'].startswith('text/csv')
     rows = list(csv.DictReader(r.text.splitlines()))
