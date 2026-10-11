@@ -51,6 +51,8 @@ export interface Change {
   sharesDelta?: number | null; // null on a catch-up fund
   currentWeight: number;
   previousWeight: number;
+  currentShares?: number | null;
+  previousShares?: number | null;
   type: ChangeType;
   isOption: boolean;
   fundCategory?: Category;
@@ -234,7 +236,23 @@ export interface OptionRoll {
   opened: { strike: number; expiry: string }[];
 }
 
+export interface FundStreak {
+  ticker: string;
+  days: number;
+  direction: "up" | "down" | string;
+}
+export interface FundFlow {
+  sharesOutstanding: number;
+  sharesDelta: number;
+  flowPct: number;
+  periodDays: number;
+}
+
 export interface FundResponse {
+  streaks?: FundStreak[];
+  /** Share creation/redemption net flow over `periodDays`, when known. */
+  flow?: FundFlow | null;
+  refreshed?: boolean | null;
   /** All option legs (the equity list above is top-20 only). */
   optionHoldings?: FundOptionHolding[];
   optionRolls?: OptionRoll[];
