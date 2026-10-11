@@ -76,6 +76,7 @@ export default function Today() {
       {category === "option-income" && (
         <Note>Option-income funds churn their stock books by design, so deltas here are mechanics, not a view on the company.</Note>
       )}
+      {category === "option-income" && <Action onPress={() => router.push("/income")}>How these funds are built →</Action>}
 
       {signals.isLoading && <Loading />}
       {signals.isError && <ErrorNote message="Couldn't load today's signals. Check your connection." onRetry={refresh} />}

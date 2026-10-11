@@ -111,6 +111,7 @@ function ThemedStack() {
         <Stack.Screen name="trend" options={{ ...detail, title: "Institutional trend" }} />
         <Stack.Screen name="evidence/[symbol]" options={{ ...detail, title: "All evidence" }} />
         <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
+        <Stack.Screen name="income/index" options={{ ...detail, title: "Premium Sellers" }} />
         <Stack.Screen name="options/index" options={{ ...detail, title: "Options" }} />
         <Stack.Screen name="options/activity" options={{ ...detail, title: "Option activity" }} />
         <Stack.Screen name="options/listings" options={{ ...detail, title: "CBOE listings" }} />

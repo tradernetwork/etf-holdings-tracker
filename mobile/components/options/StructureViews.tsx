@@ -2,46 +2,30 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ShowMore } from "@/components/options/parts";
-import { Badge, Card, FreshnessLabel, Hint, Mono, Note, Tappable } from "@/components/ui";
-import { formatExpiry, optionSubtitle, optionTitle } from "@/lib/book";
-import { formatUsd, freshnessLabel } from "@/lib/format";
+import { OptionRow } from "@/components/fund/option-row";
+import { Card, FreshnessLabel, Hint, Note, Tappable } from "@/components/ui";
+import { formatExpiry } from "@/lib/book";
+import { freshnessLabel } from "@/lib/format";
+import { legToLine } from "@/lib/optionHolders";
 import {
-  formatContractsChange, legsOfStructure, STRUCTURE_BLURB, structureLabel, TRADE_BLURB, tradeSummary,
+  legsOfStructure, STRUCTURE_BLURB, structureLabel, TRADE_BLURB, tradeSummary,
 } from "@/lib/options/logic";
 import type { FundOptionBook, OptionLeg, OptionStructure, OptionTrade } from "@/lib/options/types";
-import { deltaColor, fonts, spacing, type Palette } from "@/lib/theme";
+import { fonts, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
 const CAP = 3;
 
-/** One contract, in the same words the fund screen uses: title, expiry · DTE · FLEX, side, value, change. */
+/** One contract, rendered by the shared option row so it reads the same as on the fund screen. */
 export function LegLine({ leg, underlying }: { leg: OptionLeg; underlying: string }) {
-  const c = useTheme();
-  const styles = useStyles(makeStyles);
-  const short = leg.contracts < 0;
-  const n = Math.abs(Math.round(leg.contracts)).toLocaleString("en-US");
+  const moved = leg.prevContracts != null && leg.change != null && leg.change !== 0;
   return (
-    <View style={styles.leg}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={styles.legTitle}>{optionTitle(underlying, leg.optionType, leg.strike)}</Text>
-        <Hint>{optionSubtitle(leg.expiry, leg.dte, leg.isFlex)}</Hint>
-        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-          <Badge label={short ? "SHORT" : "LONG"} color={short ? c.isNew : c.accent} />
-          <Hint>{n} {Math.abs(leg.contracts) === 1 ? "contract" : "contracts"}</Hint>
-        </View>
-      </View>
-      <View style={{ alignItems: "flex-end", gap: 2 }}>
-        <Mono bold style={{ fontSize: 13, color: leg.marketValue != null && leg.marketValue < 0 ? c.isNew : c.textPrimary }}>
-          {leg.marketValue == null ? "—" : formatUsd(leg.marketValue)}
-        </Mono>
-        <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: deltaColor(leg.change, c) }}>
-          {formatContractsChange(leg.change)} ct
-        </Text>
-        {leg.prevContracts != null && leg.change != null && leg.change !== 0 ? (
-          <Hint>{Math.round(leg.prevContracts).toLocaleString("en-US")} → {Math.round(leg.contracts).toLocaleString("en-US")}</Hint>
-        ) : null}
-      </View>
-    </View>
+    <OptionRow
+      plain
+      showWeight={false}
+      line={legToLine(leg, underlying)}
+      note={moved ? `${Math.round(leg.prevContracts as number).toLocaleString("en-US")} → ${Math.round(leg.contracts).toLocaleString("en-US")}` : undefined}
+    />
   );
 }
 
@@ -140,6 +124,4 @@ const makeStyles = (c: Palette) =>
     block: { borderColor: c.border, borderWidth: 1, borderRadius: 10, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm },
     blockHead: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 44 },
     blockTitle: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
-    leg: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, borderTopColor: c.border, borderTopWidth: 1 },
-    legTitle: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
   });
