@@ -1,3 +1,4 @@
+import { scopeChanges } from "./scope";
 import type { Change, CategoryChoice } from "../types";
 import { resolveUsd } from "../format";
 import type {
@@ -244,11 +245,10 @@ export function dailyMoveCounts(
   response: ChangesResponse | undefined,
   asOf: string | undefined,
   category: CategoryChoice,
+  funds?: FundMap,
 ): { added: number; reduced: number } | null {
   if (!response || response.asOfDate !== asOf) return null;
   return moveCounts(
-    response.changes.filter(
-      (r) => category === "all" || r.fundCategory === category,
-    ),
+    scopeChanges(response.changes, category, funds),
   );
 }

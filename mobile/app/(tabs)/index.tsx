@@ -1,3 +1,4 @@
+import { CATEGORY_OPTIONS as CATEGORIES } from "@/lib/discovery/scope";
 import { Action } from "@/components/discovery-ui";
 import { TrendPreview } from "@/components/institutional-trend";
 import { useChanges } from "@/lib/discovery/api";
@@ -21,14 +22,8 @@ import { kpis, staleMessage } from "@/lib/today/logic";
 import type { TodayStats } from "@/lib/today/types";
 import { deltaColor, display, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
-import type { CategoryChoice } from "@/lib/types";
 
 const REFERRAL_URL = "https://www.tradermatrix.pro/?ref=MPHINANCE";
-const CATEGORIES: { value: CategoryChoice; label: string }[] = [
-  { value: "active-equity", label: "Active Equity" },
-  { value: "option-income", label: "Option-Income" },
-  { value: "all", label: "All" },
-];
 
 export default function Today() {
   const c = useTheme();
@@ -46,7 +41,7 @@ export default function Today() {
   };
   const asOf = signals.data?.asOfDate;
   const stats = signals.data?.stats;
-  const counts = dailyMoveCounts(completeChanges.data, asOf, category);
+  const counts = dailyMoveCounts(completeChanges.data, asOf, category, new Map((funds.data?.funds ?? []).map(f => [f.fund, f])));
   const ratio = counts && counts.reduced > 0 ? (counts.added / counts.reduced).toFixed(2) : "—";
 
   const hero = pickHero(divergences.data, signals.data);

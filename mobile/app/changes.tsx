@@ -1,16 +1,24 @@
+import { useAppState } from "@/lib/app-state";
+import {
+  CATEGORY_OPTIONS,
+  scopeChanges,
+  scopeLabel,
+} from "@/lib/discovery/scope";
+import { changeSections } from "@/lib/discovery/sections";
+import { deltaColor } from "@/lib/theme";
 import { useState, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import {
   Action,
   ChangeCard,
-  ListPage,
+  SectionPage,
+  DenseRow,
   Search,
   Title,
 } from "@/components/discovery-ui";
 import {
-  Card,
   Mono,
   ErrorNote,
   Hint,
@@ -20,7 +28,6 @@ import {
 } from "@/components/ui";
 import { useChanges } from "@/lib/discovery/api";
 import {
-  aggregateChanges,
   emptyChangeFilters,
   filterChanges,
   moveCounts,
@@ -28,11 +35,11 @@ import {
 import type { ChangeFilters, Period } from "@/lib/discovery/types";
 import { useFunds } from "@/lib/queries";
 import { useTheme } from "@/lib/theme-context";
-import type { Change } from "@/lib/types";
 import { formatPp, formatUsd, formatShortDate } from "@/lib/format";
 export default function Changes() {
   const c = useTheme(),
     params = useLocalSearchParams<{ search?: string; fund?: string }>();
+  const { category, setCategory } = useAppState();
   const [period, setPeriod] = useState<Period>("daily"),
     [f, setF] = useState<ChangeFilters>({
       ...emptyChangeFilters,
@@ -49,26 +56,19 @@ export default function Changes() {
     () => new Map((funds.data?.funds ?? []).map((r) => [r.fund, r])),
     [funds.data],
   );
-  const source = q.data?.changes ?? [];
+  const source = useMemo(
+    () => scopeChanges(q.data?.changes ?? [], category, map),
+    [q.data, category, map],
+  );
   const filtered = useMemo(
     () => filterChanges(source, f, map),
     [source, f, map],
   );
-  const rows = grouped
-    ? [...filtered].sort((a, b) =>
-        (map.get(a.fund)?.provider ?? a.fund).localeCompare(
-          map.get(b.fund)?.provider ?? b.fund,
-        ),
-      )
-    : filtered;
-  const aggregates = aggregateChanges(filtered, map);
-  const data: {
-    id: string;
-    row?: Change;
-    aggregate?: (typeof aggregates)[number];
-  }[] = byTicker
-    ? aggregates.map((aggregate) => ({ id: aggregate.ticker, aggregate }))
-    : rows.map((row) => ({ id: `${row.fund}:${row.ticker}:${row.type}`, row }));
+  const rows = filtered;
+  const sections = useMemo(
+    () => changeSections(rows, map, grouped, byTicker, expanded),
+    [rows, map, grouped, byTicker, expanded],
+  );
   const counts = moveCounts(filtered);
   const values = (key: "sector" | "fund") =>
     [...new Set(source.map((r) => r[key]).filter(Boolean))].sort();
@@ -81,9 +81,16 @@ export default function Changes() {
     <>
       <Title>Changes</Title>
       <Hint>
-        {formatShortDate(q.data?.asOfDate)} · {rows.length} of {source.length}{" "}
-        equity changes · {counts.added} added / {counts.reduced} reduced
+        {formatShortDate(q.data?.asOfDate)} · {source.length} stock-position
+        changes across{" "}
+        {scopeLabel(category, new Set(source.map((r) => r.fund)).size)} ·{" "}
+        {rows.length} shown · {counts.added} added / {counts.reduced} reduced
       </Hint>
+      <Segmented
+        options={CATEGORY_OPTIONS}
+        value={category}
+        onChange={setCategory}
+      />
       <Segmented
         value={period}
         onChange={setPeriod}
@@ -122,10 +129,20 @@ export default function Changes() {
           ))}
       </View>
       <Note>
-        Complete equity change feed, including smaller adjustments. Daily
-        catch-up changes are withheld by the API. Periods compare disclosed
-        snapshots, not intraday trades.
+        Active Δ is drift adjusted; dollar flow is estimated. Tap a row for
+        sector, full name and fund links. Catch-up deltas are withheld.
+        {category !== "active-equity" &&
+          " Option-income stock moves are collateral mechanics, not stock conviction."}
       </Note>
+      {f.fund &&
+        category !== "all" &&
+        map.get(f.fund)?.category &&
+        map.get(f.fund)?.category !== category && (
+          <Note>
+            {f.fund} belongs to {map.get(f.fund)?.category}. Switch category or
+            choose All to see its changes.
+          </Note>
+        )}
       {q.data?.truncated && (
         <Note>
           A fund still reaches the API limit after provider/fund splitting.
@@ -148,69 +165,63 @@ export default function Changes() {
     </>
   );
   return (
-    <ListPage
-      data={data}
+    <SectionPage
+      sections={sections}
+      showHeaders={grouped || byTicker}
       header={header}
-      keyFor={(r) => r.id}
       refreshing={q.isRefetching}
       onRefresh={() => {
         q.refetch();
         funds.refetch();
       }}
-      renderItem={({ item, index }) => {
+      renderItem={({ item }) => {
         const a = item.aggregate;
         if (a)
           return (
-            <Card>
-              <Mono bold>{a.ticker}</Mono>
+            <DenseRow
+              label={`${a.ticker}, ${a.rows.length} fund changes. ${expanded === a.ticker ? "Collapse" : "Expand"} all evidence`}
+              expanded={expanded === a.ticker}
+              onPress={() =>
+                setExpanded(expanded === a.ticker ? null : a.ticker)
+              }
+              top={
+                <Mono bold style={{ fontSize: 14 }}>
+                  {a.ticker}
+                </Mono>
+              }
+              rightTop={
+                <Mono
+                  style={{ fontSize: 13, color: deltaColor(a.netDelta, c) }}
+                >
+                  {formatPp(a.netDelta)} net
+                </Mono>
+              }
+              bottom={
+                <Hint>
+                  {a.buying.length} buying · {a.selling.length} selling ·{" "}
+                  {a.rows.length} fund rows
+                </Hint>
+              }
+              rightBottom={<Hint>est. {formatUsd(a.flowUsd)}</Hint>}
+            >
               <Hint>
                 {a.rows[0].name} · {a.rows[0].sector || "Sector not reported"}
               </Hint>
               <Hint>
-                {a.buying.length} buying: {a.buying.join(", ") || "none"} ·{" "}
-                {a.selling.length} selling: {a.selling.join(", ") || "none"}
-              </Hint>
-              <Mono>
-                {formatPp(a.netDelta)} net · est. {formatUsd(a.flowUsd)} flow
-              </Mono>
-              <Hint>
-                {a.knownDollarRows} of {a.rows.length} rows with known dollar
-                flow; unknown rows excluded from sums.
+                {a.knownDollarRows} of {a.rows.length} rows have known dollar
+                flow. Unknown rows excluded from sums.
               </Hint>
               <Action
                 onPress={() =>
-                  setExpanded(expanded === a.ticker ? null : a.ticker)
+                  router.push(`/ticker/${encodeURIComponent(a.ticker)}`)
                 }
               >
-                {expanded === a.ticker
-                  ? "Hide fund evidence"
-                  : `View all ${a.rows.length} fund changes`}
+                Open {a.ticker} →
               </Action>
-              {expanded === a.ticker &&
-                a.rows.map((r) => (
-                  <ChangeCard
-                    key={`${r.fund}:${r.type}`}
-                    row={r}
-                    fund={map.get(r.fund)}
-                  />
-                ))}
-            </Card>
+              <Hint>All {a.rows.length} fund changes below</Hint>
+            </DenseRow>
           );
-        const r = item.row!;
-        return (
-          <View style={{ gap: 8 }}>
-            {grouped &&
-              (index === 0 ||
-                (map.get(rows[index - 1].fund)?.provider ??
-                  rows[index - 1].fund) !==
-                  (map.get(r.fund)?.provider ?? r.fund)) && (
-                <Text style={{ color: c.textSecondary, fontWeight: "bold" }}>
-                  {map.get(r.fund)?.provider ?? r.fund}
-                </Text>
-              )}
-            <ChangeCard row={r} fund={map.get(r.fund)} />
-          </View>
-        );
+        return <ChangeCard row={item.row!} fund={map.get(item.row!.fund)} />;
       }}
     >
       <FilterSheet
@@ -291,6 +302,6 @@ export default function Changes() {
           ]}
         />
       </FilterSheet>
-    </ListPage>
+    </SectionPage>
   );
 }
