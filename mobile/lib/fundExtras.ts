@@ -8,8 +8,6 @@ import { fetchWithRetry } from "./retry";
 import type { Change } from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "https://api.tickertrace.pro";
-/** The website origin, which serves the rotation reports as static JSON under /data/. */
-const WEB_BASE = process.env.EXPO_PUBLIC_WEB_URL ?? "https://tickertrace.pro";
 
 // ---- /api/v1/income/{fund} -------------------------------------------------------
 
@@ -180,6 +178,10 @@ export interface RotationData {
   currentThemes: Record<string, number>;
   churnSincePrior: { added: string[]; dropped: string[]; held: string[]; rate: number };
   unmapped?: string[];
+  /** The report's asOf is older than the previous trading day (API #156). */
+  stale?: boolean;
+  /** The holdings snapshot the report was served against (API #156). */
+  snapshotAsOfDate?: string;
 }
 /** Funds that have a rotation report; avoids pointless 404s for the rest. */
 export const ROTATION_FUNDS = new Set(["ULTI", "ULTY"]);
@@ -208,5 +210,6 @@ export const fundExtras = {
       `${API_BASE}/api/v1/changes?fund=${encodeURIComponent(fund)}&period=${period}&limit=1000`, signal),
   effectiveness: (fund: string, signal?: AbortSignal) => getJson<Effectiveness>(`${API_BASE}/api/v1/fund-effectiveness/${encodeURIComponent(fund)}`, signal),
   peers: (signal?: AbortSignal) => getJson<{ funds: Effectiveness[] }>(`${API_BASE}/api/v1/fund-effectiveness`, signal),
-  rotation: (fund: string, signal?: AbortSignal) => getJson<RotationData>(`${WEB_BASE}/data/${fund.toLowerCase()}_rotation.json`, signal),
+  /** Same-origin with the API (so the web preview needs no CORS): ULTI and ULTY only, a 404 lists the funds that have one. */
+  rotation: (fund: string, signal?: AbortSignal) => getJson<RotationData>(`${API_BASE}/api/v1/fund/${encodeURIComponent(fund)}/rotation`, signal),
 };

@@ -1,8 +1,9 @@
 import { describeTrade, activitySummary, dayStatus, formatDay, legChange, legName } from "../lib/activity";
 import { currentBars, groupColor, hexAlpha, maxCell, rotationTitle, sortedGroups } from "../lib/rotation";
+import { freshnessLabel } from "../lib/format";
 import { gradeTone, metricCards, peerComparison, scoreTone, weightLines, effectivenessFacts } from "../lib/effectiveness";
 import { deltaOf, splitPeriod } from "../lib/fundChanges";
-import type { Effectiveness, IncomeFundResponse, OptionActivityDay, RotationData } from "../lib/fundExtras";
+import { fundExtras, type Effectiveness, type IncomeFundResponse, type OptionActivityDay, type RotationData } from "../lib/fundExtras";
 import {
   coverageClass, incomeNotices, noCoverageMessage, deriveRows, expiryLadder, filterRows, legMeta, NO_FILTERS, openedDates, openedLabel, optionOnlyPositions, qtyNote, sectorsOf, sortRows, topSector, liveLegCount, filtersActive,
 } from "../lib/incomeBook";
@@ -218,5 +219,27 @@ describe("data notices and coverage class (QDTE: intraday income leg is invisibl
   });
   it("coverage class uses the filter's buckets", () => {
     expect([coverageClass(100), coverageClass(90), coverageClass(89.9), coverageClass(1), coverageClass(0), coverageClass(null)]).toEqual(["full", "full", "partial", "partial", "none", "none"]);
+  });
+});
+
+describe("rotation from the API endpoint (#156)", () => {
+  it("fetches /api/v1/fund/{fund}/rotation (same origin as the API) and keeps the additive fields", async () => {
+    const body = { ...(ultyRotation as object), stale: true, snapshotAsOfDate: "2026-10-09" };
+    const f = jest.fn(async (_url: string) => ({ ok: true, status: 200, json: async () => body, text: async () => "" }) as unknown as Response);
+    const orig = globalThis.fetch;
+    globalThis.fetch = f as never;
+    try {
+      const r = await fundExtras.rotation("ULTY");
+      expect(f.mock.calls[0][0]).toBe("https://api.tickertrace.pro/api/v1/fund/ULTY/rotation");
+      expect(r.stale).toBe(true);
+      expect(r.snapshotAsOfDate).toBe("2026-10-09");
+      expect(r.churnSincePrior).toBeDefined();
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+  it("a stale report shows the same freshness label as the rest of the screen", () => {
+    expect(freshnessLabel({ stale: true, date: "2026-10-02" })).toEqual({ stale: true, text: "Older disclosure · Oct 2" });
+    expect(freshnessLabel({ stale: false, date: rot.asOf }).stale).toBe(false);
   });
 });

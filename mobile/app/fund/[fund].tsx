@@ -108,7 +108,7 @@ export default function FundScreen() {
   const rows = useMemo(() => {
     const raw2 = bookQ.data ? bookQ.data.holdings : f ? rowsFromFundPayload(f) : [];
     // A stale or catch-up fund has no honest one-day change: show "—", never "no change".
-    return f && (f.stale || catchUpOf(f).active) ? raw2.map((r) => ({ ...r, weightDelta: null, sharesDelta: null })) : raw2;
+    return f && (f.stale || catchUpOf(f).active) ? raw2.map((r) => ({ ...r, weightDelta: null, activeWeightDelta: null, sharesDelta: null })) : raw2;
   }, [bookQ.data, f]);
   const book: Book | null = useMemo(() => {
     if (!f) return null;

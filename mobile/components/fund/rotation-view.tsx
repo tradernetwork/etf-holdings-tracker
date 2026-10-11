@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Card, Hint, Mono } from "@/components/ui";
+import { Card, FreshnessLabel, Hint, Mono } from "@/components/ui";
+import { freshnessLabel } from "@/lib/format";
 import type { RotationData } from "@/lib/fundExtras";
 import { currentBars, groupColor, hexAlpha, maxCell, rotationTitle, sortedGroups } from "@/lib/rotation";
 import { fonts, spacing, type Palette } from "@/lib/theme";
@@ -19,6 +20,8 @@ export function RotationView({ d }: { d: RotationData }) {
           <Text style={styles.title}>{rotationTitle(d)}</Text>
           <Hint>{d.holdings} holdings · as of {d.asOf}</Hint>
         </View>
+        {/* The same freshness label used on the rest of the fund screen: an older report is an older disclosure, never "no change". */}
+        <FreshnessLabel freshness={freshnessLabel({ stale: d.stale, date: d.asOf })} />
         <Text style={styles.blurb}>{d.blurb}</Text>
         {currentBars(d).map(({ group, weight }) => (
           <View key={group} style={styles.barRow}>

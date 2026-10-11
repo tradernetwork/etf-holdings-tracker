@@ -374,10 +374,63 @@ export interface paths {
         };
         /**
          * Get All Holdings
-         * @description Every latest holding row across every tracked fund, with today's
-         *     weightDelta / sharesDelta attached. Heavy payload — limited to 30/minute.
+         * @description Every latest holding row across every tracked fund (equities, options, cash,
+         *     treasuries, swaps), with today's raw `weightDelta` / `sharesDelta`, the
+         *     drift-adjusted `activeWeightDelta` (the website's Δ Weight; null for a fund
+         *     catching up from stale data), the snapshot `dte`, and an `assetClass`.
+         *
+         *     With no query parameters this is the full unpaginated book (backward
+         *     compatible, ~20k rows). Use `fund`/`asset`/`q`/`sort` and `page`/`size` to
+         *     page it, or `format=csv` for an uncapped export. `total` is the filtered
+         *     row count; `count` is the rows in this response. Heavy — 30/minute.
          */
         get: operations["get_all_holdings_api_v1_holdings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fund/{fund}/rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fund Rotation
+         * @description Allocation-rotation report for funds that publish one (currently ULTI and
+         *     ULTY): holdings grouped by theme/sector over time, weekly drift, churn since
+         *     the prior snapshot and unmapped names. Served exactly as the nightly job
+         *     writes it, plus `stale` and `snapshotAsOfDate`. 404 for any other fund.
+         */
+        get: operations["get_fund_rotation_api_v1_fund__fund__rotation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/options-listings/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Options Listings Schedule
+         * @description The "MWF Elite" 0DTE schedule: the 12 symbols approved for Monday / Wednesday
+         *     / Friday weekly expirations (excluding SPY and QQQ), whether today (ET) is an
+         *     expiration day, and the next one — NYSE holidays skipped. The website's
+         *     options-listings box uses the same rules.
+         */
+        get: operations["get_options_listings_schedule_api_v1_options_listings_schedule_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -640,6 +693,18 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        DollarFields: {
+            /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+            aum?: number | null;
+            /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+            aumUsd?: number | null;
+            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+            positionUsd?: number | null;
+            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+            activeFlowUsd?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
     };
     responses: never;
     parameters: never;
@@ -687,7 +752,126 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        signals?: {
+                            buying?: ({
+                                fundDetails?: ({
+                                    /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                    aum?: number | null;
+                                    /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                    aumUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            selling?: ({
+                                fundDetails?: ({
+                                    /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                    aum?: number | null;
+                                    /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                    aumUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        };
+                        changes?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        briefing?: {
+                            topBuys?: ({
+                                fundDetails?: ({
+                                    /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                    aum?: number | null;
+                                    /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                    aumUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            topSells?: ({
+                                fundDetails?: ({
+                                    /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                    aum?: number | null;
+                                    /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                    aumUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            crossFundConvergence?: ({
+                                fundDetails?: ({
+                                    /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                    aum?: number | null;
+                                    /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                    aumUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            notableOptions?: ({
+                                record?: {
+                                    /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                    positionUsd?: number | null;
+                                    /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                                    activeFlowUsd?: number | null;
+                                } & {
+                                    [key: string]: unknown;
+                                };
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        };
+                        activity?: {
+                            accumulating?: ({
+                                /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                positionUsd?: number | null;
+                                /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                                activeFlowUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            reducing?: ({
+                                /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                positionUsd?: number | null;
+                                /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                                activeFlowUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            optionsActivity?: ({
+                                /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                positionUsd?: number | null;
+                                /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                                activeFlowUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -776,7 +960,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        changes?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -870,7 +1065,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                        aum?: number | null;
+                        /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                        aumUsd?: number | null;
+                        topHoldings?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        optionHoldings?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        recentChanges?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -952,7 +1174,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        holdings?: ({
+                            /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                            aum?: number | null;
+                            /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                            aumUsd?: number | null;
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        changes?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -983,7 +1226,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        holdings?: ({
+                            /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                            aum?: number | null;
+                            /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                            aumUsd?: number | null;
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -1048,7 +1304,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        patterns?: ({
+                            /** @description Combined participating fund AUM in billions of USD, rounded to three decimals; not capital invested in this ticker; null if any AUM is unknown. */
+                            consensusAum?: number | null;
+                            /** @description Combined participating fund AUM in whole USD (sum of unrounded individual AUM); null if any AUM is unknown. */
+                            consensusAumUsd?: number | null;
+                            /** @description Estimated total entry-position value in whole USD: sum of entry weights × latest respective fund AUM / 100. Null if any AUM is unknown. */
+                            positionUsdTotal?: number | null;
+                            entrySequence?: ({
+                                /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                aum?: number | null;
+                                /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                aumUsd?: number | null;
+                                /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                positionUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -1064,7 +1343,10 @@ export interface operations {
     };
     get_briefing_api_v1_briefing_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction. */
+                category?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1077,7 +1359,67 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        topBuys?: ({
+                            fundDetails?: ({
+                                /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                aum?: number | null;
+                                /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                aumUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        topSells?: ({
+                            fundDetails?: ({
+                                /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                aum?: number | null;
+                                /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                aumUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        crossFundConvergence?: ({
+                            fundDetails?: ({
+                                /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                                aum?: number | null;
+                                /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                                aumUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        notableOptions?: ({
+                            record?: {
+                                /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                                positionUsd?: number | null;
+                                /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                                activeFlowUsd?: number | null;
+                            } & {
+                                [key: string]: unknown;
+                            };
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1099,7 +1441,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        accumulating?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        reducing?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        optionsActivity?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Estimated signed active allocation flow in whole USD: activeWeightDelta percentage points × latest fund AUM / 100. Not actual execution proceeds; null when AUM is unavailable. */
+                            activeFlowUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -1114,6 +1483,108 @@ export interface operations {
         };
     };
     get_all_holdings_api_v1_holdings_get: {
+        parameters: {
+            query?: {
+                /** @description Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash); case-insensitive, 422 on a malformed ticker. Omit for every fund. */
+                fund?: string | null;
+                /** @description Restrict to one asset class (`assetClass` on each row). */
+                asset?: string | null;
+                /** @description Case-insensitive substring of ticker, name or option underlying. */
+                q?: string | null;
+                /** @description value = marketValue, weight, delta = activeWeightDelta (signed), absdelta = its magnitude, expiry = option expiry. Rows with no value always sort last. Omit for the natural file order. */
+                sort?: string | null;
+                dir?: string;
+                /** @description 1-based page. Giving `page` or `size` switches on pagination; omit both for the full (filtered) list. */
+                page?: number | null;
+                /** @description Rows per page (default 100 once paginating, max 500). */
+                size?: number | null;
+                /** @description csv streams the whole filtered set (uncapped export; ignores page/size). */
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Rows matching the filters (before paging). */
+                        total?: number;
+                        page?: number;
+                        size?: number;
+                        pages?: number;
+                        holdings?: ({
+                            /** @description Estimated signed position value in whole USD: weight percent × fund AUM / 100. Uses latest fund AUM, including historical entry estimates; null when AUM is unavailable. Option values are premiums, not underlying notional. */
+                            positionUsd?: number | null;
+                            /** @description Raw day-over-day weight change in percentage points (includes price drift). Null for a catch-up fund. */
+                            weightDelta?: number | null;
+                            /** @description Day-over-day share change. Null for a catch-up fund. */
+                            sharesDelta?: number | null;
+                            /** @description Drift-adjusted weight change (percentage points): the manager-attributable move, equal to the website Δ Weight. 0 when unchanged; null for a catch-up fund (see catchUpSince). */
+                            activeWeightDelta?: number | null;
+                            /** @description Present on a catch-up fund: its daily deltas are withheld (null) because they would span a stale gap since this date. */
+                            catchUpSince?: string;
+                            /** @enum {string} */
+                            assetClass?: "equity" | "option" | "cash" | "treasury" | "swap" | "other";
+                            /** @description Days to expiry as written in the issuer snapshot (options only; null otherwise). Not recomputed from today. */
+                            dte?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fund_rotation_api_v1_fund__fund__rotation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fund: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_options_listings_schedule_api_v1_options_listings_schedule_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1151,7 +1622,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        funds?: ({
+                            /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                            aum?: number | null;
+                            /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                            aumUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -1180,7 +1662,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        funds?: ({
+                            /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                            aum?: number | null;
+                            /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                            aumUsd?: number | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -1202,7 +1695,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        /** @description Fund AUM in billions of US dollars ($B); legacy field; null when AUM is unavailable. */
+                        aum?: number | null;
+                        /** @description Fund AUM in whole US dollars; null when AUM is unavailable. */
+                        aumUsd?: number | null;
+                    } & {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

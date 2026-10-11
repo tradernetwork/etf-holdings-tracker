@@ -15,13 +15,20 @@ const CASH_HINTS = ["CASH", "MONEY MARKET", "MMKT", "OBLIGATIONS", "GOVERNMENT &
 const SWAP_HINTS = ["SWAP", "WEEKLYPAY"];
 const CASH_TICKERS = new Set(["WEEK", "B", "TBILL", "CASH"]);
 
-export function sleeveOf(r: Pick<HoldingRow, "isOption" | "name" | "ticker">): Sleeve {
+export function sleeveOf(r: Pick<HoldingRow, "isOption" | "name" | "ticker"> & { assetClass?: string }): Sleeve {
   if (r.isOption) return "option";
   const name = (r.name ?? "").toUpperCase();
   const ticker = (r.ticker ?? "").toUpperCase();
-  if (SWAP_HINTS.some((h) => name.includes(h))) return "swap";
-  // `ticker in CASH_TICKERS` is only trusted for non-company names: Pathward Financial's real ticker is CASH.
+  // Pathward Financial's real ticker is CASH, so a ticker/class of "cash" is only trusted for non-company names.
   const looksLikeCompany = /\b(INC|CORP|CO|LTD|PLC|COMMON STOCK)\b/.test(name);
+  const nameHint = [...SWAP_HINTS, ...TREASURY_HINTS, ...CASH_HINTS].some((h) => name.includes(h));
+  // The server's assetClass (API #156) is used for the non-equity classes, but it has two known slips this guards:
+  // a company whose ticker is CASH (classed "cash"), and money-market funds like FGXXX (classed "equity").
+  if (r.assetClass === "treasury" || r.assetClass === "cash" || r.assetClass === "swap" || r.assetClass === "other") {
+    if (looksLikeCompany && !nameHint) return "stock";
+    return r.assetClass === "other" ? "cash" : r.assetClass;
+  }
+  if (SWAP_HINTS.some((h) => name.includes(h))) return "swap";
   if (TREASURY_HINTS.some((h) => name.includes(h)) || (CASH_TICKERS.has(ticker) && !looksLikeCompany)) return "treasury";
   if (CASH_HINTS.some((h) => name.includes(h)) || (ticker.length === 5 && ticker.endsWith("XX"))) return "cash";
   return "stock";
@@ -212,7 +219,8 @@ export function buildBook(rows: HoldingRow[], ctx: BookContext): Book {
         value: valueOf(r),
         weight: w,
         sharesDelta: r.sharesDelta,
-        activeDelta: ctx.activeDeltaByTicker?.get(r.ticker) ?? null,
+        // The row's own active weight (API #156) when present (null on catch-up), else the fund's change list.
+        activeDelta: r.activeWeightDelta !== undefined ? r.activeWeightDelta : (ctx.activeDeltaByTicker?.get(r.ticker) ?? null),
       });
     } else if (sleeve === "option") {
       const contracts = num(r.contracts ?? r.shares);
@@ -232,7 +240,7 @@ export function buildBook(rows: HoldingRow[], ctx: BookContext): Book {
         type,
         strike: r.strike ?? null,
         expiry: r.expiry ?? null,
-        dte: extra?.dte ?? daysBetween(ctx.asOfDate, r.expiry),
+        dte: r.dte ?? extra?.dte ?? daysBetween(ctx.asOfDate, r.expiry),
         contracts,
         short: contracts < 0,
         flex: !!r.isFlex,

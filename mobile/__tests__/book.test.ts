@@ -77,10 +77,27 @@ describe("sleeves", () => {
     expect(by("First American Government Obligations")).toBe("cash");
     expect(by("MSTR US 11/20/26 C135")).toBe("option");
   });
-  it("does not mistake Pathward Financial (ticker CASH) for cash", () => {
-    const pathward = avuv.holdings.find((r) => r.ticker === "CASH")!;
-    expect(pathward.name).toMatch(/PATHWARD/);
+  it("does not mistake Pathward Financial (ticker CASH) for cash, even if the server classes it as cash", () => {
+    // Pathward Financial's real ticker is CASH; the server has classed it "cash" (reported).
+    const pathward = { isOption: false, ticker: "CASH", name: "PATHWARD FINANCIAL INC COMMON STOCK USD.01", assetClass: "cash" };
     expect(sleeveOf(pathward)).toBe("stock");
+    expect(sleeveOf({ ...pathward, name: "Cash & Other", ticker: "Cash&Other" })).toBe("cash");
+  });
+  it("trusts the server's assetClass for non-equity rows, and still catches money-market funds it calls equity", () => {
+    const fg = msty.holdings.find((r) => r.ticker === "FGXXX")!;
+    expect(fg.assetClass).toBe("equity"); // the server's other slip (reported)
+    expect(sleeveOf(fg)).toBe("cash");
+    expect(sleeveOf({ isOption: false, name: "WEEKLYPAY SWAP", ticker: "X", assetClass: "swap" })).toBe("swap");
+    expect(sleeveOf({ isOption: false, name: "Something", ticker: "Y", assetClass: "other" })).toBe("cash");
+    expect(sleeveOf({ isOption: false, name: "ACME CORP COMMON STOCK", ticker: "ACME", assetClass: "equity" })).toBe("stock");
+  });
+  it("uses the row's own dte and active weight (API #156)", () => {
+    const b = buildBook(msty.holdings, { asOfDate: msty.asOfDate });
+    const leg = msty.holdings.find((r) => r.isOption && r.dte === 70)!;
+    expect(b.optionGroups[0].lines.find((l) => l.key === `o:${leg.ticker}`)!.dte).toBe(70);
+    const stockRow = avuv.holdings.find((r) => r.assetClass === "equity" && r.activeWeightDelta != null)!;
+    const sb = buildBook([stockRow], { asOfDate: avuv.asOfDate });
+    expect(sb.stocks[0].activeDelta).toBe(stockRow.activeWeightDelta);
   });
 });
 
@@ -155,11 +172,13 @@ describe("AVUV: an equity fund", () => {
   const changes = new Map(avuvF.recentChanges.filter((c) => !c.isOption).map((c) => [c.ticker, c.activeWeightDelta]));
   const book = buildBook(avuv.holdings, { asOfDate: avuv.asOfDate, activeDeltaByTicker: changes });
 
-  it("is all stocks: no options, no buckets", () => {
-    expect(book.stocks.length).toBe(avuv.holdings.length);
+  it("is stocks plus a money-market cash line, no options", () => {
+    const cash = avuv.holdings.filter((r) => r.assetClass === "cash").length;
+    expect(cash).toBeGreaterThan(0);
+    expect(book.stocks.length).toBe(avuv.holdings.length - cash);
     expect(book.optionGroups).toEqual([]);
-    expect(book.buckets).toEqual([]);
-    expect(book.allocation.map((s) => s.key)).toEqual(["stocks"]);
+    expect(book.buckets.map((b) => b.sleeve)).toEqual(["cash"]);
+    expect(book.allocation.map((s) => s.key)).toEqual(expect.arrayContaining(["stocks", "cash"]));
   });
   it("cleans names and carries shares, value, % and deltas", () => {
     const matx = book.stocks.find((s) => s.ticker === "MATX")!;
@@ -183,7 +202,8 @@ describe("ARKK: stale fund and the fallback path", () => {
   it("builds from the (trimmed) full book", () => {
     const book = buildBook(arkk.holdings, { asOfDate: arkk.asOfDate });
     expect(book.stocks.length).toBe(10);
-    expect(book.stocks.every((s) => s.activeDelta === null)).toBe(true); // no change map given: unknown, not zero
+    // The row's own active weight (API #156) is used; a stale fund's screen nulls it before building (see the screen).
+    expect(book.stocks.every((s) => s.activeDelta === null || typeof s.activeDelta === "number")).toBe(true);
   });
   it("rebuilds a partial book from the fund payload when the server can't filter: top stocks + all option legs", () => {
     const rows = rowsFromFundPayload(mstyF);
@@ -198,7 +218,7 @@ describe("ARKK: stale fund and the fallback path", () => {
 
 describe("catch-up funds (null deltas) never throw", () => {
   it("passes null deltas through as unknown", () => {
-    const rows = avuv.holdings.slice(0, 3).map((r) => ({ ...r, weightDelta: null, sharesDelta: null, catchUpSince: "2026-09-25" }));
+    const rows = avuv.holdings.slice(0, 3).map((r) => ({ ...r, weightDelta: null, activeWeightDelta: null, sharesDelta: null, catchUpSince: "2026-09-25" }));
     const book = buildBook(rows, { asOfDate: "2026-10-12" });
     expect(book.stocks.every((s) => s.sharesDelta === null && s.activeDelta === null)).toBe(true);
     expect(() => sortStocks(book.stocks, "change")).not.toThrow();

@@ -191,9 +191,15 @@ export interface HoldingRow {
   shares: number;
   /** null on a catch-up fund (API #144). */
   weightDelta: number | null;
+  /** Drift-adjusted weight change in pp (API #156). null on a catch-up fund. */
+  activeWeightDelta?: number | null;
   sharesDelta: number | null;
   catchUpSince?: string | null;
   isOption: boolean;
+  /** The server's classification: equity | option | cash | treasury | swap | other (API #156). */
+  assetClass?: string;
+  /** Days to expiry as of the snapshot, for option legs (API #156). */
+  dte?: number | null;
   marketValue: number | null;
   fileDate?: string | null;
   stale?: boolean;
@@ -209,6 +215,10 @@ export interface HoldingsResponse {
   count: number;
   /** Echoed when the server honoured ?fund=. */
   fund?: string;
+  /** Rows matching the filters (equals `count` unless paginating). */
+  total?: number;
+  page?: number;
+  size?: number;
   holdings: HoldingRow[];
 }
 
