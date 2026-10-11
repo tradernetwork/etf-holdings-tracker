@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 11, 2026"
+            tag="bugfix"
+            title="The options activity tables had been empty, and nobody told us"
+            desc="Options activity on the dashboard and the Income page, plus the 'notable options' line in the briefing, quietly showed nothing. Option contracts have ugly tickers on purpose (MSTR 261016C00095000), and the filter that hides junk like CASH and CUSIPs was eating every one of them before they could be listed. We'd already taught the change engine about that exception and forgot the activity bucketer. Fixed: today's contract-level adds, closes and rolls are back, with a test so an option can't be mistaken for junk again."
+          />
+          <ChangelogEntry
+            date="October 11, 2026"
             tag="feature"
             title="The full holdings book is now an API you can page through"
             desc="/api/v1/holdings used to hand you all twenty thousand rows and ignore every question you asked it (ask for MSTY, get AVUV and everything else). Now it takes fund, asset class, a search string and a sort, pages properly, and exports CSV when you really do want the lot. Each row also carries the same drift-adjusted change the website shows, the snapshot's days-to-expiry on options, and an honest null while a fund is catching up from stale data. Two small friends arrived with it: the ULTI and ULTY rotation reports at /api/v1/fund/{fund}/rotation, and the Monday/Wednesday/Friday 0DTE symbol list at /api/v1/options-listings/schedule. The old no-parameter request still works exactly as before."
