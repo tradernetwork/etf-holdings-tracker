@@ -110,6 +110,7 @@ function ThemedStack() {
         <Stack.Screen name="institutional" options={{ ...detail, title: "Combined institutional book" }} />
         <Stack.Screen name="trend" options={{ ...detail, title: "Institutional trend" }} />
         <Stack.Screen name="evidence/[symbol]" options={{ ...detail, title: "All evidence" }} />
+        <Stack.Screen name="holdings" options={{ ...detail, title: "Holdings" }} />
         <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
         <Stack.Screen name="income/index" options={{ ...detail, title: "Premium Sellers" }} />
         <Stack.Screen name="income/[fund]" options={{ ...detail, title: "Income analysis" }} />
