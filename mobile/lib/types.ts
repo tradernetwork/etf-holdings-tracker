@@ -205,6 +205,7 @@ export interface HoldingRow {
   marketValue: number | null;
   fileDate?: string | null;
   stale?: boolean;
+  refreshed?: boolean | null;
   underlying?: string | null;
   optionType?: string | null;
   strike?: number | null;
