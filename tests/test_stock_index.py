@@ -132,3 +132,13 @@ def test_trend_signal_uses_unrounded_flow(tmp_path, monkeypatch):
     assert result['institutional']['daily'] == 0
     assert result['institutional']['signal'] == 'distribution-starting'
     assert 'historyAdjustedForCatchUp' not in result
+
+
+def test_prewarm_warms_the_same_history_index_requests_use(monday_history):
+    """The memo key includes the call's args: prewarming `_stock_history_index()` while requests call
+    `_stock_history_index(30)` left the first request rebuilding (~6 s) and two ~75 MiB copies resident."""
+    data.clear_result_memo()
+    assert data.prewarm_snapshot_caches() is True
+    data.get_stock_detail('TER')
+    keys = [k for k in data._memo if k[0] == '_stock_history_index']
+    assert len(keys) == 1, keys

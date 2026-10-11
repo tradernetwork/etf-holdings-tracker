@@ -1716,7 +1716,9 @@ def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
     _ticker_snapshot_index(get_latest_holdings)
     if should_stop():
         return False
-    _stock_history_index()
+    # Same positional argument get_stock_detail uses: the memo key includes args, so
+    # `_stock_history_index()` and `_stock_history_index(30)` would be two cached copies.
+    _stock_history_index(30)
     return True
 
 
