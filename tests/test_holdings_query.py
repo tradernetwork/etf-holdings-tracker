@@ -195,3 +195,76 @@ def test_ticker_cash_is_cash_only_when_the_name_is_not_a_company():
     assert income._sleeve_of({'Name': 'Whatever', 'Ticker': 'TBILL'}) == 'treasury'   # others unchanged
     assert not data.is_cash_placeholder('CASH', 'PATHWARD FINANCIAL INC COMMON STOCK USD.01')
     assert data.is_cash_placeholder('usd', 'US DOLLAR')
+
+
+# ─── Money-market funds are cash, in BOTH classifiers ────────────────────────
+
+MM_ROWS = [
+    ('FGXXX', 'First American Government Obligations Fund 12/01/2031'),
+    ('FGXXX', 'FIRST AMERICAN GOVERNMENT OBLI FIRST AM GOV OBLIG X'),
+    ('FIGXX', 'FIDELITY INV MMKT GOVT-I  12/31/2031'),
+    ('AGPXX', 'Invesco Government & Agency Portfolio 12/31/2031'),
+    ('CMQXX', 'CAPITAL GROUP CENTRAL CASH FUN CAPITAL GROUP CNTRL C'),
+    ('OTHER', 'SSC GOVERNMENT MM GVMXX'),
+    ('OTHER', 'GOLDMAN FS TRSY OBLIG INST 468'),
+    ('SPAXX', 'Fidelity Government Money Market'),
+    ('', 'JPMorgan Treasury Plus Money Market Fund'),
+    ('', 'BlackRock Treasury Portfolio Institutional'),
+    ('', 'Dreyfus Government Cash Management'),   # no phrase we match: stays as before (not a regression)
+]
+REAL_COMPANIES = [
+    ('CML', 'CORONATION FUND MANAGERS LTD COMMON STOCK ZAR.0001'),
+    ('EUR', 'EUROCASH SA COMMON STOCK PLN1.0'),
+    ('6418', 'JAPAN CASH MACHINE CO LTD COMMON STOCK'),
+    ('MTS', 'METCASH LTD COMMON STOCK'),
+    ('FCFS', 'FirstCash Holdings, Inc.'),
+    ('TWE', 'TREASURY WINE ESTATES LTD COMMON STOCK'),
+    ('LQDT', 'LIQUIDITY SERVICES INC COMMON STOCK USD.001'),
+    ('SPXX', 'Nuveen S&P 500 Dynamic Overwrite Fund'),       # 4-letter ticker: a real closed-end fund
+    ('IDXX', 'IDEXX LABORATORIES INC COMMON STOCK'),
+    ('USA', 'Liberty All-Star Equity Fund'),
+    ('ACP', 'abrdn Income Credit Strategies Fund'),
+    ('FBTC', 'Fidelity Wise Origin Bitcoin Fund'),
+    ('CASH', 'PATHWARD FINANCIAL INC COMMON STOCK USD.01'),   # real ticker CASH
+]
+
+
+def test_is_money_market_catches_the_funds_and_no_company():
+    from api import data
+    for t, n in MM_ROWS[:9]:
+        assert data.is_money_market(t, n), (t, n)
+    for t, n in REAL_COMPANIES:
+        assert not data.is_money_market(t, n), (t, n)
+
+
+def test_money_market_funds_are_cash_in_assetclass_and_income_sleeves():
+    from api import data, income
+    for t, n in MM_ROWS[:9]:
+        row = {'Ticker': t, 'Name': n, 'ETF Ticker': 'X'}
+        assert data.holding_asset_class(row) == 'cash', (t, n)
+        assert income._sleeve_of(row) == 'cash', (t, n)
+    # A fund NAMED "Treasury Obligations" is cash, not T-bills: the money-market check runs before the T-bill hints.
+    assert income._sleeve_of({'Ticker': 'OTHER', 'Name': 'GOLDMAN FS TRSY OBLIG INST 468'}) == 'cash'
+    assert income._sleeve_of({'Ticker': '', 'Name': 'Some Treasury Obligations Fund'}) == 'cash'
+    # real T-bills stay treasuries, real companies stay equity
+    assert data.holding_asset_class({'Ticker': '912797UK1', 'Name': 'United States Treasury Bill 10/15/2026'}) == 'treasury'
+    assert income._sleeve_of({'Ticker': '912797UK1', 'Name': 'United States Treasury Bill 10/15/2026'}) == 'treasury'
+    for t, n in REAL_COMPANIES:
+        assert data.holding_asset_class({'Ticker': t, 'Name': n}) == 'equity', (t, n)
+
+
+def test_live_book_invariants_for_cash_classification():
+    """On the committed current book: every 5-letter-XX ticker is cash, and nothing named like a common stock is."""
+    import pytest
+    from api import data
+    rows = data.get_latest_holdings()
+    if not rows:
+        pytest.skip('no history data checked in')
+    for r in rows:
+        if (r.get('Option_Type') or '').strip():
+            continue
+        t, n, cls = (r.get('Ticker') or '').strip().upper(), r.get('Name') or '', data.holding_asset_class(r)
+        if len(t) == 5 and t.endswith('XX'):
+            assert cls == 'cash', (r.get('ETF Ticker'), t, n, cls)
+        if 'COMMON STOCK' in n.upper():
+            assert cls != 'cash', (r.get('ETF Ticker'), t, n, cls)

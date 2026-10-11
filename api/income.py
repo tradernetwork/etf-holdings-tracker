@@ -43,6 +43,7 @@ from collections import defaultdict
 
 from .data import (
     is_cash_placeholder,
+    is_money_market,
     EXCLUDED_FUNDS,
     _SECTOR_FALLBACK,
     get_fund_aum,
@@ -110,6 +111,9 @@ def _sleeve_of(r: dict) -> str:
     ticker = _clean_ticker(r.get('Ticker', '')).upper()
     if any(h in name for h in _SWAP_HINTS):
         return 'swap'
+    # A money-market FUND is cash even when its name says Treasury ("... Treasury Obligations ..."): checked before the T-bill hints.
+    if is_money_market(ticker, name):
+        return 'cash'
     if any(h in name for h in _TREASURY_HINTS) or ticker in _CASH_TICKERS:
         return 'treasury'
     if is_cash_placeholder(ticker, name):
