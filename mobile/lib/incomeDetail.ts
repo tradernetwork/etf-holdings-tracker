@@ -138,5 +138,6 @@ export const COV_NOTE = "Cov is the share of the position covered by written cal
 export const SUPPRESSED_NOTE = "A ⚠ in the spot column means the fund's own mark and our quote feed disagree by more than 5%, so we suppress the derived numbers rather than show them wrong.";
 
 export function netAssetsLabel(d: Pick<IncomeDetail, "netAssets">): string {
-  return d.netAssets ? ` · $${(d.netAssets / 1e6).toFixed(1)}M net assets` : "";
+  if (!d.netAssets) return "";
+  return d.netAssets >= 1e9 ? ` · $${(d.netAssets / 1e9).toFixed(2)}B net assets` : ` · $${(d.netAssets / 1e6).toFixed(1)}M net assets`;
 }

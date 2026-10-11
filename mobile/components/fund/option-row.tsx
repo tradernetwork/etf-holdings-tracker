@@ -34,7 +34,7 @@ export function OptionRow({ line, showWeight = true, note, plain }: {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <Badge label={line.short ? "SHORT" : "LONG"} color={line.short ? c.isNew : c.accent} />
           <Hint>{sideLabel(line.contracts).replace(/^(Long|Short) · /, "")}</Hint>
-          {line.chip ? <Badge label={line.chip.label} color={line.chip.label === "ITM" ? c.buy : c.textMuted} /> : null}
+          {line.chip && !exp.expired ? <Badge label={line.chip.label} color={line.chip.label === "ITM" ? c.buy : c.textMuted} /> : null}
         </View>
       </View>
       <View style={{ alignItems: "flex-end", gap: 2 }}>

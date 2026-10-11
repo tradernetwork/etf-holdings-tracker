@@ -7,6 +7,7 @@ import mstr from "./fixtures/ticker-mstr.json";
 import { optionSubtitle } from "../lib/book";
 import { dteToday, expiryInfo, expirySubtitle, shortDay, todayIso } from "../lib/expiry";
 import { bookRowView, bookRowView as view, detailTiles, hasIncomeDetail, notionalLine, sleeveBar, type IncomeDetail } from "../lib/incomeDetail";
+import { netAssetsLabel } from "../lib/incomeDetail";
 import { legMeta } from "../lib/incomeBook";
 import { apiUnderlyingPrice, buildOptionHolders, type TickerChangeRow, type TickerHoldingRow } from "../lib/optionHolders";
 import { formatPutCall } from "../lib/stats";
@@ -131,6 +132,12 @@ describe("income detail (/income/{fund})", () => {
     expect(q.incomeLegVisible).toBe(false);
     expect(hasIncomeDetail(q)).toBe(true);
   });
+});
+
+it("prints net assets in M or B", () => {
+  expect(netAssetsLabel({ netAssets: 85_000_000 })).toBe(" · $85.0M net assets");
+  expect(netAssetsLabel({ netAssets: 1_132_472_040 })).toBe(" · $1.13B net assets");
+  expect(netAssetsLabel({ netAssets: null })).toBe("");
 });
 
 describe("put/call ratio", () => {
