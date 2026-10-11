@@ -10,6 +10,7 @@ authoritative source of truth; `etf-dashboard/lib/holdings.ts` is deprecated
 import copy
 import csv
 import functools
+import hashlib
 import math
 import os
 import re
@@ -1578,6 +1579,80 @@ def clear_result_memo() -> None:
         _memo.clear()
 
 
+def _changes_signature_depth(period: str) -> int:
+    """Cover the actual calendar-lookback file, even with very sparse history."""
+    if period == 'daily':
+        return 2
+    dates = get_available_dates()
+    if len(dates) < 2:
+        return max(2, len(dates))
+    latest = _parse_iso(dates[0])
+    days = 7 if period == 'weekly' else 30
+    if latest is None:
+        return min(max(1, round(days * 5 / 7)), len(dates) - 1) + 1
+    target = latest - timedelta(days=days)
+    for i, d in enumerate(dates[1:], 1):
+        parsed = _parse_iso(d)
+        if parsed is not None and parsed <= target:
+            return i + 1
+    return len(dates)
+
+
+@_memoize_per_snapshot(depth=lambda args, kwargs: _changes_signature_depth(args[0] if args else kwargs.get('period', 'daily')))
+def _full_changes(period: str = 'daily') -> dict:
+    """Full guarded equity book, memoized before request filters/paging.
+
+    Inputs: latest + previous (daily), or latest + chosen calendar lookback
+    (weekly/monthly); latest also supplies AUM. Fund/sector/category rules are
+    deployed constants. No JSON snapshots, network, wall clock or option rows.
+    Token is checked around computation so a sync cannot publish mixed data.
+    """
+    for _ in range(3):
+        before = snapshot_signature(_changes_signature_depth(period))
+        compute = {'daily': compute_daily_changes, 'weekly': compute_weekly_changes,
+                   'monthly': compute_monthly_changes}[period]
+        rows = compute()
+        as_of = get_as_of_date()
+        after = snapshot_signature(_changes_signature_depth(period))
+        if before == after:
+            return {'asOfDate': as_of, 'snapshot': hashlib.sha256(repr(after).encode()).hexdigest(),
+                    'changes': rows}
+    raise RuntimeError('Snapshot changed while computing changes; retry.')
+
+
+def query_changes(*, period: str = 'daily', fund: str | None = None,
+                  provider: str | None = None, direction: str | None = None,
+                  category: str | None = None, sector: str | None = None,
+                  q: str | None = None, change_type: str | None = None,
+                  stable: bool = True) -> dict:
+    """Apply filters to the full snapshot memo. Legacy ordering is opt-in retained."""
+    result = _full_changes(period=period)
+    rows = result['changes']
+    if category:
+        rows = [r for r in rows if r.get('fundCategory') == category]
+    if fund:  # Existing contract: explicit fund takes precedence over provider.
+        rows = [r for r in rows if r['fund'] == fund.upper()]
+    elif provider:
+        rows = [r for r in rows if FUND_PROVIDERS.get(r['fund'], r['fund']) == provider]
+    if direction == 'buying':
+        rows = [r for r in rows if r.get('activeWeightDelta') is not None and r['activeWeightDelta'] > 0]
+    elif direction == 'selling':
+        rows = [r for r in rows if r.get('activeWeightDelta') is not None and r['activeWeightDelta'] < 0]
+    if sector:
+        rows = [r for r in rows if r.get('sector') == sector]
+    if q:
+        needle = q.strip().casefold()
+        rows = [r for r in rows if any(needle in str(r.get(k) or '').casefold()
+                                      for k in ('ticker', 'name', 'fund'))]
+    if change_type:
+        rows = [r for r in rows if r.get('type') == change_type]
+    if stable:
+        rows.sort(key=lambda r: (r.get('activeWeightDelta') is None,
+                                 -abs(r.get('activeWeightDelta') or 0), r['fund'],
+                                 r['ticker'], r['type']))
+    return {**result, 'changes': rows}
+
+
 def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
     """Compute the common requests so the first real one is instant.
 
@@ -1591,6 +1666,9 @@ def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
     if should_stop():
         return False
     query_holdings()          # the /holdings book (first page request is then instant)
+    if should_stop():
+        return False
+    _full_changes(period='daily')  # reuse the guarded daily book for discovery pages
     return True
 
 

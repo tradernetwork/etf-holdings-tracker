@@ -8,6 +8,11 @@ export interface ChangesResponse {
   count: number;
   changes: Change[];
   truncated?: boolean;
+  total?: number;
+  page?: number;
+  size?: number;
+  pages?: number;
+  snapshot?: string;
 }
 export interface ActivityResponse {
   accumulating: Change[];
