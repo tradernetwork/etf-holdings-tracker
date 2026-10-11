@@ -207,6 +207,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+    expose_headers=["X-Fund-Filter"],
     allow_credentials=False,
 )
 app.add_middleware(RequestIdMiddleware)
@@ -491,25 +492,92 @@ def get_activity(request: Request, period: str = Query("daily", pattern="^(daily
     return data.get_activity(period=period)
 
 
+_HOLDINGS_CSV_COLUMNS = (
+    'fund', 'ticker', 'name', 'assetClass', 'sector', 'weight', 'marketValue', 'shares',
+    'weightDelta', 'activeWeightDelta', 'sharesDelta', 'catchUpSince', 'optionType', 'underlying',
+    'strike', 'expiry', 'dte', 'contracts', 'isFlex', 'fileDate', 'refreshed', 'stale',
+)
+
+
 @app.get("/api/v1/holdings", tags=["public"])
 @limiter.limit("30/minute")
 def get_all_holdings(
     request: Request,
     response: Response,
-    fund: Optional[str] = Query(None, description="Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash). Omit for every fund (heavy, ~9 MB)."),
+    fund: Optional[str] = Query(None, description="Restrict to ONE fund's full book (stocks, option legs, Treasuries, cash); case-insensitive, 400 on a malformed ticker. Omit for every fund."),
+    asset: Optional[str] = Query(None, pattern="^(equity|option|cash|treasury|swap|other)$", description="Restrict to one asset class (`assetClass` on each row)."),
+    q: Optional[str] = Query(None, max_length=64, description="Case-insensitive substring of ticker, name or option underlying."),
+    sort: Optional[str] = Query(None, pattern="^(value|weight|delta|absdelta|expiry)$", description="value = marketValue, weight, delta = activeWeightDelta (signed), absdelta = its magnitude, expiry = option expiry. Rows with no value always sort last. Omit for the natural file order."),
+    dir: str = Query("desc", pattern="^(asc|desc)$"),
+    page: Optional[int] = Query(None, ge=1, description="1-based page. Giving `page` or `size` switches on pagination; omit both for the full (filtered) list."),
+    size: Optional[int] = Query(None, ge=1, le=500, description="Rows per page (default 100 once paginating, max 500)."),
+    format: str = Query("json", pattern="^(json|csv)$", description="csv streams the whole filtered set (uncapped export; ignores page/size)."),
 ):
     """
-    Every latest holding row across every tracked fund, with today's
-    weightDelta / sharesDelta attached. Heavy payload — limited to 30/minute.
-    Pass `fund` for a single fund's book; the response then carries `fund` and an
-    `X-Fund-Filter` header, so a client can tell (from the headers alone) that the
-    filter was honoured before it downloads a body.
+    Every latest holding row across every tracked fund (equities, options, cash,
+    treasuries, swaps), with today's raw `weightDelta` / `sharesDelta`, the
+    drift-adjusted `activeWeightDelta` (the website's Δ Weight; null for a fund
+    catching up from stale data), the snapshot `dte`, and an `assetClass`.
+
+    With no query parameters this is the full unpaginated book (backward
+    compatible, ~20k rows). Use `fund`/`asset`/`q`/`sort` and `page`/`size` to
+    page it, or `format=csv` for an uncapped export. `total` is the filtered
+    row count; `count` is the rows in this response. Heavy — 30/minute.
     """
     if fund is not None:
         if not _TICKER_PATTERN.match(fund):
             raise HTTPException(status_code=400, detail="Invalid fund ticker format")
+        # Lets a client confirm from the headers alone that the filter was honoured.
         response.headers["X-Fund-Filter"] = fund.upper()
-    return data.get_all_holdings(fund=fund)
+    as_of, rows = data.query_holdings(fund=fund, asset=asset, q=q, sort=sort, desc=(dir == "desc"))
+    if format == "csv":
+        import csv as _csv, io as _io
+        buf = _io.StringIO()
+        w = _csv.writer(buf)
+        w.writerow(_HOLDINGS_CSV_COLUMNS)
+        for r in rows:
+            w.writerow(["" if r.get(c) is None else r.get(c) for c in _HOLDINGS_CSV_COLUMNS])
+        return PlainTextResponse(buf.getvalue(), media_type="text/csv; charset=utf-8",
+                                 headers={"Content-Disposition": f'attachment; filename="holdings_{as_of}.csv"'})
+    total = len(rows)
+    out = {"asOfDate": as_of, "total": total}
+    if fund:
+        out["fund"] = fund.upper()
+    if page is not None or size is not None:
+        n = size or 100
+        pages = max(1, -(-total // n))
+        pg = min(page or 1, pages)
+        rows = rows[(pg - 1) * n: pg * n]
+        out.update({"page": pg, "size": n, "pages": pages})
+    out.update({"count": len(rows), "holdings": [dict(r) for r in rows]})
+    return out
+
+
+@app.get("/api/v1/fund/{fund}/rotation", tags=["public"])
+@limiter.limit("60/minute")
+def get_fund_rotation(request: Request, fund: str):
+    """
+    Allocation-rotation report for funds that publish one (currently ULTI and
+    ULTY): holdings grouped by theme/sector over time, weekly drift, churn since
+    the prior snapshot and unmapped names. Served exactly as the nightly job
+    writes it, plus `stale` and `snapshotAsOfDate`. 404 for any other fund.
+    """
+    report = data.get_rotation_report(fund)
+    if report is None:
+        raise HTTPException(status_code=404, detail=f"No rotation report for '{fund.upper()}'. Funds with one: {', '.join(data.list_rotation_funds()) or 'none'}")
+    return report
+
+
+@app.get("/api/v1/options-listings/schedule", tags=["public"])
+@limiter.limit("60/minute")
+def get_options_listings_schedule(request: Request):
+    """
+    The "MWF Elite" 0DTE schedule: the 12 symbols approved for Monday / Wednesday
+    / Friday weekly expirations (excluding SPY and QQQ), whether today (ET) is an
+    expiration day, and the next one — NYSE holidays skipped. The website's
+    options-listings box uses the same rules.
+    """
+    return data.get_mwf_schedule()
 
 
 @app.get("/api/v1/funds", tags=["public"])

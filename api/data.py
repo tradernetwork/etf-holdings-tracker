@@ -1588,6 +1588,9 @@ def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
             if should_stop():
                 return False
             unit(category=category)
+    if should_stop():
+        return False
+    query_holdings()          # the /holdings book (first page request is then instant)
     return True
 
 
@@ -2178,22 +2181,54 @@ def get_briefing(*, category: str | None = None) -> dict:
     return _briefing_from(signals, activity, streaks)
 
 
-def get_all_holdings(fund: str | None = None) -> dict:
-    """
-    Return every latest holding row across every tracked fund, enriched with
-    today's weightDelta + sharesDelta. Used by the dashboard's full-holdings
-    page (review #10 finale).
+_CASH_TYPES = {'cash', 'cash_fx', 'money_market'}
+_COMPANY_NAME_RE = re.compile(
+    r'\b(COMMON STOCK|INC|CORP|CORPORATION|LTD|PLC|HOLDINGS|BANCORP|FINANCIAL|ADR|CO|COMPANY|GROUP|SA|NV|AG)\b', re.I)
 
-    `fund` restricts the result to one fund's full book (stocks, option legs,
-    Treasuries, cash). Rows are IDENTICAL to the same rows of the unfiltered call;
-    the filter only avoids shipping (and building) the other ~20k rows. The
-    response then also carries `fund`.
+
+def is_cash_placeholder(ticker: str, name: str) -> bool:
+    """A literal CASH/USD/MARGIN ticker is a cash line only when the NAME isn't a
+    company: Pathward Financial (a real AVUV stock) trades under the ticker CASH."""
+    return (ticker or '').strip().upper() in ('CASH', 'USD', 'MARGIN') and not _COMPANY_NAME_RE.search(name or '')
+
+
+
+def holding_asset_class(r: dict) -> str:
+    """equity | option | cash | treasury | swap | other, from the CSV's own typing.
+
+    holding_type (when the scraper set it) wins; otherwise Security Type / name.
+    Cash and treasuries stay IN the book (the website's /holdings hides them, the
+    API does not) — this label is how a client tells them apart from stocks.
     """
+    if (r.get('Option_Type') or '').strip():
+        return 'option'
+    ht = (r.get('holding_type') or '').strip().lower()
+    st = (r.get('Security Type') or '').strip().lower()
+    name = (r.get('Name') or '').lower()
+    ticker = (r.get('Ticker') or '').strip().upper()
+    if ht == 'swap' or 'swap' in name or 'total return' in name:
+        return 'swap'
+    if ht == 'treasury' or ticker == 'TBILL' or 'treasury bill' in name or 'treasury note' in name or 'treasury bond' in name:
+        return 'treasury'
+    if ht in _CASH_TYPES or st in ('cash & equivalent', 'spot fx', 'sweep investment vehicle') \
+            or is_cash_placeholder(ticker, r.get('Name') or '') or name.startswith('cash'):
+        return 'cash'
+    if ht in ('', 'equity') and ticker not in ('OTHER', ''):
+        return 'equity'
+    return 'other'
+
+
+@functools.lru_cache(maxsize=2)
+def _holdings_book(signature: tuple) -> tuple:
+    """The enriched latest book, built once per snapshot signature and shared
+    (treat as read-only). 20k rows: building it is ~0.5s, slicing a page ~ms."""
     latest = get_latest_holdings()
-    only_fund = fund.upper() if fund else None     # `fund` is reused as the loop variable below
-    if only_fund:
-        latest = [r for r in latest if r.get('ETF Ticker', '') == only_fund]
-    # Build a prev-day map keyed on (fund, ticker) for delta computation.
+    as_of = get_as_of_date()
+    # Same guarded active Δ the daily changes/signals use: price drift removed,
+    # splits excluded, catch-up funds dropped. Position-for-position equal to the
+    # website's computeDiff (tests/test_holdings_query.py pins this with a golden).
+    active = {(c['fund'], c['ticker']): c['activeWeightDelta']
+              for c in compute_daily_changes_with_options()}
     prev_map: dict[tuple[str, str], dict] = {}
     for r in get_previous_holdings():
         key = (r.get('ETF Ticker', ''), _clean_ticker(r.get('Ticker', '')))
@@ -2201,8 +2236,6 @@ def get_all_holdings(fund: str | None = None) -> dict:
             'weight': _safe_float(r.get('Weight', '0')),
             'shares': _safe_float(r.get('Share Quantity', '0')),
         }
-
-    as_of = get_as_of_date()
     # A catch-up fund's delta against the carried rows is the whole gap, not a
     # day: null (unknown), with catchUpSince so clients can say why.
     catch_up = get_catch_up_funds()
@@ -2215,6 +2248,7 @@ def get_all_holdings(fund: str | None = None) -> dict:
         prev = prev_map.get((fund, ticker))
         is_option = bool(r.get('Option_Type'))
         file_date = row_file_date(r)
+        caught = fund in catch_up
         rows.append({
             'fund': fund,
             'ticker': ticker,
@@ -2223,12 +2257,16 @@ def get_all_holdings(fund: str | None = None) -> dict:
             'weight': weight,
             'positionUsd': estimate_position_usd(fund, weight),
             'shares': shares,
-            'weightDelta': (None if fund in catch_up
+            'weightDelta': (None if caught
                             else round(weight - prev['weight'], 4) if prev else 0.0),
-            'sharesDelta': (None if fund in catch_up
+            'sharesDelta': (None if caught
                             else round(shares - prev['shares'], 2) if prev else 0.0),
-            **({'catchUpSince': catch_up[fund]} if fund in catch_up else {}),
+            # Drift-adjusted (manager-attributable) Δ, the figure the website's
+            # /holdings Δ Weight column shows. 0.0 = no change; null = catch-up fund.
+            'activeWeightDelta': None if caught else active.get((fund, ticker), 0.0),
+            **({'catchUpSince': catch_up[fund]} if caught else {}),
             'isOption': is_option,
+            'assetClass': holding_asset_class(r),
             'cusip': r.get('CUSIP', ''),
             # ── Added 2026-09-27 (additive; see docs/DATA_QUALITY_2026-09.md) ──
             # `shares` is unchanged: on option rows it is the signed contract
@@ -2237,18 +2275,146 @@ def get_all_holdings(fund: str | None = None) -> dict:
             'fileDate': file_date,
             'refreshed': row_refreshed(r),
             'stale': is_stale(file_date, as_of),
+            # Snapshot DTE straight from the CSV (null on non-options / blank) —
+            # not recomputed from today's date, so it matches the issuer file.
+            'dte': _nullable_float(r.get('DTE')) if is_option else None,
             **(option_leg_fields(r) if is_option else {
                 'underlying': None, 'optionType': None, 'strike': None,
                 'expiry': None, 'contracts': None, 'isFlex': None,
             }),
         })
-    out = {
-        'asOfDate': as_of,
-        'count': len(rows),
-        'holdings': rows,
+    return as_of, tuple(rows)
+
+
+# ─── Rotation reports & MWF schedule ─────────────────────────────────────────
+# ULTI/ULTY rotation JSON is written nightly by scripts/rotation_tracker.py into the
+# same public/data directory the API already mounts read-only, so it is served from
+# there verbatim (every field kept) plus two additive freshness fields.
+
+_ROTATION_FUND_RE = re.compile(r'^[A-Za-z0-9]{2,10}$')
+
+
+def _public_data_dir() -> str:
+    return os.path.dirname(HISTORY_DIR)
+
+
+def list_rotation_funds() -> list[str]:
+    try:
+        names = os.listdir(_public_data_dir())
+    except OSError:
+        return []
+    return sorted(n[:-len('_rotation.json')].upper() for n in names if n.endswith('_rotation.json'))
+
+
+def get_rotation_report(fund: str) -> dict | None:
+    """The fund's rotation report, unchanged, or None when it has none.
+
+    Added: `stale` (the report's own `asOf` is older than the previous trading
+    day relative to the API's snapshot) and `snapshotAsOfDate`. `asOf` itself is
+    the report's date, exactly as written."""
+    import json
+    if not _ROTATION_FUND_RE.match(fund or ''):
+        return None
+    path = os.path.join(_public_data_dir(), f'{fund.lower()}_rotation.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            report = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(report, dict):
+        return None
+    as_of = get_as_of_date()
+    report['stale'] = is_stale(_iso_date(report.get('asOf')), as_of)
+    report['snapshotAsOfDate'] = as_of
+    return report
+
+
+# "MWF Elite": the 12 non-SPY/QQQ symbols approved for Monday/Wednesday/Friday weekly
+# options. Mirrors MWF_TICKERS in etf-dashboard/lib/marketHours.ts (a test pins the
+# two lists and the holiday sets together).
+MWF_TICKERS = ('GLD', 'IBIT', 'SLV', 'TLT', 'AAPL', 'AMZN', 'AVGO', 'GOOGL',
+               'META', 'MSFT', 'NVDA', 'TSLA')
+_DAY_NAMES = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+
+
+def get_mwf_schedule(now=None) -> dict:
+    """Eligible MWF symbols plus the Mon/Wed/Fri expiration calendar in ET.
+
+    Same rules as getMWFExpirationStatus() on the website: today is an
+    expiration day on Mon/Wed/Fri unless it is an NYSE holiday; the next one
+    is the first later M/W/F (within 14 days) that is not a holiday."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    et = (now or datetime.now(ZoneInfo('America/New_York'))).astimezone(ZoneInfo('America/New_York'))
+    today = et.date()
+    is_exp = today.weekday() in (0, 2, 4) and today.isoformat() not in _NYSE_HOLIDAYS
+    nxt = None
+    for i in range(1, 15):
+        d = today + timedelta(days=i)
+        if d.weekday() in (0, 2, 4) and d.isoformat() not in _NYSE_HOLIDAYS:
+            nxt = d
+            break
+    return {
+        'tickers': list(MWF_TICKERS),
+        'excludes': ['SPY', 'QQQ'],
+        'expirationWeekdays': ['Monday', 'Wednesday', 'Friday'],
+        'timezone': 'America/New_York',
+        'today': today.isoformat(),
+        'dayName': _DAY_NAMES[today.weekday()],
+        'isExpirationDay': is_exp,
+        'nextExpirationDay': _DAY_NAMES[nxt.weekday()] if nxt else 'Monday',
+        'nextExpirationDate': nxt.isoformat() if nxt else None,
+        'holidays': sorted(h for h in _NYSE_HOLIDAYS if h >= today.isoformat()),
     }
-    if only_fund:
-        out['fund'] = only_fund
+
+
+HOLDINGS_ASSETS = ('equity', 'option', 'cash', 'treasury', 'swap', 'other')
+HOLDINGS_SORTS = ('value', 'weight', 'delta', 'absdelta', 'expiry')
+_HOLDINGS_SORT_KEY = {
+    'value': lambda r: r['marketValue'],
+    'weight': lambda r: r['weight'],
+    'delta': lambda r: r['activeWeightDelta'],
+    'absdelta': lambda r: abs(r['activeWeightDelta']) if r['activeWeightDelta'] is not None else None,
+    'expiry': lambda r: r['expiry'],
+}
+
+
+def query_holdings(*, fund: str | None = None, asset: str | None = None, q: str | None = None,
+                   sort: str | None = None, desc: bool = True) -> tuple[str, list[dict]]:
+    """Filter + sort the cached book. Returns (asOfDate, rows) — rows are the
+    shared cached dicts: callers copy before mutating."""
+    # Key = files on disk + the identity of the readers (so a patched reader, as in
+    # tests, can never be served another snapshot's cached book).
+    sig = (snapshot_signature(2), id(get_latest_holdings), id(get_previous_holdings),
+           id(get_as_of_date), id(compute_daily_changes_with_options))
+    as_of, book = _holdings_book(sig)
+    rows = list(book)
+    if fund:
+        f = fund.strip().upper()
+        rows = [r for r in rows if r['fund'] == f]
+    if asset:
+        rows = [r for r in rows if r['assetClass'] == asset]
+    if q:
+        needle = q.strip().lower()
+        rows = [r for r in rows if needle in r['ticker'].lower() or needle in (r['name'] or '').lower()
+                or needle in (r['underlying'] or '').lower()]
+    if sort:
+        key = _HOLDINGS_SORT_KEY[sort]
+        have = [r for r in rows if key(r) is not None]
+        missing = [r for r in rows if key(r) is None]     # blanks always sink to the bottom
+        have.sort(key=key, reverse=desc)
+        rows = have + missing
+    return as_of, rows
+
+
+def get_all_holdings(fund: str | None = None) -> dict:
+    """The book — legacy shape (asOfDate, count, holdings), with activeWeightDelta /
+    assetClass / dte per row. `fund` restricts to one fund's full book (rows identical
+    to the same rows of the unfiltered call) and adds `fund` to the response."""
+    as_of, rows = query_holdings(fund=fund)
+    out = {'asOfDate': as_of, 'count': len(rows), 'holdings': [dict(r) for r in rows]}
+    if fund:
+        out['fund'] = fund.upper()
     return out
 
 

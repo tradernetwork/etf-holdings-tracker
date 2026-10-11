@@ -1,0 +1,12 @@
+Name,Ticker,Share Quantity,Market Value,Weight,Sector,ETF Ticker,Date,Option_Type,Option_Strike,Option_Expiry,DTE,Underlying_Ticker,Refreshed,Source_Date
+Alpha,A1,100,4400,42.307692,Technology,AAA,2026-10-09,,,,,,True,2026-10-09
+Beta,A2,250,3750,36.057692,Technology,AAA,2026-10-09,,,,,,True,2026-10-09
+Delta,A4,100,1000,9.615385,Technology,AAA,2026-10-09,,,,,,True,2026-10-09
+Epsilon,A5,30,900,8.653846,Technology,AAA,2026-10-09,,,,,,True,2026-10-09
+Cash,CASH,1,500,4.807692,,AAA,2026-10-09,,,,,,True,2026-10-09
+A1 C 50,A1  261120C00050000,-2,-150,-1.442308,,AAA,2026-10-09,Call,50,2026-11-20,42,A1,True,2026-10-09
+Zeta,B1,60,3600,36.0,Technology,BBB,2026-10-09,,,,,,True,2026-10-09
+Eta,B2,100,5400,54.0,Technology,BBB,2026-10-09,,,,,,True,2026-10-09
+Theta,B3,20,1000,10.0,Technology,BBB,2026-10-09,,,,,,True,2026-10-09
+Iota,C1,100,5500,55.0,Technology,CCC,2026-10-09,,,,,,True,2026-10-09
+Kappa,C2,100,4500,45.0,Technology,CCC,2026-10-09,,,,,,True,2026-10-09

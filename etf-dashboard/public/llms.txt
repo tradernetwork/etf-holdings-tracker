@@ -16,6 +16,9 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 - [/api/v1/sectors](https://api.tickertrace.pro/api/v1/sectors): sector-level weight flows
 - [/api/v1/divergences](https://api.tickertrace.pro/api/v1/divergences): same ticker, opposite directions across funds
 - [/api/v1/options/{underlying}](https://api.tickertrace.pro/api/v1/options/AMD): one underlying's option legs across funds, grouped into synthetics, spreads, collars and rolls
+- [/api/v1/holdings](https://api.tickertrace.pro/api/v1/holdings?fund=ARKK&sort=absdelta&page=1&size=50): every holding row (equities, options, cash, treasuries, swaps) with raw and drift-adjusted `activeWeightDelta` (null while a fund is catching up) and snapshot `dte`; filters `fund`, `asset`, `q`, `sort`, `dir`, paging `page`/`size`, and `format=csv` for an uncapped export
+- [/api/v1/fund/{fund}/rotation](https://api.tickertrace.pro/api/v1/fund/ULTI/rotation): theme/sector allocation rotation report for ULTI and ULTY (other funds return 404)
+- [/api/v1/options-listings/schedule](https://api.tickertrace.pro/api/v1/options-listings/schedule): the MWF Elite 0DTE symbol list and the Mon/Wed/Fri expiration calendar
 - [/api/v1/funds](https://api.tickertrace.pro/api/v1/funds): all tracked funds
 - [/api/v1/stats](https://api.tickertrace.pro/api/v1/stats): global stats, including the fund count and as-of date
 

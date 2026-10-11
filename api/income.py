@@ -42,6 +42,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .data import (
+    is_cash_placeholder,
     EXCLUDED_FUNDS,
     _SECTOR_FALLBACK,
     get_fund_aum,
@@ -96,7 +97,7 @@ _TREASURY_HINTS = ('TREASURY', 'T-BILL', 'TBILL', 'BILL ')
 _CASH_HINTS = ('CASH', 'MONEY MARKET', 'MMKT', 'OBLIGATIONS', 'GOVERNMENT & AGENCY',
                'NET OTHER', 'OTHER ASSET', 'PAYABLE', 'RECEIVABLE')
 _SWAP_HINTS = ('SWAP', 'WEEKLYPAY')
-_CASH_TICKERS = {'WEEK', 'B', 'TBILL', 'CASH'}
+_CASH_TICKERS = {'WEEK', 'B', 'TBILL'}   # 'CASH' handled by data.is_cash_placeholder: Pathward (a stock) uses it
 
 
 def _is_option(r: dict) -> bool:
@@ -111,6 +112,8 @@ def _sleeve_of(r: dict) -> str:
         return 'swap'
     if any(h in name for h in _TREASURY_HINTS) or ticker in _CASH_TICKERS:
         return 'treasury'
+    if is_cash_placeholder(ticker, name):
+        return 'cash'
     if any(h in name for h in _CASH_HINTS) or (len(ticker) == 5 and ticker.endswith('XX')):
         return 'cash'
     return 'equity'
