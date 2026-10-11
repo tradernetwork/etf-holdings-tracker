@@ -46,8 +46,9 @@ export interface OptionHolders {
   funds: OptionHolderFund[];
   legCount: number;
   expiredHidden: number;
-  /** Stock price implied by an equity holder's reported value / shares; null when none. */
+  /** Price used for ITM/OTM: the API's own underlyingPrice when given, else implied from an equity holder; null when neither. */
   spot: number | null;
+  spotSource: "api" | "implied" | null;
 }
 
 const legKey = (fund: string, type: string, strike: number | null | undefined, expiry: string | null | undefined) =>
@@ -65,8 +66,21 @@ export function impliedSpot(holdings: TickerHoldingRow[]): number | null {
   return px.length % 2 ? px[mid] : (px[mid - 1] + px[mid]) / 2;
 }
 
-export function buildOptionHolders(symbol: string, holdings: TickerHoldingRow[], changes: TickerChangeRow[] = []): OptionHolders {
-  const spot = impliedSpot(holdings);
+/** Median `underlyingPrice` the API reports on option rows of `symbol` (/fund/{f} optionHoldings). */
+export function apiUnderlyingPrice(symbol: string, rows: { underlying?: string | null; underlyingPrice?: number | null }[]): number | null {
+  const px = rows
+    .filter((r) => (r.underlying ?? "").toUpperCase() === symbol.toUpperCase() && r.underlyingPrice != null && r.underlyingPrice > 0)
+    .map((r) => r.underlyingPrice as number)
+    .sort((a, b) => a - b);
+  if (px.length === 0) return null;
+  const mid = Math.floor(px.length / 2);
+  return px.length % 2 ? px[mid] : (px[mid - 1] + px[mid]) / 2;
+}
+
+export function buildOptionHolders(symbol: string, holdings: TickerHoldingRow[], changes: TickerChangeRow[] = [], apiSpot: number | null = null): OptionHolders {
+  const implied = impliedSpot(holdings);
+  const spot = apiSpot ?? implied;
+  const spotSource: OptionHolders["spotSource"] = apiSpot != null ? "api" : implied != null ? "implied" : null;
   const deltaByLeg = new Map<string, number | null>();
   for (const ch of changes) {
     const d = ch.optionDetails;
@@ -110,6 +124,7 @@ export function buildOptionHolders(symbol: string, holdings: TickerHoldingRow[],
       weight: h.weight,
       contractsDelta: deltaByLeg.get(legKey(h.fund, type, d.strike, d.expiry)) ?? null,
       chip: moneynessChip(type, d.strike, spot),
+      asOf: h.fileDate,
     });
     f.netWeight += h.weight;
     if (value.usd != null) f.netValue = { usd: (f.netValue.usd ?? 0) + value.usd, estimated: true };
@@ -125,11 +140,11 @@ export function buildOptionHolders(symbol: string, holdings: TickerHoldingRow[],
   // Largest option footprint first (gross weight), like the website's weight sort.
   const gross = (f: OptionHolderFund) => f.legs.reduce((s, l) => s + Math.abs(l.weight), 0);
   funds.sort((a, b) => gross(b) - gross(a));
-  return { funds: funds.filter((f) => f.legs.length > 0), legCount: funds.reduce((s, f) => s + f.legs.length, 0), expiredHidden, spot };
+  return { funds: funds.filter((f) => f.legs.length > 0), legCount: funds.reduce((s, f) => s + f.legs.length, 0), expiredHidden, spot, spotSource };
 }
 
 /** Adapts an /options/{t} structure leg to the shared option row. These legs carry no fund weight. */
-export function legToLine(leg: { optionType: string; strike: number | null; expiry: string | null; contracts: number; isFlex: boolean | null; dte: number | null; marketValue: number | null; change: number | null; occ?: string }, underlying: string, index = 0): OptionLine {
+export function legToLine(leg: { optionType: string; strike: number | null; expiry: string | null; contracts: number; isFlex: boolean | null; dte: number | null; marketValue: number | null; change: number | null; occ?: string }, underlying: string, index = 0, asOf: string | null = null): OptionLine {
   return {
     key: `${leg.occ ?? underlying}|${index}`,
     underlying,
@@ -144,5 +159,6 @@ export function legToLine(leg: { optionType: string; strike: number | null; expi
     weight: 0,
     contractsDelta: leg.change,
     chip: null,
+    asOf,
   };
 }

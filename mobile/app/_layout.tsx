@@ -112,6 +112,7 @@ function ThemedStack() {
         <Stack.Screen name="evidence/[symbol]" options={{ ...detail, title: "All evidence" }} />
         <Stack.Screen name="settings" options={{ ...detail, title: "Settings" }} />
         <Stack.Screen name="income/index" options={{ ...detail, title: "Premium Sellers" }} />
+        <Stack.Screen name="income/[fund]" options={{ ...detail, title: "Income analysis" }} />
         <Stack.Screen name="effectiveness" options={{ ...detail, title: "Effectiveness" }} />
         <Stack.Screen name="signals" options={{ ...detail, title: "Today in full" }} />
         <Stack.Screen name="layering" options={{ ...detail, title: "Consensus" }} />

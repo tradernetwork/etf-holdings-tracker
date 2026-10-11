@@ -57,7 +57,7 @@ export function FundCard({ f }: { f: IncomeDirectoryFund }) {
   const t = f.tiles;
   const aum = formatAum(f.aum);
   return (
-    <Tappable onPress={() => router.push(`/fund/${encodeURIComponent(f.fund)}`)}>
+    <Tappable onPress={() => router.push(`/income/${encodeURIComponent(f.fund)}`)}>
       <Card style={{ gap: spacing.md }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" }}>
           <Text style={styles.fund}>

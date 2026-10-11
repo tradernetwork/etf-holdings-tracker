@@ -17,13 +17,13 @@ import { useStyles, useTheme } from "@/lib/theme-context";
 const CAP = 3;
 
 /** One contract, rendered by the shared option row so it reads the same as on the fund screen. */
-export function LegLine({ leg, underlying }: { leg: OptionLeg; underlying: string }) {
+export function LegLine({ leg, underlying, asOf }: { leg: OptionLeg; underlying: string; asOf?: string | null }) {
   const moved = leg.prevContracts != null && leg.change != null && leg.change !== 0;
   return (
     <OptionRow
       plain
       showWeight={false}
-      line={legToLine(leg, underlying)}
+      line={legToLine(leg, underlying, 0, asOf)}
       note={moved ? `${Math.round(leg.prevContracts as number).toLocaleString("en-US")} → ${Math.round(leg.contracts).toLocaleString("en-US")}` : undefined}
     />
   );
@@ -47,14 +47,14 @@ function StructureBlock({ book, s, underlying }: { book: FundOptionBook; s: Opti
       {open && (
         <View style={{ gap: 2 }}>
           <Hint style={{ marginBottom: 4 }}>{STRUCTURE_BLURB[s.kind] ?? ""}</Hint>
-          {legs.map((l, i) => <LegLine key={`${l.occ ?? i}-${i}`} leg={l} underlying={underlying} />)}
+          {legs.map((l, i) => <LegLine key={`${l.occ ?? i}-${i}`} leg={l} underlying={underlying} asOf={book.fileDate} />)}
         </View>
       )}
     </View>
   );
 }
 
-function TradeBlock({ t, underlying }: { t: OptionTrade; underlying: string }) {
+function TradeBlock({ t, underlying, asOf }: { t: OptionTrade; underlying: string; asOf: string | null }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const [open, setOpen] = useState(false);
@@ -70,7 +70,7 @@ function TradeBlock({ t, underlying }: { t: OptionTrade; underlying: string }) {
       {open && (
         <View style={{ gap: 2 }}>
           <Hint style={{ marginBottom: 4 }}>{TRADE_BLURB[t.kind] ?? ""}</Hint>
-          {t.legs.map((l, i) => <LegLine key={`${l.occ ?? i}-${i}`} leg={l} underlying={underlying} />)}
+          {t.legs.map((l, i) => <LegLine key={`${l.occ ?? i}-${i}`} leg={l} underlying={underlying} asOf={asOf} />)}
         </View>
       )}
     </View>
@@ -110,7 +110,7 @@ export function FundOptionBookCard({ book, underlying, compact }: { book: FundOp
           CHANGED{book.compareDate ? ` SINCE ${formatExpiry(book.compareDate)}` : ""} · {book.trades.length} {book.trades.length === 1 ? "TRADE" : "TRADES"}
         </Text>
         {book.trades.length === 0 && <Note>No contracts changed since {book.compareDate ? formatExpiry(book.compareDate) : "the previous file"}.</Note>}
-        {trades.map((t, i) => <TradeBlock key={`${t.kind}-${i}`} t={t} underlying={underlying} />)}
+        {trades.map((t, i) => <TradeBlock key={`${t.kind}-${i}`} t={t} underlying={underlying} asOf={book.fileDate} />)}
         <ShowMore total={book.trades.length} shown={cap} open={allTrades} onPress={() => setAllTrades((v) => !v)} />
       </View>
     </Card>

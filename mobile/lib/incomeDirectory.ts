@@ -78,6 +78,12 @@ export const ARCHETYPE_ORDER: string[] = ["covered-call", "synthetic", "leap-pro
 export const INVISIBLE_INCOME_LEG =
   "Income leg not visible in holdings data — contracts are written and expire in the same session, so no end-of-day file ever contains one. We can show what this fund owns, not what it sold.";
 
+/** "Oct 9, 2026". */
+export function formatAsOfLong(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
 export const pct = (v: number | null | undefined, digits = 1): string => (v == null ? "—" : `${v.toFixed(digits)}%`);
 
 /** Signed percent for sleeves ("+12.3%" / "−7.5%"); zero shows as 0.0%. */

@@ -4,6 +4,7 @@
  * split, filters, nine sorts and an expiry ladder. Every rule below is copied from the website so
  * the two clients show the same book.
  */
+import { expiryInfo } from "./expiry";
 import { optionKey } from "./book";
 import { sectorLabel } from "./format";
 import type { IncomePosition, OptionActivityDay, PositionLeg } from "./fundExtras";
@@ -206,9 +207,11 @@ export function qtyNote(p: IncomePosition): string | null {
 }
 
 /** "5 DTE · opened 10/6 · 3.4% upside room" / "ITM by 1.2%". */
-export function legMeta(leg: PositionLeg, opened?: string): string {
+export function legMeta(leg: PositionLeg, opened?: string, asOf?: string | null, now?: Date): string {
+  const exp = asOf ? expiryInfo({ expiry: leg.expiry, asOf, fileDte: leg.dte, now }) : null;
   return [
-    leg.expired ? "expired" : leg.dte != null ? `${Math.round(leg.dte)} DTE` : null,
+    exp ? exp.label || null : leg.expired ? "expired" : leg.dte != null ? `${Math.round(leg.dte)} DTE` : null,
+    exp?.fileNote ?? null,
     opened ? openedLabel(opened) : null,
     leg.upsideRoomPct != null ? (leg.upsideRoomPct >= 0 ? `${leg.upsideRoomPct.toFixed(1)}% upside room` : `ITM by ${Math.abs(leg.upsideRoomPct).toFixed(1)}%`) : null,
   ].filter(Boolean).join(" · ");

@@ -1,5 +1,6 @@
+import { Action } from "@/components/discovery-ui";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { Pressable, RefreshControl, SectionList, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
@@ -9,7 +10,7 @@ import {
 } from "@/components/fund/book-rows";
 import { ChangeRow, StreakRow } from "@/components/fund/changes-rows";
 import { FactsCard, GradeHeader, MetricBlock, PeerCard } from "@/components/fund/effectiveness-view";
-import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, optionKeyOf } from "@/components/fund/income-rows";
+import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, SnapshotDate, optionKeyOf } from "@/components/fund/income-rows";
 import { RotationView } from "@/components/fund/rotation-view";
 import { Card, ErrorNote, Hint, Loading, Mono, Note, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -335,7 +336,10 @@ export default function FundScreen() {
       </View>
       {f.flow ? <Hint>Net creation/redemption: {f.flow.sharesDelta > 0 ? "+" : ""}{formatCount(f.flow.sharesDelta)} shares of {formatCount(f.flow.sharesOutstanding)} outstanding over {f.flow.periodDays} days.</Hint> : null}
 
-      <FollowButton symbol={symbol} following={isFollowing("fund", symbol)} onToggle={() => toggleFollow("fund", symbol)} />
+      <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
+        <FollowButton symbol={symbol} following={isFollowing("fund", symbol)} onToggle={() => toggleFollow("fund", symbol)} />
+        {income ? <Action onPress={() => router.push(`/income/${encodeURIComponent(f.fund)}`)}>Income structure →</Action> : null}
+      </View>
 
       {catchUp.active ? <Banner title={catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"} body="Changes over that gap aren't shown as one day: this fund's previous file was carried forward, so the latest diff spans several days." /> : null}
       {f.stale ? <Banner title={`Older disclosure · ${formatShortDate(f.holdingsDate)}`} body={`The ${formatShortDate(f.asOfDate)} snapshot carries this book forward. These positions are not fresh trade signals. Quiet data is not proof of no trades.`} /> : null}
@@ -375,7 +379,7 @@ export default function FundScreen() {
   );
 
   return (
-    <>
+    <SnapshotDate.Provider value={inc?.asOfDate ?? f.asOfDate ?? null}>
       <SectionList<Item, Section>
         ref={listRef}
         style={styles.root}
@@ -407,7 +411,7 @@ export default function FundScreen() {
         <OptionGroup<PosSort> label="Sort by" value={posSort} onChange={setPosSort} options={(Object.keys(SORT_LABEL) as PosSort[]).map((k) => ({ value: k, label: SORT_LABEL[k] }))} />
         <OptionGroup<"default" | "asc" | "desc"> label="Direction" value={posDir} onChange={setPosDir} options={[{ value: "default", label: "Default for this column" }, { value: "asc", label: "Ascending ↑" }, { value: "desc", label: "Descending ↓" }]} />
       </FilterSheet>
-    </>
+    </SnapshotDate.Provider>
   );
 }
 

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { createContext, useContext } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, Hint, Mono, ThinBar } from "@/components/ui";
 import { formatCount, formatShares, formatUsd } from "@/lib/format";
@@ -44,10 +45,22 @@ function roleColor(role: PositionLeg["role"], c: Palette): string {
   return { "written-call": c.isNew, "written-put": c.accent, "long-call": c.buy, "long-put": c.buy, synthetic: c.textMuted }[role];
 }
 
+/** The snapshot (file) date of the fund's income book; expiry labels count from today, not from it. */
+export const SnapshotDate = createContext<string | null>(null);
+
+/** The soonest-expiry DTE, shifted from the file's date to today ("exp" once past). */
+function dteStat(fileDte: number | null, asOf: string | null): string {
+  if (fileDte == null) return "—";
+  if (!asOf) return String(Math.round(fileDte));
+  const left = dteToday(fileDte, asOf);
+  return left === null ? "exp" : String(left);
+}
+
 /** One option leg: "MSTR 10/16/26 152.5 C", role, signed contracts, price, value, % NAV, upside, DTE. */
 export function LegRow({ leg, ticker, opened }: { leg: PositionLeg; ticker?: string; opened?: string }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
+  const asOf = useContext(SnapshotDate);
   const type = normalizeOptionType(leg.optionType) === "Put" ? "P" : "C";
   const title = `${ticker ? `${ticker} ` : ""}${formatExpiry(leg.expiry)} ${formatStrike(leg.strike)} ${type}`;
   return (
@@ -57,7 +70,7 @@ export function LegRow({ leg, ticker, opened }: { leg: PositionLeg; ticker?: str
           <Mono bold style={{ fontSize: 13 }}>{title}</Mono>
           <Text style={{ color: roleColor(leg.role, c), fontFamily: fonts.bodyMedium, fontSize: 11 }}>{ROLE_LABEL[leg.role]}</Text>
         </View>
-        <Hint>{legMeta(leg, opened)}</Hint>
+        <Hint>{legMeta(leg, opened, asOf)}</Hint>
       </View>
       <View style={{ alignItems: "flex-end", gap: 2 }}>
         <Mono bold style={{ fontSize: 13, color: leg.marketValue != null && leg.marketValue < 0 ? c.isNew : c.textPrimary }}>{money(leg.marketValue)}</Mono>
@@ -70,6 +83,7 @@ export function LegRow({ leg, ticker, opened }: { leg: PositionLeg; ticker?: str
 /** One stock with its legs tucked underneath (tap to expand). */
 export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened: Map<string, string>; open: boolean; onToggle: () => void }) {
   const c = useTheme();
+  const snapshot = useContext(SnapshotDate);
   const styles = useStyles(makeStyles);
   const { p } = r;
   const note = qtyNote(p);
@@ -98,7 +112,7 @@ export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened:
         <Stat label="Δ today" value={r.sharesDelta == null ? "—" : formatShares(r.sharesDelta)} color={r.sharesDelta == null ? undefined : r.sharesDelta > 0 ? c.buy : c.sell} />
         <View style={styles.stat}><Hint>Covered</Hint><CoverageBar pct={p.coveragePct} /></View>
         <View style={styles.stat}><Hint>Upside</Hint><UpsideText pct={r.upside} /></View>
-        <Stat label="DTE" value={r.dte == null ? "—" : String(Math.round(r.dte))} />
+        <Stat label="DTE" value={dteStat(r.dte, snapshot)} />
       </View>
       {open ? p.legs.map((l, i) => <LegRow key={i} leg={l} opened={opened.get(optionKeyOf(p.ticker, l))} />) : null}
     </View>
@@ -106,6 +120,7 @@ export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened:
 }
 
 import { optionKey } from "@/lib/book";
+import { dteToday, expiryInfo } from "@/lib/expiry";
 export const optionKeyOf = (ticker: string, l: PositionLeg): string => optionKey(ticker, l.optionType, l.strike, l.expiry);
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -121,10 +136,12 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 
 export function ExpiryHeader({ expiry, dte, count }: { expiry: string; dte: number | null; count: number }) {
   const styles = useStyles(makeStyles);
+  const asOf = useContext(SnapshotDate);
+  const info = asOf ? expiryInfo({ expiry, asOf, fileDte: dte }) : null;
   return (
     <View style={styles.expHead}>
       <Text style={styles.expTitle}>{formatExpiry(expiry)}</Text>
-      {dte != null ? <Hint>{Math.round(dte)} DTE</Hint> : null}
+      {info ? <Hint>{[info.label, info.fileNote].filter(Boolean).join(" · ")}</Hint> : dte != null ? <Hint>{Math.round(dte)} DTE</Hint> : null}
       <View style={{ flex: 1 }} />
       <Hint>{count} {count === 1 ? "leg" : "legs"}</Hint>
     </View>

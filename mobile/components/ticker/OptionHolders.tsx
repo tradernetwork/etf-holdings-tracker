@@ -3,13 +3,16 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { OptionRow } from "@/components/fund/option-row";
 import { Card, FreshnessLabel, Hint, Note, SectionHeader, Tappable } from "@/components/ui";
-import { buildOptionHolders, type OptionHolderFund, type TickerChangeRow, type TickerHoldingRow } from "@/lib/optionHolders";
+import { useQueries } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { apiUnderlyingPrice, buildOptionHolders, type OptionHolderFund, type TickerChangeRow, type TickerHoldingRow } from "@/lib/optionHolders";
 import { formatUsdValue, formatWeight, freshnessLabel } from "@/lib/format";
 import { fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
 const FUNDS_COLLAPSED = 3;
 const LEGS_COLLAPSED = 4;
+const MAX_PRICE_FUNDS = 6;
 
 /**
  * Ticker screen "Option holders": every tracked fund holding options on THIS stock, with its legs
@@ -17,7 +20,12 @@ const LEGS_COLLAPSED = 4;
  * "Option positions on it". Renders nothing when no fund holds a live option on the symbol.
  */
 export function OptionHolders({ symbol, holdings, changes }: { symbol: string; holdings: TickerHoldingRow[]; changes: TickerChangeRow[] }) {
-  const built = useMemo(() => buildOptionHolders(symbol, holdings, changes), [symbol, holdings, changes]);
+  const optionFunds = useMemo(() => [...new Set(holdings.filter((h) => h.isOption && !h.stale).map((h) => h.fund))].slice(0, MAX_PRICE_FUNDS), [holdings]);
+  const fundQs = useQueries({
+    queries: optionFunds.map((fund) => ({ queryKey: ["fund", fund], queryFn: ({ signal }: { signal?: AbortSignal }) => api.fund(fund, signal), staleTime: 5 * 60 * 1000 })),
+  });
+  const apiSpot = apiUnderlyingPrice(symbol, fundQs.flatMap((q) => q.data?.optionHoldings ?? []));
+  const built = useMemo(() => buildOptionHolders(symbol, holdings, changes, apiSpot), [symbol, holdings, changes, apiSpot]);
   const [all, setAll] = useState(false);
   const c = useTheme();
   if (built.funds.length === 0) return null;
@@ -35,7 +43,7 @@ export function OptionHolders({ symbol, holdings, changes }: { symbol: string; h
       <Hint>
         {built.legCount} live {built.legCount === 1 ? "leg" : "legs"} across {built.funds.length} {built.funds.length === 1 ? "fund" : "funds"} — left out of the institutional blend. Short = written. A long call and a written put at one strike together are synthetic stock, not two trades.
         {built.expiredHidden > 0 ? ` ${built.expiredHidden} expired ${built.expiredHidden === 1 ? "contract" : "contracts"} hidden.` : ""}
-        {built.spot != null ? ` ITM/OTM uses an implied price of ~$${built.spot.toFixed(2)}.` : ""}
+        {built.spot != null ? ` ITM/OTM uses ${built.spotSource === "api" ? "the funds' reported" : "an implied"} $${built.spot.toFixed(2)} stock price${built.spotSource === "api" ? "" : " (value ÷ shares), as no fund reports one"}.` : ""}
       </Hint>
       {shown.map((f) => <HolderCard key={f.fund} f={f} />)}
     </>
