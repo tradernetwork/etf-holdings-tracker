@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     description: 'What TickerTrace collects, why, and what it does not.',
 };
 
-const UPDATED = 'October 8, 2026';
+const UPDATED = 'October 11, 2026';
 
 export default function PrivacyPage() {
     return (
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
                     <ArrowLeft className="mr-2 h-4 w-4" /> TickerTrace
                 </Link>
                 <h1 className="text-3xl font-bold">Privacy Policy</h1>
-                <p className="text-sm text-slate-400">Last updated {UPDATED}. Applies to tickertrace.pro and the TickerTrace Android app, which is the same site in a wrapper.</p>
+                <p className="text-sm text-slate-400">Last updated {UPDATED}. Applies to tickertrace.pro and to the TickerTrace Android app. The app is a native app (not a wrapper around the site); where the two differ, the sections below say so.</p>
 
                 <section className="space-y-2">
                     <h2 className="text-xl font-semibold">The short version</h2>
@@ -27,11 +27,22 @@ export default function PrivacyPage() {
                 <section className="space-y-2">
                     <h2 className="text-xl font-semibold">What we collect</h2>
                     <ul className="list-disc pl-6 space-y-2 text-slate-300">
-                        <li><strong>Usage analytics.</strong> We use Google Analytics 4 and Vercel Analytics to see which pages are used, what device and browser, and roughly where (country or region level). Google Analytics sets cookies or similar identifiers for this.</li>
+                        <li><strong>Usage analytics (website only).</strong> On tickertrace.pro we use Google Analytics 4 and Vercel Analytics to see which pages are used, what device and browser, and roughly where (country or region level). Google Analytics sets cookies or similar identifiers for this.</li>
                         <li><strong>A visitor counter.</strong> Our server counts page views for the live visitor figure. It stores a short one-way hash of your IP address, never the address itself, and deletes the records after about 30 days.</li>
                         <li><strong>Standard server logs.</strong> Our hosts (Vercel and our API server) may log IP address, user agent and request path for security and debugging.</li>
                         <li><strong>A referral code.</strong> If you arrive through a link that includes a <code>ref</code> code, we save that code in your browser&apos;s local storage so a later visit to TraderMatrix can be attributed.</li>
                     </ul>
+                </section>
+
+                <section className="space-y-2">
+                    <h2 className="text-xl font-semibold">The Android app</h2>
+                    <p>The app has no ads, no ad networks and no analytics or tracking libraries, and it does not ask for your location, contacts, camera, microphone or advertising ID. Your follows (the funds and stocks you star), your theme and category choices and your notification setting are stored on your phone. The app reads public data from our API. To deliver app updates, the app contacts Expo&apos;s update service, which receives the app version, platform and a random per-install identifier, plus your IP address as part of the request.</p>
+                </section>
+
+                <section className="space-y-2">
+                    <h2 className="text-xl font-semibold">Notifications (optional)</h2>
+                    <p>Daily digest notifications are optional and off until you turn them on in the app and allow the Android notification permission. If you do, the app registers your phone with our server: a random device identifier, your Expo push token, a hashed access secret, and the list of funds and stocks you follow. We use this only to send you the digest you asked for. We store no name, email address, phone number, advertising ID, location or portfolio, and we do not use this registry for advertising or analytics.</p>
+                    <p>Messages are delivered through Expo&apos;s push service and Google&apos;s Firebase Cloud Messaging, which process your push token to deliver them. Unsent digests expire after 24 hours and sent-digest records are deleted after 30 days; a registration that goes unused for 180 days is deleted. You can delete it yourself at any time: turning notifications off or choosing &ldquo;Clear my follows&rdquo; in the app&apos;s Settings erases your device record, follows and digest records from our server immediately (a one-way anonymous counter of enrollments per token may remain until the end of that UTC day to limit abuse). Uninstalling the app and not re-enrolling leaves nothing but the 180-day expiry. You can also email us to have it deleted. Backups are rotated out within 30 days.</p>
                 </section>
 
                 <section className="space-y-2">
