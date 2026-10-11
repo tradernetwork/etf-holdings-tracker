@@ -357,6 +357,18 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 11, 2026"
+            tag="feature"
+            title="The signals list can finally go past ten"
+            desc="/api/v1/signals handed out exactly ten buys and ten sells and called it a day, which is fine for a headline and annoying for anyone who wanted the rest of the ranking. It now takes a limit (up to 200), and /api/v1/briefing does too for its top buys, top sells, multi-provider list and streaks. Same order as before, just longer. Leave the parameter off and you get exactly what you got yesterday, byte for byte. The mobile app uses it for its Today in full screens and will only say it's showing everything when the server confirms it."
+          />
+          <ChangelogEntry
+            date="October 11, 2026"
+            tag="feature"
+            title="Five thousand changes was not the whole book"
+            desc="The mobile changes explorer had to ask one provider at a time to get past the API's 5,000-row cap. Now /changes has optional pages and a snapshot token, so the full daily book loads in a handful of bounded requests without rebuilding the diff each time. Old callers still get their usual 50 rows; CSV export gets the lot. If a scrape lands halfway through, we ask you to reload instead of quietly stapling two days together."
+          />
+          <ChangelogEntry
+            date="October 11, 2026"
             tag="bugfix"
             title="The options activity tables had been empty, and nobody told us"
             desc="Options activity on the dashboard and the Income page, plus the 'notable options' line in the briefing, quietly showed nothing. Option contracts have ugly tickers on purpose (MSTR 261016C00095000), and the filter that hides junk like CASH and CUSIPs was eating every one of them before they could be listed. We'd already taught the change engine about that exception and forgot the activity bucketer. Fixed: today's contract-level adds, closes and rolls are back, with a test so an option can't be mistaken for junk again."

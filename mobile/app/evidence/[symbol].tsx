@@ -23,6 +23,7 @@ export default function Evidence() {
   );
   return (
     <ListPage
+      dense
       data={rows}
       keyFor={(r) => `${r.fund}:${r.ticker}:${r.type}`}
       refreshing={q.isRefetching}
@@ -31,7 +32,7 @@ export default function Evidence() {
         <>
           <Title>{symbol} evidence</Title>
           <Hint>
-            All {rows.length} equity changes ·{" "}
+            All {rows.length} stock-position changes (all fund categories) ·{" "}
             {
               rows.filter((r) => isSignificant(r.fund, r.activeWeightDelta))
                 .length
@@ -48,7 +49,7 @@ export default function Evidence() {
             ]}
           />
           <Note>
-            All disclosed changes are reachable, including smaller adjustments.
+            Active Δ is drift adjusted; dollar flow is estimated. Tap any row for full details, including smaller adjustments.
             Null deltas are unknown; older holdings are not proof of no trades.
           </Note>
           {q.isLoading && <Loading />}

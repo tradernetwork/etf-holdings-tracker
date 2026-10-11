@@ -67,7 +67,7 @@ const TAB_LABEL: Record<Tab, string> = { positions: "Positions", changes: "Chang
 export default function FundScreen() {
   const c = useTheme();
   const styles = useStyles(makeStyles);
-  const { fund: raw } = useLocalSearchParams<{ fund: string }>();
+  const { fund: raw, tab: tabParam } = useLocalSearchParams<{ fund: string; tab?: string }>();
   const symbol = String(raw ?? "").toUpperCase();
   const q = useFund(symbol);
   const f = q.data;
@@ -78,7 +78,8 @@ export default function FundScreen() {
     if (!f) return ["positions"];
     return income ? ["positions", "activity", "scores", ...(ROTATION_FUNDS.has(symbol) ? (["rotation"] as Tab[]) : [])] : ["positions", "changes"];
   }, [f, income, symbol]);
-  const [tab, setTab] = useState<Tab>("positions");
+  // ?tab=scores etc. lets other screens (the effectiveness leaderboard) land on a specific tab.
+  const [tab, setTab] = useState<Tab>((["positions", "changes", "activity", "scores", "rotation"] as const).find((t) => t === tabParam) ?? "positions");
   const activeTab: Tab = tabs.includes(tab) ? tab : "positions";
 
   const bookQ = useFundBook(symbol);

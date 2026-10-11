@@ -10,7 +10,7 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 - [OpenAPI spec](https://api.tickertrace.pro/openapi.json): machine-readable schema (also at https://tickertrace.pro/openapi.json)
 - [Interactive docs](https://api.tickertrace.pro/docs): Swagger UI
 - [/api/v1/signals](https://api.tickertrace.pro/api/v1/signals): top buying and selling signals with conviction scores
-- [/api/v1/changes](https://api.tickertrace.pro/api/v1/changes?provider=ARK&direction=buying): filterable daily position changes (provider, fund, direction)
+- [/api/v1/changes](https://api.tickertrace.pro/api/v1/changes?provider=ARK&direction=buying): guarded equity changes (daily/weekly/monthly; provider, fund, direction, category, sector, q, type). Legacy limit=50 (max 5000). Add page=1&size=2000 for uncapped paging with total/page/size/pages/snapshot; pass snapshot on later pages (409: restart). Stable order: absolute active Δ descending, then fund/ticker/type. format=csv exports every filtered row, ignoring limit/page/size
 - [/api/v1/fund/{fund}](https://api.tickertrace.pro/api/v1/fund/ARKK): one fund's top holdings, options and AUM
 - [/api/v1/ticker/{ticker}](https://api.tickertrace.pro/api/v1/ticker/TSLA): cross-fund view of who is buying or selling a ticker
 - [/api/v1/sectors](https://api.tickertrace.pro/api/v1/sectors): sector-level weight flows
@@ -21,6 +21,8 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 - [/api/v1/options-listings/schedule](https://api.tickertrace.pro/api/v1/options-listings/schedule): the MWF Elite 0DTE symbol list and the Mon/Wed/Fri expiration calendar
 - [/api/v1/funds](https://api.tickertrace.pro/api/v1/funds): all tracked funds
 - [/api/v1/stats](https://api.tickertrace.pro/api/v1/stats): global stats, including the fund count and as-of date
+
+`/api/v1/signals` and `/api/v1/briefing` also take `limit` (1 to 200): the same ranked order, just longer lists (signals buying and selling, briefing top buys/sells, multi-provider and streaks). Omit it for the usual top lists; the response echoes `limit` when you send one.
 
 Most list endpoints accept `category=active-equity|option-income` to separate stock-pickers from option-income funds. More endpoints (institutional flow, income funds, layering patterns, signal performance, options listings) are in the OpenAPI spec.
 

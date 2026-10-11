@@ -1,0 +1,24 @@
+# Dense discovery, honest category scope
+
+Changes, Stocks and ticker evidence now use two-line, 64px collapsed rows instead of a card per record. Changes shows ticker/type + signed active Δ on line 1; fund/provider + previous → current weight + estimated signed flow on line 2. Name/sector, freshness/unknown/catch-up notes and ticker/fund links remain available on tap. Stocks keeps rank, fund count/total allocation, net Δ and compact NEW/EXIT/streak/family badges; expanded rows preserve company/sector, full badge evidence and every holder link. Shared change rows also compact activity cell details; the activity matrix itself already has 60px rows.
+
+Changes uses a real virtualized `SectionList`: provider sections have sticky headers; By ticker uses ticker sections and expands all constituent fund rows as virtualized section data, rather than one nested evidence card. Sorts, periods, filters, full paged discovery and old-server fallback stay intact. Sector/drift/estimate explanations move to the header; per-record exceptions stay explicit.
+
+Today and Changes share Active Equity / Option-Income / All. The setting now persists at `tt.category`, defaults to Active Equity, validates old/corrupt storage, and protects a new user selection from being overwritten by late hydration. Filtering is by **fund category**, preferring `/funds` metadata and using row `fundCategory` when metadata is unavailable. A stock row is not automatically stock-picking conviction. IDVO's SAP position belongs to Option-Income. Unknown categories remain reachable in All; they are never guessed into Active Equity. Today's Add/Cut uses this same scope helper and still rejects mismatched snapshot dates/null moves/options.
+
+The Oct 9 snapshot contains **9,818 stock-position changes across 55 active-equity funds** by default, **307 across 16 option-income funds**, or **10,125 across 71 funds** in All. Headers show the scoped total, funds, filtered row count and add/reduce counts. Option-Income/All explicitly explain collateral mechanics. Selecting a fund outside the current category gets a scope note rather than pretending that fund has no changes. Stocks and full ticker evidence retain their website-wide All-category universe with honest labels.
+
+## Visual evidence: 390 × 844, both themes
+
+| Screen | Terminal before → after | Paper before → after |
+|---|---|---|
+| Changes, default | [Before](discovery-density-screens/before-terminal-changes.png) → [After](discovery-density-screens/after-terminal-changes.png) | [Before](discovery-density-screens/before-paper-changes.png) → [After](discovery-density-screens/after-paper-changes.png) |
+| Changes, same All universe | [Before](discovery-density-screens/before-terminal-changes.png) → [After](discovery-density-screens/after-terminal-changes-all.png) | [Before](discovery-density-screens/before-paper-changes.png) → [After](discovery-density-screens/after-paper-changes-all.png) |
+| Stocks | [Before](discovery-density-screens/before-terminal-stocks.png) → [After](discovery-density-screens/after-terminal-stocks.png) | [Before](discovery-density-screens/before-paper-stocks.png) → [After](discovery-density-screens/after-paper-stocks.png) |
+| Full ticker evidence | [Before](discovery-density-screens/before-terminal-evidence-TSLA.png) → [After](discovery-density-screens/after-terminal-evidence-TSLA.png) | [Before](discovery-density-screens/before-paper-evidence-TSLA.png) → [After](discovery-density-screens/after-paper-evidence-TSLA.png) |
+| Expanded change | [After](discovery-density-screens/after-terminal-change-expanded.png) | [After](discovery-density-screens/after-paper-change-expanded.png) |
+| IDVO in Option-Income | [After](discovery-density-screens/after-terminal-changes-income.png) | [After](discovery-density-screens/after-paper-changes-income.png) |
+
+Before/after exports use the same cached actual API responses, snapshot Oct 9, fetched Oct 11. Browser checks measured collapsed change/stock buttons at **64px**, provider headers pinned at **y=64px** after scrolling, full ticker evidence expansion, and IDVO exclusion from Active Equity. Category survives reload and is shared with Today in both themes. About six Changes rows / seven Stocks rows fit above the fold, versus roughly two cards. These are React Native Web phone previews; installed Android acceptance remains separate.
+
+Tests cover persisted-category parsing, authoritative IDVO fund scope (with a live fund fixture), unknown/offline categories, Today/explorer count agreement, uncapped 10,125-row sections, stable ordering, empty results and expanded virtualized ticker evidence. No backend or native dependency changes: JavaScript-only, suitable for OTA review. **Final checks after rebase onto 7606e3c (#165, including #164): 268 Jest tests / 15 suites passed; TypeScript and Expo web export passed. Both-theme browser capture/interaction checks passed with no page errors.**

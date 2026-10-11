@@ -1,6 +1,6 @@
 # Mobile discovery parity: changes, stocks and institutional history
 
-Implements GAPS.md group 4, using existing public endpoints. Fund-screen implementation is owned separately and is untouched here. Shared response shapes and fetchers live in `mobile/lib/discovery/`; the only common-client change exports the existing retry/cancellation-aware request function. No API endpoint/schema or native dependency changes.
+Implements GAPS.md group 4, using existing public endpoints. Fund-screen implementation is owned separately and is untouched here. Shared response shapes and fetchers live in `mobile/lib/discovery/`; the only common-client change exports the existing retry/cancellation-aware request function. Discovery paging is additive to the existing endpoint; no native dependency changes.
 
 ## Field-by-field review checklist
 
@@ -22,15 +22,17 @@ Implements GAPS.md group 4, using existing public endpoints. Fund-screen impleme
 
 Pagination is native virtualization, not hiding data behind permanent excerpts. Summary cards are small; their View all links open real destinations. Ranking endpoints with hard server limits describe the returned universe instead of claiming the whole stock market.
 
-## Completing `/changes` without an API addition
+## Completing `/changes` across server versions
 
-The actual 2026-10-09 live response hits the 5,000-row broad-query ceiling. Requesting `limit=5000` alone is not complete. On a capped response:
+Discovery now probes `page=1&size=2000&limit=5000`. A paging-capable server returns `total/page/size/pages/snapshot`: the app fetches the remaining pages with at most three concurrent requests, passes the snapshot token, and checks page identities, row counts and duplicates before publishing a complete result. The 10,125-row daily book takes six changes requests and no metadata call. See [CHANGES_PAGING.md](CHANGES_PAGING.md).
+
+The old server ignores page/size and returns the legacy 5,000-row broad response. Requesting `limit=5000` alone is not complete, so that fallback remains:
 
 1. Read the existing `/funds` metadata once.
 2. Query existing `/changes?provider=…` filters sequentially. Only providers that still cap are split into `/changes?fund=…` requests. Unknown-provider (`Other`) funds go directly by fund; visible funds absent from latest metadata are also queried explicitly.
 3. Union by fund/ticker/type, preserve signed deltas and dollar fields, and reject results if snapshot dates differ. A single fund still reaching 5,000 rows remains explicitly `truncated`.
 
-The live phone view showed **10,125 equity rows**, vs the initial 5,000, with **3,228 positive / 3,251 negative active changes** (zero-active rows remain inspectable). Today uses that same daily query/cache, applying category locally instead of independently splitting another request set. Five-minute React Query caching and abort signals reduce repeat work. Splitting is sequential to avoid a request burst; cold complete loads do cost more API requests/time, and fast switches of multiple uncached windows can encounter the existing 60/minute limiter. The existing client retries transient errors. A future paginated, snapshot-cached changes endpoint would reduce this cost; this PR does not depend on one.
+The live phone view showed **10,125 equity rows**, vs the initial 5,000, with **3,228 positive / 3,251 negative active changes** (zero-active rows remain inspectable). Today uses that same daily query/cache, applying category locally instead of independently splitting another request set. Five-minute React Query caching and abort signals reduce repeat work. Splitting is sequential to avoid a request burst; cold complete loads do cost more API requests/time, and fast switches of multiple uncached windows can encounter the existing 60/minute limiter. The existing client retries transient errors. This split cost applies only to old servers; the snapshot-memoized paging endpoint removes provider/fund fan-out on updated servers.
 
 No new financial scoring is introduced. Changes browse all rows as the website changes table does; activity consumes the API's significant buckets; the existing ticker preview's significance rules stay unchanged. Institutional classifications and blended-weight history are server-authored. Unknown sectors stay unknown, short dollar signs stay signed, stale books are labelled, and catch-up deltas are never coerced into zero or surfaced as fresh daily trades. The history chart shows disclosed allocations, not a synthetic trade tape.
 

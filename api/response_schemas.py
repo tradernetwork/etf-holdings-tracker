@@ -61,7 +61,12 @@ RESPONSES = {
         total={'type': 'integer', 'description': 'Rows matching the filters (before paging).'},
         page={'type': 'integer'}, size={'type': 'integer'}, pages={'type': 'integer'},
         holdings=array(HOLDINGS_ROW)),
-    '/api/v1/changes': obj(changes=array(CHANGE)),
+    '/api/v1/changes': obj(changes=array(CHANGE),
+        total={'type': 'integer', 'description': 'All rows matching filters, before paging. Present only with page/size.'},
+        page={'type': 'integer', 'description': '1-based page; present only with page/size.'},
+        size={'type': 'integer', 'description': 'Page size (1–2000); present only with page/size.'},
+        pages={'type': 'integer', 'description': 'Total pages; 0 for an empty filtered universe.'},
+        snapshot={'type': 'string', 'description': 'Opaque comparison-window snapshot token. Pass on later pages; 409 means restart at page 1.'} ),
     '/api/v1/layering-patterns': obj(patterns=array(PATTERN)),
     '/api/v1/income': obj(funds=array(AUM)),
     '/api/v1/income/{fund}': AUM,
@@ -84,6 +89,11 @@ def install_response_schemas(app):
             operation = schema['paths'].get(path, {}).get('get')
             if operation:
                 operation['responses']['200']['content']['application/json']['schema'] = response
+        changes = schema['paths'].get('/api/v1/changes', {}).get('get', {})
+        if changes:
+            changes['responses']['200']['content']['text/csv'] = {'schema': {'type': 'string', 'description': 'format=csv: uncapped filtered export; unknown values are blank.'}}
+            changes['responses']['409'] = {'description': 'Snapshot token no longer matches. Restart at page 1.'}
+            changes['responses']['503'] = {'description': 'Snapshot changed repeatedly during computation. Retry.'}
         app.openapi_schema = schema
         return schema
     app.openapi = openapi

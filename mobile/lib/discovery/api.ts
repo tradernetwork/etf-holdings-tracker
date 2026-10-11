@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { request } from "../api";
-import { completeChanges } from "./complete-changes";
+import { loadCompleteChanges, type ChangeQuery } from "./paged-changes";
 import type { Category, FundsResponse } from "../types";
 import type {
   ChangesResponse,
@@ -17,20 +17,20 @@ export const discoveryApi = {
     category?: Category,
     signal?: AbortSignal,
   ) => {
-    const load = (filter: { fund?: string; provider?: string } = {}) =>
+    const load = (query: ChangeQuery) =>
       request<ChangesResponse>(
         "/api/v1/changes",
-        { period, limit: 5000, category, ...filter },
+        { period, category, ...query },
         signal,
       );
-    const first = await load();
-    if (first.count < 5000) return { ...first, truncated: false };
-    const metadata = await request<FundsResponse>("/api/v1/funds", {}, signal);
-    return completeChanges(
-      first,
-      metadata.funds.filter((f) => !category || f.category === category),
-      load,
-    );
+    return loadCompleteChanges(load, async () => {
+      const metadata = await request<FundsResponse>(
+        "/api/v1/funds",
+        {},
+        signal,
+      );
+      return metadata.funds.filter((f) => !category || f.category === category);
+    });
   },
   activity: (period: Period, signal?: AbortSignal) =>
     request<ActivityResponse>("/api/v1/activity", { period }, signal),

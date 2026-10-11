@@ -7,6 +7,7 @@ import { createSecureDeviceStore } from "./device-store";
 import { NotifySync } from "./notify-sync";
 import { createNotifyApi, NOTIFICATIONS_BACKEND_ENABLED } from "./notifyApi";
 import { currentPushToken, requestEnable } from "./notifications";
+import { CATEGORY_KEY, parseCategory } from "./discovery/scope";
 import type { CategoryChoice } from "./types";
 
 const FOLLOWS_KEY = "tt.follows";
@@ -33,7 +34,8 @@ const Ctx = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   // Spec: the default view is Active Equity.
-  const [category, setCategory] = useState<CategoryChoice>("active-equity");
+  const [category, setCategoryState] = useState<CategoryChoice>("active-equity");
+  const categoryTouched = useRef(false);
   const [follows, setFollows] = useState<Follow[]>([]);
   const [notify, setNotify] = useState<OptInState>(initialOptIn);
   const [promptVisible, setPromptVisible] = useState(false);
@@ -49,8 +51,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   followsRef.current = follows;
 
   useEffect(() => {
-    Promise.all([AsyncStorage.getItem(FOLLOWS_KEY), AsyncStorage.getItem(NOTIFY_KEY)])
-      .then(([f, n]) => {
+    Promise.all([AsyncStorage.getItem(FOLLOWS_KEY), AsyncStorage.getItem(NOTIFY_KEY), AsyncStorage.getItem(CATEGORY_KEY)])
+      .then(([f, n, savedCategory]) => {
+        if (!categoryTouched.current) setCategoryState(parseCategory(savedCategory));
         setFollows(parseFollows(f));
         setNotify(parseOptIn(n));
       })
@@ -63,6 +66,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!hydrated || !notifyRef.current.enabled) return;
     void currentPushToken().then((t) => sync.onLaunch(t, followsRef.current));
   }, [hydrated, sync]);
+
+  const setCategory = useCallback((next: CategoryChoice) => {
+    categoryTouched.current = true;
+    setCategoryState(next);
+    AsyncStorage.setItem(CATEGORY_KEY, next).catch(() => {});
+  }, []);
 
   const saveFollows = useCallback((list: Follow[]) => {
     setFollows(list);

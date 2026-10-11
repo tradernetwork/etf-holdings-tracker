@@ -1,3 +1,4 @@
+import { CATEGORY_OPTIONS as CATEGORIES } from "@/lib/discovery/scope";
 import { Action } from "@/components/discovery-ui";
 import { TrendPreview } from "@/components/institutional-trend";
 import { useChanges } from "@/lib/discovery/api";
@@ -7,6 +8,8 @@ import { router } from "expo-router";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { HeroCard } from "@/components/hero-card";
 import { OptionsTeaser } from "@/components/options/OptionsTeaser";
+import { ViewAll } from "@/components/options/parts";
+import { KpiGrid, StaleBanner } from "@/components/today/Parts";
 import { SignalRow } from "@/components/signal-row";
 import {
   Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Segmented, StatTile, Tappable,
@@ -15,16 +18,12 @@ import { useAppState } from "@/lib/app-state";
 import { alsoWorthLook, consensusCards, convictionFractions, mergeSectorFlow, pickHero } from "@/lib/derive";
 import { cleanName, formatPp, formatShortDate, formatUsd, sectorShort } from "@/lib/format";
 import { useDivergences, useFunds, useLayering, useSectors, useSignals } from "@/lib/queries";
+import { kpis, staleMessage } from "@/lib/today/logic";
+import type { TodayStats } from "@/lib/today/types";
 import { deltaColor, display, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
-import type { CategoryChoice } from "@/lib/types";
 
 const REFERRAL_URL = "https://www.tradermatrix.pro/?ref=MPHINANCE";
-const CATEGORIES: { value: CategoryChoice; label: string }[] = [
-  { value: "active-equity", label: "Active Equity" },
-  { value: "option-income", label: "Option-Income" },
-  { value: "all", label: "All" },
-];
 
 export default function Today() {
   const c = useTheme();
@@ -42,7 +41,7 @@ export default function Today() {
   };
   const asOf = signals.data?.asOfDate;
   const stats = signals.data?.stats;
-  const counts = dailyMoveCounts(completeChanges.data, asOf, category);
+  const counts = dailyMoveCounts(completeChanges.data, asOf, category, new Map((funds.data?.funds ?? []).map(f => [f.fund, f])));
   const ratio = counts && counts.reduced > 0 ? (counts.added / counts.reduced).toFixed(2) : "—";
 
   const hero = pickHero(divergences.data, signals.data);
@@ -78,6 +77,8 @@ export default function Today() {
       )}
       {category === "option-income" && <Action onPress={() => router.push("/income")}>How these funds are built →</Action>}
 
+      {staleMessage(asOf) ? <StaleBanner text={staleMessage(asOf)!} /> : null}
+
       {signals.isLoading && <Loading />}
       {signals.isError && <ErrorNote message="Couldn't load today's signals. Check your connection." onRetry={refresh} />}
 
@@ -109,11 +110,15 @@ export default function Today() {
         </View>
       )}
 
+      {stats && <KpiGrid items={kpis(stats as unknown as TodayStats).filter((k) => k.key !== "new" && k.key !== "exits")} />}
+
       <Action onPress={() => router.push("/changes")}>View all changes →</Action>
+      <Action onPress={() => router.push("/signals?tab=briefing")}>Briefing, streaks, divergences →</Action>
       <TrendPreview />
       {consensus.length > 0 && (
         <>
-          <SectionHeader title="Consensus" right={<Hint>last {layering.data?.windowDays ?? 7} days</Hint>} />
+          <SectionHeader title="Consensus" right={<ViewAll label="View all patterns" onPress={() => router.push("/layering")} />} />
+          <Hint>last {layering.data?.windowDays ?? 7} days</Hint>
           {consensus.map((k) => (
             <Tappable key={k.ticker} onPress={() => router.push(`/ticker/${encodeURIComponent(k.ticker)}`)}>
               <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
@@ -142,7 +147,8 @@ export default function Today() {
 
       {flow.length > 0 && (
         <>
-          <SectionHeader title="Sector flow" right={<Hint>net active weight</Hint>} />
+          <SectionHeader title="Sector flow" right={<ViewAll label="View all sectors" onPress={() => router.push("/signals?tab=sectors")} />} />
+          <Hint>net active weight</Hint>
           <Card>
             {flow.map((f) => {
               const up = f.delta >= 0;
@@ -169,7 +175,7 @@ export default function Today() {
 
       {buys.length > 0 && (
         <>
-          <SectionHeader title="Top buys" right={<Hint>active weight</Hint>} />
+          <SectionHeader title="Top buys" right={<ViewAll label={`View all ${signals.data?.signals.buying.length ?? ""}`.trim()} onPress={() => router.push("/signals?tab=buys")} />} />
           <Card style={{ paddingVertical: spacing.sm }}>
             {buys.map((s, i) => <SignalRow key={`b-${s.ticker}`} signal={s} conviction={buyConv[i]} />)}
           </Card>
@@ -177,7 +183,7 @@ export default function Today() {
       )}
       {sells.length > 0 && (
         <>
-          <SectionHeader title="Top sells" right={<Hint>active weight</Hint>} />
+          <SectionHeader title="Top sells" right={<ViewAll label={`View all ${signals.data?.signals.selling.length ?? ""}`.trim()} onPress={() => router.push("/signals?tab=sells")} />} />
           <Card style={{ paddingVertical: spacing.sm }}>
             {sells.map((s, i) => <SignalRow key={`s-${s.ticker}`} signal={s} conviction={sellConv[i]} />)}
           </Card>

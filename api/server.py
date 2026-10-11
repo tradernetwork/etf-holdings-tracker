@@ -258,7 +258,11 @@ def health():
 
 @app.get("/api/v1/signals", tags=["public"])
 @limiter.limit("60/minute")
-def get_signals(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds.")):
+def get_signals(
+    request: Request,
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
+    limit: Optional[int] = Query(None, ge=1, le=200, description="Entries per ranked list (signals buying/selling, briefing topBuys/topSells/crossFundConvergence/activeStreaks). Omit for the default top lists (10 signals each side; briefing 3/3/5/10). The order is identical; a larger limit only extends it. Echoed back as `limit` when given, so a client can tell an older server ignored it."),
+):
     """
     Full signal payload — conviction-scored buys/sells, daily changes,
     sector flow, divergences. Fully open, no API key required.
@@ -272,6 +276,8 @@ def get_signals(request: Request, category: Optional[str] = Query(None, pattern=
     option-income fund's stock book is collateral for its overlay and churns by
     design, so its daily deltas are mechanics, not a view on the company.
     """
+    if limit is not None:
+        return data.get_full_payload_limited(category=category, limit=limit)
     return data.get_full_payload(category=category)
 
 
@@ -298,50 +304,52 @@ def get_changes(
     direction: Optional[str] = Query(None),
     period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     limit: int = Query(50, ge=1, le=5000),
+    page: Optional[int] = Query(None, ge=1, description="Opt into uncapped pagination; 1-based. Default page 1 when size is provided."),
+    size: Optional[int] = Query(None, ge=1, le=2000, description="Rows per page, max 2000. Opts into paging; default 2000 when page is provided. Overrides legacy limit."),
+    snapshot: Optional[str] = Query(None, max_length=64, description="Token from page 1; later pages return 409 if the snapshot changed."),
+    sector: Optional[str] = Query(None, description="Exact sector filter, applied before paging/export."),
+    q: Optional[str] = Query(None, max_length=200, description="Case-insensitive ticker/company/fund search."),
+    type: Optional[str] = Query(None, pattern="^(NEW|REMOVED|CHANGED)$", description="Raw change type; REMOVED is EXIT in the app. Direction uses active delta, not this raw type."),
+    format: str = Query("json", pattern="^(json|csv)$", description="csv exports all filtered rows, ignoring limit/page/size; JSON is the default."),
     category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category. Omit for all funds."),
 ):
-    """Position changes over a window. Filterable by provider, fund, direction.
+    """Guarded equity position changes, with opt-in uncapped pagination/export.
 
-    `limit` allows up to 5000 because broad value funds (e.g. Avantis AVUV
-    holds ~800 names) generate well over a thousand small daily changes — a
-    low cap, applied after sorting by magnitude, silently drops them entirely.
-
-    `period` selects the comparison window: 'daily' (latest two snapshots),
-    'weekly' (~7 calendar days) or 'monthly' (~30 calendar days). Weekly and
-    monthly are the right horizon for active-equity funds, where a NEW or
-    REMOVED row means a position was entered or exited over that window.
+    Without page/size, legacy limit=50 (max 5000) and response shape/order stay
+    unchanged. Supply page or size for stable magnitude/fund/ticker/type ordering
+    and total/page/size/pages/snapshot metadata. Pass snapshot on later pages:
+    409 means the input snapshots changed; restart at page 1. format=csv exports
+    every filtered row, ignoring limit/page/size. Weekly/monthly compare ~7/~30
+    calendar days; carried/catch-up funds follow the same existing guards.
     """
-    if period == "weekly":
-        changes = data.compute_weekly_changes()
-    elif period == "monthly":
-        changes = data.compute_monthly_changes()
-    else:
-        changes = data.compute_daily_changes()
-
-    if category:
-        changes = [c for c in changes if c.get("fundCategory") == category]
-
-    if fund:
-        changes = [c for c in changes if c["fund"] == fund.upper()]
-    elif provider:
-        changes = [
-            c for c in changes
-            if data.FUND_PROVIDERS.get(c["fund"], c["fund"]) == provider
-        ]
-
-    # "Buying"/"selling" means the manager traded, so filter on the
-    # drift-adjusted move — a position whose weight only rose because the stock
-    # rallied is not a fund buying it.
-    if direction == "buying":
-        changes = [c for c in changes if c["activeWeightDelta"] > 0]
-    elif direction == "selling":
-        changes = [c for c in changes if c["activeWeightDelta"] < 0]
-
-    return {
-        "asOfDate": data.get_as_of_date(),
-        "count": len(changes[:limit]),
-        "changes": changes[:limit],
-    }
+    paged = page is not None or size is not None
+    try:
+        result = data.query_changes(period=period, provider=provider, fund=fund,
+                                    direction=direction, category=category, sector=sector,
+                                    q=q, change_type=type, stable=paged or format == 'csv')
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if snapshot and snapshot != result['snapshot']:
+        raise HTTPException(status_code=409, detail="Snapshot changed; restart at page 1.")
+    rows = result['changes']
+    if format == 'csv':
+        import csv
+        import io
+        output = io.StringIO(newline='')
+        fields = list(dict.fromkeys(k for row in rows for k in row)) or ['fund', 'ticker', 'type', 'activeWeightDelta']
+        writer = csv.DictWriter(output, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+        return Response(output.getvalue(), media_type='text/csv', headers={
+            'Content-Disposition': f'attachment; filename="changes-{period}-{result["asOfDate"]}.csv"'})
+    if not paged:
+        return {'asOfDate': result['asOfDate'], 'count': len(rows[:limit]), 'changes': rows[:limit]}
+    page, size = page or 1, size or 2000
+    total = len(rows)
+    selected = rows[(page - 1) * size:page * size]
+    return {'asOfDate': result['asOfDate'], 'snapshot': result['snapshot'],
+            'count': len(selected), 'changes': selected, 'total': total,
+            'page': page, 'size': size, 'pages': (total + size - 1) // size}
 
 
 @app.get("/api/v1/institutional", tags=["public"])
@@ -473,11 +481,17 @@ def get_layering_patterns(
 
 @app.get("/api/v1/briefing", tags=["public"])
 @limiter.limit("60/minute")
-def get_briefing(request: Request, category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction.")):
+def get_briefing(
+    request: Request,
+    category: Optional[str] = Query(None, pattern="^(active-equity|option-income)$", description="Restrict to one fund category before scoring. Omit for all funds; active-equity is recommended for stock conviction."),
+    limit: Optional[int] = Query(None, ge=1, le=200, description="Entries per list (topBuys, topSells, crossFundConvergence, activeStreaks). Omit for 3 / 3 / 5 / 10. Same order; a larger limit only extends it."),
+):
     """
     Pre-market briefing — top buys, top sells, multi-provider convergence,
     active streaks, and notable new option positions.
     """
+    if limit is not None:
+        return data.get_briefing_limited(category=category, limit=limit)
     return data.get_briefing(category=category)
 
 
