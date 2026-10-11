@@ -28,6 +28,15 @@ DOLLARS = obj(
 P = DOLLARS['properties']
 AUM = obj(aum=P['aum'], aumUsd=P['aumUsd'])
 HOLDING = obj(positionUsd=P['positionUsd'])
+HOLDINGS_ROW = obj(
+    positionUsd=P['positionUsd'],
+    weightDelta=amount('Raw day-over-day weight change in percentage points (includes price drift). Null for a catch-up fund.'),
+    sharesDelta=amount('Day-over-day share change. Null for a catch-up fund.'),
+    activeWeightDelta=amount('Drift-adjusted weight change (percentage points): the manager-attributable move, equal to the website Δ Weight. 0 when unchanged; null for a catch-up fund (see catchUpSince).'),
+    catchUpSince={'type': 'string', 'description': 'Present on a catch-up fund: its daily deltas are withheld (null) because they would span a stale gap since this date.'},
+    assetClass={'type': 'string', 'enum': ['equity', 'option', 'cash', 'treasury', 'swap', 'other']},
+    dte=amount('Days to expiry as written in the issuer snapshot (options only; null otherwise). Not recomputed from today.'),
+)
 CHANGE = obj(positionUsd=P['positionUsd'], activeFlowUsd=P['activeFlowUsd'])
 FUND = obj(**AUM['properties'], topHoldings=array(HOLDING),
            optionHoldings=array(HOLDING), recentChanges=array(CHANGE))
@@ -48,7 +57,10 @@ RESPONSES = {
     '/api/v1/fund/{fund}': FUND,
     '/api/v1/stock/{ticker}': obj(holdings=array(obj(**AUM['properties'], positionUsd=P['positionUsd']))),
     '/api/v1/ticker/{ticker}': obj(holdings=array(obj(**AUM['properties'], positionUsd=P['positionUsd'])), changes=array(CHANGE)),
-    '/api/v1/holdings': obj(holdings=array(HOLDING)),
+    '/api/v1/holdings': obj(
+        total={'type': 'integer', 'description': 'Rows matching the filters (before paging).'},
+        page={'type': 'integer'}, size={'type': 'integer'}, pages={'type': 'integer'},
+        holdings=array(HOLDINGS_ROW)),
     '/api/v1/changes': obj(changes=array(CHANGE)),
     '/api/v1/layering-patterns': obj(patterns=array(PATTERN)),
     '/api/v1/income': obj(funds=array(AUM)),
