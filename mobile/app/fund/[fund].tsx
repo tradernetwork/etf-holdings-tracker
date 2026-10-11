@@ -1,3 +1,4 @@
+import { Action } from "@/components/discovery-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
@@ -335,7 +336,10 @@ export default function FundScreen() {
       </View>
       {f.flow ? <Hint>Net creation/redemption: {f.flow.sharesDelta > 0 ? "+" : ""}{formatCount(f.flow.sharesDelta)} shares of {formatCount(f.flow.sharesOutstanding)} outstanding over {f.flow.periodDays} days.</Hint> : null}
 
-      <FollowButton symbol={symbol} following={isFollowing("fund", symbol)} onToggle={() => toggleFollow("fund", symbol)} />
+      <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }}>
+        <FollowButton symbol={symbol} following={isFollowing("fund", symbol)} onToggle={() => toggleFollow("fund", symbol)} />
+        {income ? <Action onPress={() => router.push(`/income/${encodeURIComponent(f.fund)}`)}>Income structure →</Action> : null}
+      </View>
 
       {catchUp.active ? <Banner title={catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"} body="Changes over that gap aren't shown as one day: this fund's previous file was carried forward, so the latest diff spans several days." /> : null}
       {f.stale ? <Banner title={`Older disclosure · ${formatShortDate(f.holdingsDate)}`} body={`The ${formatShortDate(f.asOfDate)} snapshot carries this book forward. These positions are not fresh trade signals. Quiet data is not proof of no trades.`} /> : null}
