@@ -227,3 +227,16 @@ def test_generate_analysis_withholds_catch_up_fund(history, tmp_path, monkeypatc
     assert 'Catch-up, changes withheld' in md and 'ARKK (since 2026-09-25)' in md
     assert 'TSLA' not in md and 'COIN' not in md      # ARK's gap trades are not reported
     assert 'AAA' in md                                  # healthy fund still reported
+
+
+def test_option_contract_records_reach_options_activity_and_the_briefing():
+    # Contract tickers are junk-shaped by design; the equity junk filter must not eat them.
+    opt = {'fund': 'AAA', 'ticker': 'MSTR  261016C00095000', 'name': 'MSTR C95', 'sector': '', 'isOption': True,
+           'type': 'NEW', 'weightDelta': 0.4, 'activeWeightDelta': 0.4, 'sharesDelta': -10, 'currentWeight': 0.4,
+           'previousWeight': 0.0, 'optionDetails': {'type': 'Call', 'strike': 95.0, 'expiry': '2026-10-16', 'underlying': 'MSTR'}}
+    junk_eq = {**opt, 'isOption': False, 'ticker': 'CASH', 'optionDetails': None}
+    act = data._activity_from([opt, junk_eq])
+    assert act['optionsActivity'] == [opt]
+    assert act['accumulating'] == [] and act['reducing'] == []       # the CASH row is still dropped
+    brief = data._briefing_from(data._signals_from([]), act, {})
+    assert [n['record']['ticker'] for n in brief['notableOptions']] == ['MSTR  261016C00095000']
