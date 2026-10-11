@@ -1830,10 +1830,14 @@ def _activity_from(changes: list[dict]) -> dict:
     reducing: list[dict] = []
     options_activity: list[dict] = []
     for r in changes:
-        if _is_junk_ticker(r['ticker']):
-            continue
         if r.get('isOption'):
+            # Option contract tickers ("MSTR  261016C00095000") are deliberately
+            # junk-shaped, so they must skip the equity junk filter (as
+            # _changes_between does). Checking junk first emptied optionsActivity
+            # and the briefing's notableOptions entirely.
             options_activity.append(r)
+            continue
+        if _is_junk_ticker(r['ticker']):
             continue
         if abs(r['activeWeightDelta']) < _significance_threshold(r['fund']):
             continue
