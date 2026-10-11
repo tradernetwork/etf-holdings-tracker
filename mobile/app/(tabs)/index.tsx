@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { HeroCard } from "@/components/hero-card";
+import { OptionsTeaser } from "@/components/options/OptionsTeaser";
 import { SignalRow } from "@/components/signal-row";
 import {
   Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Segmented, StatTile, Tappable,
@@ -184,6 +185,8 @@ export default function Today() {
       {signals.data && buys.length === 0 && sells.length === 0 && (
         <Card><Note>No signals in this category for the latest data.</Note></Card>
       )}
+
+      {signals.data && <OptionsTeaser />}
 
       {signals.data && (
         <View style={styles.footer}>

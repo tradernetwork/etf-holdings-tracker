@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
+import { OptionsTeaser } from "@/components/options/OptionsTeaser";
 import { Card, ErrorNote, FreshnessLabel, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { formatUsd, freshnessLabel, fundAumUsd } from "@/lib/format";
 import { useFunds } from "@/lib/queries";
@@ -99,6 +100,8 @@ export default function Explore() {
           </Card>
         </Tappable>
       )}
+
+      <OptionsTeaser />
 
       {funds.isLoading && <Loading />}
       {funds.isError && <ErrorNote message="Couldn't load the fund list." onRetry={() => funds.refetch()} />}

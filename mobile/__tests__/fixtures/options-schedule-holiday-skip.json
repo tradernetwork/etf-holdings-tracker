@@ -1,0 +1,47 @@
+{
+ "tickers": [
+  "GLD",
+  "IBIT",
+  "SLV",
+  "TLT",
+  "AAPL",
+  "AMZN",
+  "AVGO",
+  "GOOGL",
+  "META",
+  "MSFT",
+  "NVDA",
+  "TSLA"
+ ],
+ "excludes": [
+  "SPY",
+  "QQQ"
+ ],
+ "expirationWeekdays": [
+  "Monday",
+  "Wednesday",
+  "Friday"
+ ],
+ "timezone": "America/New_York",
+ "today": "2026-07-01",
+ "dayName": "Wednesday",
+ "isExpirationDay": true,
+ "nextExpirationDay": "Monday",
+ "nextExpirationDate": "2026-07-06",
+ "holidays": [
+  "2026-07-03",
+  "2026-09-07",
+  "2026-11-26",
+  "2026-12-25",
+  "2027-01-01",
+  "2027-01-18",
+  "2027-02-15",
+  "2027-03-26",
+  "2027-05-31",
+  "2027-06-18",
+  "2027-07-05",
+  "2027-09-06",
+  "2027-11-25",
+  "2027-12-24"
+ ]
+}
