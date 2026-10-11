@@ -182,7 +182,7 @@ export default function FundScreen() {
         }
         const exited = equityChanges.filter((x) => x.type === "REMOVED");
         if (exited.length > 0) {
-          out.push({ key: "exited", title: "Exited today", data: [{ t: "node", id: "exited", node: <Hint>{exited.map((x) => `${x.ticker} (${formatCount(x.previousShares ?? 0)} sh)`).join(", ")}</Hint> }] });
+          out.push({ key: "exited", title: "Exited", data: [{ t: "node", id: "exited", node: <Hint>{exited.map((x) => `${x.ticker} (${formatCount(x.previousShares ?? 0)} sh)`).join(", ")}</Hint> }] });
         }
         const b = bucketItems();
         if (b.length) out.push({ key: "buckets", title: "Cash & treasuries", data: b });
@@ -222,7 +222,7 @@ export default function FundScreen() {
       add("increased", "Increased", sp.increased);
       add("trimmed", "Trimmed", sp.trimmed);
       if (sp.unknown > 0) out.push({ key: "unk", title: "", data: [{ t: "node", id: "unk", node: <Hint>{sp.unknown} resized {sp.unknown === 1 ? "position has" : "positions have"} no known change (a catch-up gap is not shown as a one-day move).</Hint> }] });
-      if (out.length === 0) out.push({ key: "none", title: "", data: [{ t: "node", id: "none", node: <Note>No position changes in this window.</Note> }] });
+      if (out.length === 0) out.push({ key: "none", title: "", data: [{ t: "node", id: "none", node: <Note>{f.stale ? `Changes unknown: this fund last disclosed ${formatShortDate(f.holdingsDate)}, so there is no new file to compare. Quiet data is not proof of no trades.` : "No position changes in this window."}</Note> }] });
       const st = f.streaks ?? [];
       if (st.length > 0) {
         const open = expanded.has("streaks");
@@ -323,7 +323,7 @@ export default function FundScreen() {
           <View style={{ marginTop: 4, alignItems: "flex-end", gap: 2 }}>
             <FreshLine text={fresh.text} stale={fresh.stale} />
             {f.holdingsDate && f.holdingsDate !== f.asOfDate ? <Hint>issuer file {formatShortDate(f.holdingsDate)}</Hint> : null}
-            {f.refreshed === false ? <Hint>not refreshed today</Hint> : null}
+            {f.refreshed === false ? <Hint>not refreshed in the latest snapshot</Hint> : null}
           </View>
         </View>
       </View>
@@ -474,8 +474,8 @@ const itemKey = (item: Item, i: number): string => {
   }
 };
 
-const STOCK_SORTS: { value: SortKey; label: string }[] = [{ value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Today" }];
-const OPTION_SORTS: { value: SortKey; label: string }[] = [{ value: "expiry", label: "Expiry" }, { value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Today" }];
+const STOCK_SORTS: { value: SortKey; label: string }[] = [{ value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Change" }];
+const OPTION_SORTS: { value: SortKey; label: string }[] = [{ value: "expiry", label: "Expiry" }, { value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Change" }];
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({

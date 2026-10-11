@@ -29,7 +29,7 @@ export default function Following() {
         <Card>
           <Text style={styles.emptyTitle}>Nothing followed yet</Text>
           <Note>
-            Follow a stock or a fund and this tab shows what its funds did today, only when the move is meaningful.
+            Follow a stock or a fund and this tab shows what its funds did in the latest file, only when the move is meaningful.
             Tap Follow on any ticker or fund screen.
           </Note>
           <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
@@ -93,7 +93,7 @@ function TickerFollow({ symbol }: { symbol: string }) {
   const { moves, more } = q.data ? tickerFollowMoves(q.data.changes) : { moves: [], more: 0 };
   return (
     <Shell symbol={symbol} kind="ticker">
-      {q.isLoading ? <Loading /> : q.isError ? <Note>Couldn&apos;t load {symbol} right now.</Note> : moves.length > 0 ? <MoveLines moves={moves} more={more} kind="ticker" symbol={symbol} /> : <Note>Nothing meaningful today.</Note>}
+      {q.isLoading ? <Loading /> : q.isError ? <Note>Couldn&apos;t load {symbol} right now.</Note> : moves.length > 0 ? <MoveLines moves={moves} more={more} kind="ticker" symbol={symbol} /> : <Note>Nothing meaningful in the latest file.</Note>}
     </Shell>
   );
 }
@@ -117,7 +117,7 @@ function FundFollow({ symbol }: { symbol: string }) {
       ) : moves.length > 0 ? (
         <MoveLines moves={moves} more={more} kind="fund" symbol={symbol} />
       ) : (
-        <Note>Nothing meaningful today.</Note>
+        <Note>Nothing meaningful in the latest file.</Note>
       )}
     </Shell>
   );

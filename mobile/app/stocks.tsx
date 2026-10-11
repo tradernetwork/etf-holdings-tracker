@@ -38,7 +38,7 @@ import { deltaColor } from "@/lib/theme";
 const SORTS: { value: StockSort; label: string }[] = [
   { value: "funds", label: "Most widely held" },
   { value: "weight", label: "Most weight" },
-  { value: "change", label: "Biggest Δ today" },
+  { value: "change", label: "Biggest Δ" },
   { value: "streak", label: "Longest streak" },
 ];
 const SIGNALS: { value: StockSignal; label: string }[] = [
@@ -46,8 +46,8 @@ const SIGNALS: { value: StockSignal; label: string }[] = [
   { value: "buying", label: "Net buying" },
   { value: "selling", label: "Net selling" },
   { value: "streak", label: "3+ day streak" },
-  { value: "new", label: "New today" },
-  { value: "exit", label: "Exit today" },
+  { value: "new", label: "New entries" },
+  { value: "exit", label: "Exits" },
   { value: "crossfam", label: "2+ families" },
 ];
 export default function Stocks() {

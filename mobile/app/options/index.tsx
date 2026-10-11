@@ -7,6 +7,8 @@ import { ListingScanCard } from "@/components/options/ListingScanCard";
 import { ScheduleCard } from "@/components/options/ScheduleCard";
 import { TotalTile, ViewAll } from "@/components/options/parts";
 import { Card, ErrorNote, Hint, Loading, Note, Screen, SectionHeader } from "@/components/ui";
+import { activityTitle } from "@/lib/when";
+import { useStats } from "@/lib/stats";
 import { ApiError } from "@/lib/api";
 import { sortActivity } from "@/lib/options/logic";
 import { useMwfSchedule, useOptionActivity, useOptionListings } from "@/lib/options/queries";
@@ -21,6 +23,7 @@ export default function OptionsHub() {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const activity = useOptionActivity("daily");
+  const stats = useStats();
   const listings = useOptionListings();
   const schedule = useMwfSchedule();
   const [symbol, setSymbol] = useState("");
@@ -57,7 +60,7 @@ export default function OptionsHub() {
         )}
       </View>
 
-      <SectionHeader title="Option activity today" right={<ViewAll label={total > 0 ? `View all ${total}` : "Windows & filters"} onPress={() => router.push("/options/activity")} />} />
+      <SectionHeader title={activityTitle(stats.data?.asOfDate)} right={<ViewAll label={total > 0 ? `View all ${total}` : "Windows & filters"} onPress={() => router.push("/options/activity")} />} />
       {activity.isLoading && <Loading />}
       {activity.isError && <ErrorNote message="Couldn't load option activity." onRetry={() => activity.refetch()} />}
       {activity.data && (

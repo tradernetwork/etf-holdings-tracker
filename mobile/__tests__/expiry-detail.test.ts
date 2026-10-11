@@ -112,6 +112,7 @@ describe("income detail (/income/{fund})", () => {
     expect(row.spot).toBe("154.66");
     expect(row.strike).toBe("160.00");
     expect(row.dte).toBe("exp"); // the Oct 9 written call has expired by Oct 11
+    expect(row.dteNote).toBe("File: 0d as of Oct 9");
     expect(row.room).toBe("+3.5%");
     expect(row.roomTone).toBe("buy");
     expect(row.longLegs.startsWith("C150.01")).toBe(true);

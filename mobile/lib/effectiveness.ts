@@ -88,7 +88,7 @@ export function metricCards(e: Effectiveness): MetricCard[] {
       key: "premiumCapture", title: "Premium capture", score: p.score, blurb: "Option premium written versus bought, against NAV.",
       rows: [
         ["Premium written", usd(p.totalPremiumWritten)], ["Premium bought", usd(p.totalPremiumBought)], ["Net premium", usd(p.netPremium)],
-        ["Premium as % of NAV", n2(p.premiumAsPercentNAV) + (p.premiumAsPercentNAV == null ? "" : "%")], ["Hedge cost ratio", n2(p.hedgeCostRatio)],
+        ["Premium as % of NAV", n2(p.premiumAsPercentNAV) + (p.premiumAsPercentNAV == null ? "" : "%")], ["Hedge cost ratio", p.hedgeCostRatio == null ? "—" : `${(p.hedgeCostRatio * 100).toFixed(0)}% of gross`],
         ["Premium density", usd(p.premiumDensity)], ["Positions written", int(p.positionsWritten)], ["Positions bought", int(p.positionsBought)],
       ],
     },

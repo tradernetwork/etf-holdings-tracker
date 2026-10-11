@@ -1,8 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, FreshnessLabel, Hint, Mono } from "@/components/ui";
 import { freshnessLabel } from "@/lib/format";
 import type { RotationData } from "@/lib/fundExtras";
-import { currentBars, groupColor, hexAlpha, maxCell, rotationTitle, sortedGroups } from "@/lib/rotation";
+import { cellDetail, cellLabel, churnPercent, currentBars, groupColor, hexAlpha, maxCell, rotationTitle, sortedGroups } from "@/lib/rotation";
 import { fonts, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
@@ -13,6 +14,7 @@ export function RotationView({ d }: { d: RotationData }) {
   const groups = sortedGroups(d);
   const peak = maxCell(d);
   const churn = d.churnSincePrior;
+  const [picked, setPicked] = useState<{ group: string; date: string; w: number } | null>(null);
   return (
     <View style={{ gap: spacing.md }}>
       <Card style={{ gap: spacing.sm }}>
@@ -45,17 +47,26 @@ export function RotationView({ d }: { d: RotationData }) {
                 {d.timeline.map((cell) => {
                   const w = cell.weights[g] || 0;
                   return (
-                    <View key={cell.date} accessibilityLabel={w > 0 ? `${g} ${cell.date}: ${w.toFixed(1)}%` : undefined} style={[styles.cell, { backgroundColor: w > 0 ? hexAlpha(groupColor(g, groups), 0.15 + 0.85 * (w / peak)) : c.border }]} />
+                    <Pressable
+                      key={cell.date}
+                      onPress={() => setPicked(w > 0 ? { group: g, date: cell.date, w } : null)}
+                      accessibilityRole="button"
+                      accessibilityLabel={w > 0 ? cellDetail(g, cell.date, w) : `${g} ${cell.date}: none`}
+                      style={[styles.cell, { backgroundColor: w > 0 ? hexAlpha(groupColor(g, groups), 0.15 + 0.85 * (w / peak)) : c.border }]}
+                    >
+                      <Text style={styles.cellText}>{cellLabel(w)}</Text>
+                    </Pressable>
                   );
                 })}
               </View>
             ))}
           </View>
         </ScrollView>
+        <Hint>{picked ? cellDetail(picked.group, picked.date, picked.w) : "Tap a cell for its theme, date and exact weight. Numbers show weights of 5% and up."}</Hint>
       </Card>
 
       <Card style={{ gap: spacing.sm }}>
-        <Text style={styles.small}>CHURN SINCE PRIOR · {churn.rate.toFixed(0)}% of names changed</Text>
+        <Text style={styles.small}>CHURN SINCE PRIOR · {churnPercent(churn.rate)}% of names changed</Text>
         <NameList label="Added" names={churn.added} color={c.buy} />
         <NameList label="Dropped" names={churn.dropped} color={c.sell} />
         <NameList label="Held" names={churn.held} color={c.textSecondary} />
@@ -83,7 +94,8 @@ const makeStyles = (c: Palette) =>
     barRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
     barLabel: { width: 112, color: c.textSecondary, fontFamily: fonts.body, fontSize: 12 },
     track: { flex: 1, height: 10, borderRadius: 4, backgroundColor: c.border },
-    dateHead: { width: 22, color: c.textMuted, fontFamily: fonts.body, fontSize: 7, textAlign: "center" },
+    dateHead: { width: 28, color: c.textMuted, fontFamily: fonts.body, fontSize: 7, textAlign: "center" },
     rowLabel: { width: 120, color: c.textSecondary, fontFamily: fonts.body, fontSize: 10 },
-    cell: { width: 20, height: 18, marginRight: 2, borderRadius: 3 },
+    cell: { width: 26, height: 24, marginRight: 2, borderRadius: 3, alignItems: "center", justifyContent: "center" },
+    cellText: { color: "#ffffffb3", fontFamily: fonts.mono, fontSize: 9 },
   });

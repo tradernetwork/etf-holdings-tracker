@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, Hint, Mono, Tappable } from "@/components/ui";
 import { cleanName, formatPp, formatUsd, sectorShort } from "@/lib/format";
-import { convText, fundPositionUsd, signalStreak, signalSummary, streakLabel, strengthText, usdOrDash, type Kpi } from "@/lib/today/logic";
+import { convText, fundFlowUsd, fundPositionUsd, signalFlowUsd, signalStreak, signalSummary, streakLabel, strengthText, usdOrDash, type Kpi } from "@/lib/today/logic";
 import type { ActiveStreak, FullDivergence, FullSignal, LayeringPatternFull } from "@/lib/today/types";
 import { deltaColor, fonts, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -48,6 +48,7 @@ export function SignalDetailCard({ s, rank }: { s: FullSignal; rank: number }) {
   const buy = s.direction === "buying";
   const col = buy ? c.buy : c.sell;
   const streak = signalStreak(s);
+  const flow = signalFlowUsd(s);
   return (
     <Card style={{ gap: spacing.sm }}>
       <Tappable onPress={() => openTicker(s.ticker)} style={{ gap: 4 }}>
@@ -59,6 +60,7 @@ export function SignalDetailCard({ s, rank }: { s: FullSignal; rank: number }) {
         </View>
         <Text style={styles.name} numberOfLines={1}>{cleanName(s.name)}{s.sector ? ` · ${sectorShort(s.sector)}` : ""}</Text>
         <Hint>{signalSummary(s)}</Hint>
+        {flow != null ? <Hint>{flow < 0 ? "−" : "+"}≈ est. {formatUsd(Math.abs(flow))} active flow</Hint> : null}
       </Tappable>
       <View style={styles.row}>
         <Badge label={buy ? "BUYING" : "SELLING"} color={col} />
@@ -74,6 +76,7 @@ export function SignalDetailCard({ s, rank }: { s: FullSignal; rank: number }) {
       </Pressable>
       {open && s.fundDetails.map((f) => {
         const usd = fundPositionUsd(f);
+        const fflow = fundFlowUsd(f);
         return (
           <Tappable key={f.fund} onPress={() => openFund(f.fund)} style={styles.fundRow}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -81,7 +84,7 @@ export function SignalDetailCard({ s, rank }: { s: FullSignal; rank: number }) {
               <Hint>
                 weight now {f.currentWeight.toFixed(2)}%{usd != null ? ` · est. ${formatUsd(usd)}` : ""}{f.aumUsd != null || f.aum != null ? ` · AUM ${formatUsd(f.aumUsd ?? (f.aum as number) * 1e9)}` : ""}
               </Hint>
-              <Hint>raw {formatPp(f.rawWeightDelta)} · {f.sharesDelta > 0 ? "+" : f.sharesDelta < 0 ? "−" : ""}{Math.abs(Math.round(f.sharesDelta)).toLocaleString("en-US")} sh</Hint>
+              <Hint>raw {formatPp(f.rawWeightDelta)}{fflow != null ? ` · ${fflow < 0 ? "−" : "+"}≈ est. ${formatUsd(Math.abs(fflow))} flow` : ""} · {f.sharesDelta > 0 ? "+" : f.sharesDelta < 0 ? "−" : ""}{Math.abs(Math.round(f.sharesDelta)).toLocaleString("en-US")} sh</Hint>
             </View>
             <Mono bold style={{ fontSize: 14, color: deltaColor(f.activeWeightDelta, c) }}>{formatPp(f.activeWeightDelta)}</Mono>
           </Tappable>

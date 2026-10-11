@@ -95,6 +95,12 @@ export interface ActivityFilters {
   fund: string; // "all" or a fund ticker
   q: string;    // contract / underlying / fund / name
 }
+/** `?category=` on the activity screen: only the two real fund categories pre-filter, anything else means all. */
+export const categoryParam = (v: string | string[] | undefined): ActivityFilters["category"] => {
+  const x = Array.isArray(v) ? v[0] : v;
+  return x === "option-income" || x === "active-equity" ? x : "all";
+};
+
 export const DEFAULT_ACTIVITY_FILTERS: ActivityFilters = { category: "all", optionType: "all", signal: "all", fund: "all", q: "" };
 
 export function filterActivity(records: OptionActivityRecord[], f: ActivityFilters, categoryOf?: (fund: string) => string | undefined): OptionActivityRecord[] {
@@ -115,7 +121,7 @@ export function filterActivity(records: OptionActivityRecord[], f: ActivityFilte
 export const activeFilterCount = (f: ActivityFilters): number =>
   (f.category !== "all" ? 1 : 0) + (f.optionType !== "all" ? 1 : 0) + (f.signal !== "all" ? 1 : 0) + (f.fund !== "all" ? 1 : 0);
 
-export const PERIOD_LABEL: Record<ActivityPeriod, string> = { daily: "Today", weekly: "7 days", monthly: "30 days" };
+export const PERIOD_LABEL: Record<ActivityPeriod, string> = { daily: "Latest day", weekly: "7 days", monthly: "30 days" };
 
 /** Website weight-Δ cell: raw % with 3 decimals, signed. null/NaN prints "—", never 0. */
 export function formatWeightDelta(v: number | null | undefined): string {

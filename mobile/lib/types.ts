@@ -141,6 +141,8 @@ export interface FundSummary {
   optionsCount: number;
   lastHoldingsDate: string;
   stale: boolean;
+  /** The fund's biggest position (from /funds). */
+  topHolding?: { ticker: string; weight: number } | null;
 }
 export interface FundsResponse {
   asOfDate: string;

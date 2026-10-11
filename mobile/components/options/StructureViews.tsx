@@ -95,7 +95,7 @@ export function FundOptionBookCard({ book, underlying, compact }: { book: FundOp
           <Hint>{book.legs.length} {book.legs.length === 1 ? "leg" : "legs"}{book.pairedPct != null ? ` · ${Math.round(book.pairedPct)}% of traded legs paired` : ""}</Hint>
         </View>
         <FreshnessLabel freshness={fresh} />
-        {book.refreshed === false && <Note>Today's issuer file was missing, so these are the last known legs carried forward.</Note>}
+        {book.refreshed === false && <Note>The latest issuer file was missing, so these are the last known legs carried forward.</Note>}
       </Tappable>
 
       <View style={{ gap: spacing.xs }}>

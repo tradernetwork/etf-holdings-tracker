@@ -3,7 +3,7 @@
  * one-row-per-underlying book. Types and the pure display rules; the screen only lays them out.
  * Same endpoint as the fund screen's income tab (IncomeFundResponse), with the fields that tab doesn't read.
  */
-import { dteToday } from "./expiry";
+import { dteToday, shortDay } from "./expiry";
 import type { IncomeFundResponse } from "./fundExtras";
 import { pct, type IncomeSleeves, type IncomeTiles, type Tone } from "./incomeDirectory";
 
@@ -104,6 +104,8 @@ export interface BookRowView {
   strike: string;
   capped: boolean;
   dte: string;
+  /** The file's own written-call DTE when the label above was shifted to today: "File: 0d as of Oct 9". */
+  dteNote: string | null;
   room: string;
   roomTone: Tone;
   covered: string;
@@ -116,6 +118,8 @@ export function bookRowView(r: IncomeBookRow, asOf?: string | null, now?: Date):
   const wc = r.writtenCall;
   const left = wc ? (asOf ? dteToday(wc.dte, asOf, now) : wc.dte) : null;
   const dte = !wc || wc.dte == null ? "—" : left === null ? "exp" : `${Math.round(left)}d`;
+  const fileDte = wc?.dte == null ? null : Math.round(wc.dte);
+  const dteNote = asOf && fileDte !== null && dte !== `${fileDte}d` ? `File: ${fileDte}d as of ${shortDay(asOf)}` : null;
   return {
     underlying: r.underlying,
     nav: r.equity ? `${r.equity.weight.toFixed(2)}%` : "no shares",
@@ -125,6 +129,7 @@ export function bookRowView(r: IncomeBookRow, asOf?: string | null, now?: Date):
     strike: wc ? num(wc.strike) : "—",
     capped: r.capped,
     dte,
+    dteNote,
     room: r.upsideRoomPct === null ? "—" : signed(r.upsideRoomPct),
     roomTone: r.upsideRoomPct === null ? "muted" : r.upsideRoomPct <= 0 ? "sell" : r.upsideRoomPct < 3 ? "income" : "buy",
     covered: r.coveredFraction === null ? "—" : `${(r.coveredFraction * 100).toFixed(0)}%`,
