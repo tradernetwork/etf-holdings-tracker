@@ -4,6 +4,7 @@
  * Pure functions only, so every rule is unit tested. Nothing here invents a
  * value: a missing number stays null and renders as "—".
  */
+import { expiryInfo, expirySubtitle } from "./expiry";
 import { cleanName, formatUsd, resolveUsd, type UsdValue } from "./format";
 import type { FundOptionHolding, FundResponse, HoldingRow } from "./types";
 
@@ -82,7 +83,8 @@ export function dteLabel(dte: number | null | undefined): string {
 }
 
 /** "11/20/26 · 42 DTE" (+ " · FLEX" for a FLEX contract). */
-export function optionSubtitle(expiry: string | null | undefined, dte: number | null | undefined, isFlex: boolean | null | undefined): string {
+export function optionSubtitle(expiry: string | null | undefined, dte: number | null | undefined, isFlex: boolean | null | undefined, asOf?: string | null, now?: Date): string {
+  if (asOf) return expirySubtitle(expiryInfo({ expiry, asOf, fileDte: dte, now }), expiry, isFlex);
   return [formatExpiry(expiry), dteLabel(dte), isFlex ? "FLEX" : ""].filter(Boolean).join(" · ");
 }
 
@@ -136,6 +138,8 @@ export interface OptionLine {
   weight: number;
   contractsDelta: number | null;
   chip: MoneynessChip | null;
+  /** Snapshot (file) date the dte/expiry were read at; expiry labels are counted from today, not from this. */
+  asOf?: string | null;
 }
 
 export interface OptionGroup {
@@ -249,6 +253,7 @@ export function buildBook(rows: HoldingRow[], ctx: BookContext): Book {
         weight: w,
         contractsDelta: r.sharesDelta,
         chip: moneynessChip(type, r.strike, extra?.underlyingPrice ?? null),
+        asOf: r.fileDate ?? ctx.asOfDate,
       };
       legsByUnderlying.set(underlying, [...(legsByUnderlying.get(underlying) ?? []), line]);
     } else {
