@@ -357,6 +357,12 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 11, 2026"
+            tag="bugfix"
+            title="One stock page should not take the whole API hostage"
+            desc="Stock detail was rereading a month of holdings for every ticker and checking fund AUM half a million times along the way. Now the workers build a shared stock history once per snapshot, then look up the name you asked for. Catch-up files no longer masquerade as one day's institutional trading; real multi-week moves still count. Apparently a fast chart starts with not rebuilding the universe on every tap."
+          />
+          <ChangelogEntry
+            date="October 11, 2026"
             tag="feature"
             title="The signals list can finally go past ten"
             desc="/api/v1/signals handed out exactly ten buys and ten sells and called it a day, which is fine for a headline and annoying for anyone who wanted the rest of the ranking. It now takes a limit (up to 200), and /api/v1/briefing does too for its top buys, top sells, multi-provider list and streaks. Same order as before, just longer. Leave the parameter off and you get exactly what you got yesterday, byte for byte. The mobile app uses it for its Today in full screens and will only say it's showing everything when the server confirms it."

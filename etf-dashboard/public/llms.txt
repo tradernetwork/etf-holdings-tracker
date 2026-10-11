@@ -66,3 +66,13 @@ Also works as a custom connector in Claude Desktop/claude.ai and in Cursor. 21 t
 - [Funds](https://tickertrace.pro/funds): fund profiles
 - [Income funds](https://tickertrace.pro/income): option-income fund view
 - [TraderMatrix](https://www.tradermatrix.pro/?ref=MPHINANCE): trading agent that consumes this data (referral link)
+
+## Stock history freshness
+
+`/api/v1/stock/{ticker}` returns AUM-blended history and day/week/month
+institutional horizons from a shared per-snapshot index. Carry-forward-to-fresh
+funds are excluded from the affected comparisons. A chart stitched to remove
+catch-up jumps adds `historyAdjustedForCatchUp: true`: earlier chart weight
+levels are adjusted, while latest exposure and historical ownership counts
+remain actual observations. Monthly windows starting before a gap retain
+legitimate multi-week changes. Ordinary payloads remain unchanged.

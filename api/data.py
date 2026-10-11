@@ -16,6 +16,8 @@ import os
 import re
 import threading
 from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, timedelta
 from typing import Any
 
@@ -465,6 +467,34 @@ def _fund_aum_map(as_of_date: str, snapshot_key: tuple | None = None) -> dict[st
     return _derive_fund_aum_map()
 
 
+_aum_context: ContextVar[dict | None] = ContextVar('aum_snapshot', default=None)
+
+
+@contextmanager
+def aum_snapshot_scope():
+    """Resolve AUM once per request/computation, isolated across workers/threads.
+
+    Nested scopes reuse the same snapshot; a new scope validates file metadata
+    again, so new dates and same-day corrections never depend on a TTL.
+    """
+    if _aum_context.get() is not None:
+        yield
+        return
+    token = _aum_context.set({})
+    try:
+        yield
+    finally:
+        _aum_context.reset(token)
+
+
+def _with_aum_snapshot(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with aum_snapshot_scope():
+            return fn(*args, **kwargs)
+    return wrapper
+
+
 def get_fund_aum(fund: str) -> float | None:
     """AUM for `fund` in $B, derived from the latest holdings snapshot.
 
@@ -472,6 +502,10 @@ def get_fund_aum(fund: str) -> float | None:
     functools.lru_cache keyed on snapshot date/path/mtime/size so it recomputes
     on a new date or same-day correction, not on every call.
     """
+    scoped = _aum_context.get()
+    if scoped is not None and 'values' in scoped:
+        value = scoped['values'].get(fund, FUND_AUM.get(fund))
+        return value if value is not None and math.isfinite(value) and value > 0 else None
     as_of = get_as_of_date()
     path = os.path.join(HISTORY_DIR, f'holdings_{as_of}.csv')
     if os.path.exists(path):
@@ -479,7 +513,10 @@ def get_fund_aum(fund: str) -> float | None:
         key = (path, st.st_mtime_ns, st.st_size)
     else:
         key = None
-    value = _fund_aum_map(as_of, key).get(fund, FUND_AUM.get(fund))
+    values = _fund_aum_map(as_of, key)
+    if scoped is not None:
+        scoped['values'] = values
+    value = values.get(fund, FUND_AUM.get(fund))
     return value if value is not None and math.isfinite(value) and value > 0 else None
 
 
@@ -1208,6 +1245,7 @@ def compute_monthly_changes(*, include_options: bool = False) -> list[dict]:
     return _changes_between(get_latest_holdings(), older, include_options=include_options)
 
 
+@_with_aum_snapshot
 def _blend_institutional(rows: list[dict], total_aum: float) -> tuple[dict, dict, dict, dict]:
     """AUM-weighted blended portfolio weight per underlying ticker.
 
@@ -1564,7 +1602,8 @@ def _memoize_per_snapshot(fn=None, *, depth=None, copy_result=True):
                     hit = _memo.get(key)
                     if hit is not None and hit[0] == sig:
                         return copy.deepcopy(hit[2]) if copy_result else hit[2]
-                value = fn(*args, **kwargs)
+                with aum_snapshot_scope():
+                    value = fn(*args, **kwargs)
                 with _memo_lock:
                     for k in [k for k, (s_, d_, _) in _memo.items() if d_ == n and s_ != sig]:
                         del _memo[k]          # stale snapshot (same depth): free it
@@ -1672,6 +1711,12 @@ def prewarm_snapshot_caches(should_stop=lambda: False) -> bool:
     if should_stop():
         return False
     _full_changes(period='daily')  # reuse the guarded daily book for discovery pages
+    if should_stop():
+        return False
+    _ticker_snapshot_index(get_latest_holdings)
+    if should_stop():
+        return False
+    _stock_history_index()
     return True
 
 
@@ -1690,7 +1735,7 @@ class SnapshotPrewarmer:
 
     def _tick(self) -> None:
         try:
-            sig = snapshot_signature()
+            sig = snapshot_signature(_stock_signature_depth())
             if sig != self._last and prewarm_snapshot_caches(self._stop.is_set) is not False:
                 self._last = sig            # only a COMPLETE warm counts as done
         except Exception as e:  # noqa: BLE001
@@ -2808,79 +2853,73 @@ def _fund_freshness(fund_rows: list[dict]) -> dict:
     }
 
 
-def get_ticker_detail(ticker: str) -> dict | None:
-    """
-    Cross-fund detail for a specific ticker. Enriched in review #10 with
-    optionDetails per option holding and a `changes` list of recent moves.
-    """
-    latest = get_latest_holdings()
-    matches = [
-        r for r in latest
-        if _clean_ticker(r.get('Ticker', '')) == ticker
-        or r.get('Underlying_Ticker', '') == ticker
-    ]
-    if not matches:
-        return None
+@_memoize_per_snapshot(depth=2, copy_result=False)
+def _ticker_snapshot_index(reader=None) -> dict:
+    """All cross-fund holders + guarded daily changes, built once per snapshot.
 
+    Latest/previous CSVs, latest AUM and deployed taxonomy are the only inputs.
+    Shared internally; get_ticker_detail copies only the requested ticker.
+    """
+    latest = (reader or get_latest_holdings)()
     as_of = get_as_of_date()
-    funds = []
-    for r in matches:
-        fund = r.get('ETF Ticker', '')
-        is_option = bool(r.get('Option_Type'))
-        # A contract past expiry is not a position, however long a frozen
-        # issuer file keeps listing it (EGGQ showed a Sep 4 AMD call on 9/27).
-        if is_option and option_leg_expired(r, as_of):
-            continue
-        file_date = row_file_date(r)
-        entry: dict = {
-            'fund': fund,
-            'provider': FUND_PROVIDERS.get(fund, fund),
-            'weight': _safe_float(r.get('Weight', '0')),
-            'positionUsd': estimate_position_usd(fund, _safe_float(r.get('Weight', '0'))),
-            'shares': _safe_float(r.get('Share Quantity', '0')),
-            'isOption': is_option,
-            # $B, from get_fund_aum() — added so /api/v1/ticker/{t} can drive
-            # dollar-exposure estimates without a separate client-side lookup.
-            'aum': get_fund_aum(fund),
-            'aumUsd': get_fund_aum_usd(fund),
-            'fileDate': file_date,
-            'stale': is_stale(file_date, as_of),
-            'refreshed': row_refreshed(r),
-        }
-        if is_option:
-            entry['optionDetails'] = {
-                'type': r.get('Option_Type', ''),
-                'strike': _safe_float(r.get('Option_Strike', '0')),
-                'expiry': r.get('Option_Expiry', ''),
-                **option_leg_fields(r),
+    aums = {f: get_fund_aum(f) for f in {r.get('ETF Ticker', '') for r in latest}}
+    matches = defaultdict(list)
+    for r in latest:
+        for t in {_clean_ticker(r.get('Ticker', '')), r.get('Underlying_Ticker', '')} - {''}:
+            matches[t].append(r)
+    changes = defaultdict(list)
+    for c in compute_daily_changes_with_options():
+        keys = {c['ticker']}
+        if c.get('isOption'):
+            keys.add(c.get('optionDetails', {}).get('underlying', ''))
+        for t in keys - {''}:
+            changes[t].append(c)
+    out = {}
+    for ticker, rows in matches.items():
+        funds = []
+        for r in rows:
+            fund = r.get('ETF Ticker', '')
+            is_option = bool(r.get('Option_Type'))
+            if is_option and option_leg_expired(r, as_of):
+                continue
+            weight = _safe_float(r.get('Weight', '0'))
+            aum = aums.get(fund)
+            file_date = row_file_date(r)
+            entry = {
+                'fund': fund, 'provider': FUND_PROVIDERS.get(fund, fund),
+                'weight': weight,
+                'positionUsd': round(weight / 100 * round(aum * 1e9)) if aum is not None else None,
+                'shares': _safe_float(r.get('Share Quantity', '0')),
+                'isOption': is_option, 'aum': aum,
+                'aumUsd': round(aum * 1e9) if aum is not None else None,
+                'fileDate': file_date, 'stale': is_stale(file_date, as_of),
+                'refreshed': row_refreshed(r),
             }
-        funds.append(entry)
-
-    funds.sort(key=lambda x: -x['weight'])
-
-    # Name/sector from an EQUITY row, not an option (an option row's Name is the
-    # contract string, e.g. "NVDA 06/18/2026 186 C" — wrong for the header).
-    name_src = next((m for m in matches if not m.get('Option_Type')), matches[0])
-
-    # Recent changes that match this ticker (or its option underlying)
-    all_changes = compute_daily_changes_with_options()
-    changes = [
-        c for c in all_changes
-        if c['ticker'] == ticker
-        or (c.get('isOption') and c.get('optionDetails', {}).get('underlying') == ticker)
-    ]
-
-    return {
-        'ticker': ticker,
-        'name': name_src.get('Name', ''),
-        'sector': name_src.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
-        'fundCount': len({f['fund'] for f in funds}),
-        'holdings': funds,
-        'totalWeight': round(sum(f['weight'] for f in funds if not f['isOption']), 4),
-        'changes': changes,
-    }
+            if is_option:
+                entry['optionDetails'] = {
+                    'type': r.get('Option_Type', ''),
+                    'strike': _safe_float(r.get('Option_Strike', '0')),
+                    'expiry': r.get('Option_Expiry', ''), **option_leg_fields(r),
+                }
+            funds.append(entry)
+        funds.sort(key=lambda x: -x['weight'])
+        name_src = next((r for r in rows if not r.get('Option_Type')), rows[0])
+        out[ticker] = {
+            'ticker': ticker, 'name': name_src.get('Name', ''),
+            'sector': name_src.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
+            'fundCount': len({f['fund'] for f in funds}), 'holdings': funds,
+            'totalWeight': round(sum(f['weight'] for f in funds if not f['isOption']), 4),
+            'changes': changes.get(ticker, []),
+        }
+    return out
 
 
+def get_ticker_detail(ticker: str) -> dict | None:
+    value = _ticker_snapshot_index(get_latest_holdings).get(ticker)
+    return copy.deepcopy(value) if value is not None else None
+
+
+@_with_aum_snapshot
 def _blended_weight_for(rows: list[dict], ticker: str, total_aum: float) -> tuple[float, int]:
     """AUM-blended institutional weight of a single ticker in one snapshot.
 
@@ -2906,82 +2945,142 @@ def _blended_weight_for(rows: list[dict], ticker: str, total_aum: float) -> tupl
     return w, funds
 
 
-def get_stock_detail(ticker: str, history_days: int = 30) -> dict | None:
-    """Per-stock page payload: cross-fund holders + the institutional trend.
+def _stock_signature_depth(history_days: int = 30) -> int:
+    # Sparse histories may put the calendar-month baseline outside 30 sessions.
+    return max(2, history_days, _changes_signature_depth('monthly'))
 
-    Builds on get_ticker_detail (holders, recent changes) and adds the
-    AUM-blended institutional view: the day/week/month deltas + A/D signal,
-    plus a trading-day history series of the blended weight and ownership
-    breadth so the page can chart the name's trend over time.
+
+@_memoize_per_snapshot(depth=lambda args, kwargs: _stock_signature_depth(
+    args[0] if args else kwargs.get('history_days', 30)), copy_result=False)
+def _stock_history_index(history_days: int = 30) -> dict:
+    """All-ticker series/horizons in one pass per file, no per-row AUM stat.
+
+    Inputs: requested session history, daily and calendar 7/30-day baselines,
+    latest fund AUM, fund freshness metadata and deployed institutional rules.
+    Results are shared read-only; requests copy their own small payload only.
     """
+    dates = get_available_dates()
+    if not dates:
+        return {}
+    depth = min(len(dates), _stock_signature_depth(history_days))
+    latest = get_latest_holdings()
+    inst_funds = {r.get('ETF Ticker', '') for r in latest
+                  if is_institutional_fund(r.get('ETF Ticker', ''))}
+    all_funds = inst_funds | set(FUND_AUM)
+    aums = {f: get_fund_aum(f) for f in all_funds}
+    total_aum = sum(aums.get(f) or 0 for f in inst_funds) or 1.0
+    snapshots = {}
+    universe = set()
+    for date in dates[:depth]:
+        rows = latest if date == dates[0] else _read_csv(os.path.join(HISTORY_DIR, f'holdings_{date}.csv'))
+        weights, counts, per_fund = defaultdict(float), defaultdict(int), defaultdict(lambda: defaultdict(float))
+        for r in rows:
+            if r.get('Option_Type'):
+                continue
+            fund = r.get('ETF Ticker', '')
+            if not is_institutional_fund(fund):
+                continue
+            # Historic funds absent from today's book still use the deployed fallback.
+            if fund not in aums:
+                aums[fund] = get_fund_aum(fund)
+            aum = aums[fund]
+            if aum is None or aum <= 0:
+                continue
+            ticker = _clean_ticker(r.get('Ticker', ''))
+            contribution = _safe_float(r.get('Weight', '0')) * aum / total_aum
+            weights[ticker] += contribution
+            per_fund[fund][ticker] += contribution
+            counts[ticker] += 1
+        universe.update(weights)
+        snapshots[date] = (weights, counts, per_fund, _fund_meta(rows))
+
+    ordered = list(reversed(dates[:min(history_days, len(dates))]))
+    pair_cache = {}
+    def pair(current, previous):
+        key = (current, previous)
+        if key not in pair_cache:
+            c, p = snapshots[current], snapshots[previous]
+            caught = catch_up_funds_between(c[3], p[3])
+            # Subtraction drops exactly the caught funds' contributions on BOTH sides,
+            # using the fixed latest AUM denominator, as the institutional endpoints do.
+            cw, pw = dict(c[0]), dict(p[0])
+            for fund in caught:
+                for t, w in c[2].get(fund, {}).items(): cw[t] = cw.get(t, 0) - w
+                for t, w in p[2].get(fund, {}).items(): pw[t] = pw.get(t, 0) - w
+            pair_cache[key] = (cw, pw, caught)
+        return pair_cache[key]
+
+    horizons = {'daily': dates[1] if len(dates) > 1 else dates[0]}
+    for period in ('weekly', 'monthly'):
+        horizons[period] = dates[min(len(dates), _changes_signature_depth(period)) - 1]
+    out = {}
+    for ticker in universe:
+        history = [(dt, round(snapshots[dt][0].get(ticker, 0), 4),
+                    snapshots[dt][1].get(ticker, 0)) for dt in ordered]
+        # Stitch backward from the real latest exposure. A catch-up jump changes the
+        # level, not the daily trading series; earlier levels shift only for tickers
+        # whose caught-fund contributions changed. Ordinary series remain byte-identical.
+        correction = 0.0
+        adjusted = False
+        for i in range(len(history) - 1, 0, -1):
+            cur_date, prev_date = ordered[i], ordered[i - 1]
+            cw, pw, caught = pair(cur_date, prev_date)
+            if caught:
+                raw_step = snapshots[cur_date][0].get(ticker, 0) - snapshots[prev_date][0].get(ticker, 0)
+                guarded_step = cw.get(ticker, 0) - pw.get(ticker, 0)
+                adjustment = raw_step - guarded_step
+                correction += adjustment
+                adjusted = adjusted or bool(adjustment)
+            if correction:
+                history[i - 1] = (prev_date, round(snapshots[prev_date][0].get(ticker, 0) + correction, 4),
+                                  history[i - 1][2])
+        streak = 0
+        for i in range(len(history) - 1, 0, -1):
+            delta = history[i][1] - history[i - 1][1]
+            if delta > 0.001 and streak >= 0: streak += 1
+            elif delta < -0.001 and streak <= 0: streak -= 1
+            else: break
+        cur = round(snapshots[dates[0]][0].get(ticker, 0), 4)
+        deltas = {}
+        raw_deltas = {}
+        for period, prev_date in horizons.items():
+            cw, pw, caught = pair(dates[0], prev_date)
+            # Legacy uses rounded current weight minus unrounded previous weight.
+            now = round(cw.get(ticker, 0), 4) if caught else cur
+            raw_deltas[period] = now - pw.get(ticker, 0)
+            deltas[period] = round(raw_deltas[period], 4)
+        out[ticker] = {'history': tuple(history), 'institutional': {
+            'blendedWeight': cur, **deltas,
+            'fundCount': snapshots[dates[0]][1].get(ticker, 0),
+            'signal': _trend_signal(raw_deltas['monthly'], raw_deltas['weekly'], raw_deltas['daily']),
+            'streak': streak if abs(streak) >= 2 else None,
+        }}
+        if adjusted:
+            out[ticker]['historyAdjustedForCatchUp'] = True
+    return out
+
+
+def get_stock_detail(ticker: str, history_days: int = 30) -> dict | None:
     ticker = _clean_ticker(ticker)
     base = get_ticker_detail(ticker)
     if not base:
         return None
-
-    latest = get_latest_holdings()
-    inst_funds = {r.get('ETF Ticker', '') for r in latest
-                  if is_institutional_fund(r.get('ETF Ticker', ''))}
-    total_aum = sum(get_fund_aum(f) or 0 for f in inst_funds) or 1.0
-
-    # Trading-day history series (oldest → newest) for charting.
-    dates = get_available_dates()[:history_days]  # newest-first, trading days only
-    history = []
-    for d in reversed(dates):
-        rows = _read_csv(os.path.join(HISTORY_DIR, f'holdings_{d}.csv'))
-        w, fc = _blended_weight_for(rows, ticker, total_aum)
-        history.append({'date': d, 'blendedWeight': round(w, 4), 'fundCount': fc})
-
-    cur = history[-1]['blendedWeight'] if history else 0.0
-    prev = get_previous_holdings()
-    wk = _snapshot_for_lookback(7)
-    mo = _snapshot_for_lookback(30)
-    daily = cur - (_blended_weight_for(prev, ticker, total_aum)[0] if prev else cur)
-    weekly = cur - (_blended_weight_for(wk, ticker, total_aum)[0] if wk else cur)
-    monthly = cur - (_blended_weight_for(mo, ticker, total_aum)[0] if mo else cur)
-
-    # Blended-weight streak — consecutive daily moves in the same direction.
-    # Computed from the history already loaded; no extra file reads.
-    streak = 0
-    if len(history) >= 2:
-        for i in range(len(history) - 1, 0, -1):
-            delta = history[i]['blendedWeight'] - history[i - 1]['blendedWeight']
-            if delta > 0.001:
-                if streak >= 0:
-                    streak += 1
-                else:
-                    break
-            elif delta < -0.001:
-                if streak <= 0:
-                    streak -= 1
-                else:
-                    break
-            else:
-                break
-
-    # Estimated dollar exposure: sum of (weight% × fund AUM $B × 10) across
-    # institutional equity holders. Rough but useful — turns "0.8% blended weight"
-    # into "~$890M" so traders have a concrete size anchor.
-    exposure_m = round(sum(
-        h['weight'] / 100 * (get_fund_aum(h['fund']) or 0) * 1000
-        for h in base['holdings']
-        if not h['isOption'] and is_institutional_fund(h['fund'])
-    ), 1)
-
-    return {
-        **base,
-        'institutional': {
-            'blendedWeight': round(cur, 4),
-            'daily': round(daily, 4),
-            'weekly': round(weekly, 4),
-            'monthly': round(monthly, 4),
-            'fundCount': history[-1]['fundCount'] if history else 0,
-            'signal': _trend_signal(monthly, weekly, daily),
-            'streak': streak if abs(streak) >= 2 else None,
-            'estimatedExposureM': exposure_m,
-        },
-        'history': history,
-    }
+    value = _stock_history_index(history_days).get(ticker)
+    if value is None:
+        # Option-only/non-institutional tickers have known zero institutional exposure.
+        dates = list(reversed(get_available_dates()[:history_days]))
+        value = {'history': [(d, 0.0, 0) for d in dates],
+                 'institutional': {'blendedWeight': 0.0, 'daily': 0.0, 'weekly': 0.0,
+                    'monthly': 0.0, 'fundCount': 0, 'signal': _trend_signal(0, 0, 0), 'streak': None}}
+    details = {'institutional': dict(value['institutional']), 'history': [
+        {'date': d, 'blendedWeight': w, 'fundCount': n} for d, w, n in value['history']]}
+    details['institutional']['estimatedExposureM'] = round(sum(
+        h['weight'] / 100 * (h['aum'] or 0) * 1000 for h in base['holdings']
+        if not h['isOption'] and is_institutional_fund(h['fund'])), 1)
+    result = {**base, 'institutional': details['institutional'], 'history': details['history']}
+    if value.get('historyAdjustedForCatchUp'):
+        result['historyAdjustedForCatchUp'] = True
+    return result
 
 
 def get_funds_index(*, category: str | None = None) -> list[dict]:

@@ -213,6 +213,14 @@ app.add_middleware(
 app.add_middleware(RequestIdMiddleware)
 
 
+@app.middleware("http")
+async def snapshot_aum_context(request: Request, call_next):
+    # ContextVars propagate to FastAPI's sync handler thread, without sharing
+    # mutable AUM state between simultaneous requests.
+    with data.aum_snapshot_scope():
+        return await call_next(request)
+
+
 # ─── Validation patterns ─────────────────────────────────────────
 _TICKER_PATTERN = re.compile(r"^[A-Za-z0-9.\-]{1,10}$")
 
