@@ -13,7 +13,8 @@ export const APP_ID = 'pro.tickertrace.app';
 export const EXPECT_PREFIX = '83:78:2F';
 export const EXPECT_SUFFIX = 'A3:A9';
 
-export const readToken = () => fs.readFileSync(path.join(SECRETS, 'expo-token'), 'utf8').trim();
+// CI passes EXPO_TOKEN in the environment; a workstation keeps it in ~/secrets/tickertrace-play/expo-token.
+export const readToken = () => (process.env.EXPO_TOKEN ?? '').trim() || fs.readFileSync(path.join(SECRETS, 'expo-token'), 'utf8').trim();
 
 export async function gql(query, variables = {}) {
   const r = await fetch('https://api.expo.dev/graphql', {
@@ -54,6 +55,7 @@ export async function appAndCredentials() {
     `query($n:String!,$id:String!){ app{ byFullName(fullName:$n){ id ownerAccount{ id name }
        androidAppCredentials(filter:{applicationIdentifier:$id}){ id applicationIdentifier
          googleServiceAccountKeyForFcmV1{ id }
+         googleServiceAccountKeyForSubmissions{ id clientEmail }
          androidAppBuildCredentialsList{ id name isDefault androidKeystore{ id type keyAlias sha256CertificateFingerprint } } } } } }`,
     { n: APP_FULL_NAME, id: APP_ID },
   );

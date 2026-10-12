@@ -105,3 +105,30 @@ Download the `.aab` from the EAS build page. Optionally inspect it: `bundletool`
 - [ ] Listing copy, 8 screenshots, feature graphic, icon, ratings, audience, ads declaration complete
 - [ ] Production staged rollout 5 % > 20 % > 50 % > 100 % with vitals checked between steps
 - [ ] assetlinks.json removed only after the TWA is gone (section 7)
+
+## 9. CI/CD (GitHub Actions)
+
+Ported from `tradernetwork/vero` (`build.yml`, `ota-update.yml`, `eas-ops.yml`). All three need the **`EXPO_TOKEN`** repo secret (a robot token for the `tradernetwork` Expo account). Production signing uses the **EAS-hosted** upload keystore (`play-upload-key`) and `versionCode` is remote with `autoIncrement`, so nothing about credentials or version codes lives in GitHub.
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `mobile-release.yml` | push a tag `mobile-v*`, or run it by hand with a profile | `tsc` + jest gate, then `eas build -p android --profile production --non-interactive --no-wait --auto-submit`: EAS builds and **submits to the Play internal track** when the build finishes (the job ends in about a minute). One run at a time (`concurrency`). Non-production profiles build without submitting. |
+| `ota-update.yml` | run by hand: message + channel (`preview` or `production`) | `tsc` + jest gate, then `eas update --channel X --environment X --platform android --clear-cache` (SDK 57 requires `--environment`; the EAS environment of that name must exist). |
+| `eas-ops.yml` | run by hand: `status`, `submit-android` or `release-android-production` | `status` lists builds/updates/channel and whether a Play submit key exists. `submit-android` submits the newest **finished production-profile** build (by id) to the internal track. `release-android-production` builds this ref and submits that build to the **production** track with the `production-release` submit profile (Google review still applies). |
+
+**Release an app build:** make sure `version` in `mobile/app.config.ts` is what you want (it is also the OTA runtime), then
+```bash
+git tag mobile-v1.0.1 && git push origin mobile-v1.0.1
+```
+The tag is only a trigger: the build uses the `app.config.ts` version, and the workflow warns if the tag disagrees. Watch the build on expo.dev; the submit to the internal track happens automatically after it. Promote internal → production in Play Console, or run `eas-ops` → `release-android-production`.
+
+**Ship a JS-only fix (OTA):** Actions → *OTA update (Android)* → Run workflow → pick the channel and a message. It reaches installs on the **same runtime** (the `app.config.ts` version) at their next cold launch. Native code, plugins or a version change need a new build instead. Note the preview APKs from before 1.0.0 are on runtime 0.1.0 and no longer receive OTAs from `main`; a preview OTA now targets runtime 1.0.0 builds.
+
+**One-time step: the Google Play service-account key goes to EAS, not GitHub.** Without it, `eas submit` and `--auto-submit` cannot publish, so every submitting path first runs `scripts/play/check-submit-key.mjs`, which fails **before the build is queued** with: *"No Google Play service-account key on EAS for pro.tickertrace.app … see docs/PLAY_RELEASE.md, section CI/CD"*. To create the key: Play Console → Setup → API access → link a Google Cloud project → create a service account, grant it release permissions on the app, create a JSON key. Then, from `mobile/`:
+```bash
+node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json          # dry run
+node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json --apply
+```
+It prints only the service account's `client_email` and key id (never the private key), is idempotent, and attaches the key as the app's submission key via the GraphQL mutations `createGoogleServiceAccountKey` and `setGoogleServiceAccountKeyForSubmissions`. Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `status` action.
+
+`eas.json` submit profiles: `production` (track `internal`, the default for every build) and `production-release` (track `production`, used only by `eas-ops` → `release-android-production`).

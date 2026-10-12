@@ -1,0 +1,86 @@
+name: "Mobile release (Android, build and submit to Play)"
+
+# Push a tag `mobile-v*` (e.g. `git tag mobile-v1.0.1 && git push origin mobile-v1.0.1`) to build the production
+# Android bundle on EAS and have EAS submit it to the Play INTERNAL testing track when the build finishes
+# (promoting internal -> production is a click in Play Console, or the eas-ops "release-android-production" action).
+# Pattern from tradernetwork/vero's build.yml. Or run it by hand with a profile.
+#
+# Needs the EXPO_TOKEN repo secret (robot token for the `tradernetwork` Expo account). Credentials:
+#   production  -> EAS-hosted (the Play upload keystore is on EAS as default "play-upload-key"); versionCode is
+#                  remote with autoIncrement, so nothing in git needs bumping for versionCode.
+#   production submit -> the Google Play service-account key lives ON EAS (not in GitHub). Until it is uploaded
+#                  (mobile/scripts/play/upload-play-submit-key-to-eas.mjs) the "Check Play submit key" step fails with
+#                  a clear message BEFORE the build is queued. See docs/PLAY_RELEASE.md, "CI/CD".
+#   preview     -> LOCAL credentials, which CI does not have: preview builds run from the machine that holds the key.
+#   development -> needs neither.
+# The app version (runtime) comes from mobile/app.config.ts, not from the tag.
+on:
+  push:
+    tags:
+      - "mobile-v*"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile (only production is submitted to Play)
+        type: choice
+        options: [production, preview, development]
+        default: production
+
+# EAS builds one at a time on this plan; never queue two release runs at once.
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROFILE: ${{ inputs.profile || 'production' }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # ci.yml does not run on a tag, so gate here: nothing reaches a store (or an OTA runtime) unchecked.
+      - name: Typecheck and test
+        run: npx tsc --noEmit && npx jest
+
+      - name: Tag matches the app version?
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
+        run: |
+          app=$(grep -m1 -oE 'version: "[^"]+"' app.config.ts | sed -E 's/version: "([^"]+)"/\1/')
+          tag="${GITHUB_REF_NAME#mobile-v}"
+          echo "app.config.ts version: $app, tag: $tag"
+          if [ "$app" != "$tag" ]; then
+            echo "::warning title=Tag does not match app version::Tag ${GITHUB_REF_NAME} but mobile/app.config.ts says $app. The build uses $app (that is the OTA runtime); bump the version first if you meant $tag."
+          fi
+
+      - name: Check Play submit key
+        if: env.PROFILE == 'production'
+        run: node scripts/play/check-submit-key.mjs
+
+      # --no-wait --auto-submit: EAS builds on its own servers and submits to Play when the build finishes, so this
+      # job ends in about a minute. Progress and the result are on expo.dev; submit settings live in mobile/eas.json.
+      - name: Queue Android build with auto-submit
+        if: env.PROFILE == 'production'
+        run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
+
+      - name: Queue Android build (no submit)
+        if: env.PROFILE != 'production'
+        run: eas build --profile "$PROFILE" --platform android --non-interactive --no-wait
