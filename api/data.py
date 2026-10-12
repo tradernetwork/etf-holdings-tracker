@@ -2393,6 +2393,21 @@ def is_cash_placeholder(ticker: str, name: str) -> bool:
 
 
 
+def _is_company_name(name: str) -> bool:
+    """A name that reads as a company or a share class (COMMON STOCK, LTD, INC, PLC, ORD, ADR ...) is never a cash line."""
+    return bool(_STOCK_NAME_RE.search(name or '') or _COMPANY_NAME_RE.search(name or ''))
+
+
+_CASH_WORD_RE = re.compile(r'\bCASH\b', re.I)
+
+
+def is_cash_name(name: str) -> bool:
+    """A cash line by NAME: "CASH", "CASH & OTHER", "CASH EQUIVALENT", "USD CASH" ... The word CASH must be a whole token, never
+    the start of a company ("CASHBUILD LTD COMMON STOCK", "EUROCASH", "FirstCash" are stocks), and a company or share-class
+    name can never be cash whatever it contains."""
+    return not _is_company_name(name) and bool(_CASH_WORD_RE.search(name or ''))
+
+
 # Money-market / government-obligations FUNDS held as the cash sleeve (FGXXX, FIGXX, AGPXX, CMQXX, Goldman
 # FS Treasury Obligations ...). They are funds, not stocks, so they must read as cash everywhere. Names are
 # matched with phrases (never a bare "CASH"/"TREASURY"/"FUND": EUROCASH, FirstCash, Treasury Wine Estates and
@@ -2433,7 +2448,7 @@ def holding_asset_class(r: dict) -> str:
     if ht == 'treasury' or ticker == 'TBILL' or 'treasury bill' in name or 'treasury note' in name or 'treasury bond' in name:
         return 'treasury'
     if ht in _CASH_TYPES or st in ('cash & equivalent', 'spot fx', 'sweep investment vehicle') \
-            or is_cash_placeholder(ticker, r.get('Name') or '') or name.startswith('cash') \
+            or is_cash_placeholder(ticker, r.get('Name') or '') or is_cash_name(r.get('Name') or '') \
             or is_money_market(ticker, r.get('Name') or ''):
         return 'cash'
     if ht in ('', 'equity') and ticker not in ('OTHER', ''):

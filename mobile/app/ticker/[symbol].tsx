@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { FlowBridge } from "@/components/FlowBridge";
 import { OptionHolders } from "@/components/ticker/OptionHolders";
 import { MinorAdjustments } from "@/components/minor-adjustments";
 import { TickerOptions } from "@/components/options/TickerOptions";
@@ -85,6 +86,7 @@ export default function TickerScreen() {
         </View>
       </View>
 
+      <FlowBridge ticker={symbol} />
       <StockHistory symbol={symbol} />
       <SectionHeader title="Opposite moves" right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
       {evidence.length === 0 ? (
