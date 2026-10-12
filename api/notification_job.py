@@ -10,6 +10,19 @@ from pathlib import Path
 from . import data, notification_store as store, push_delivery
 
 
+# Push digests only mention a move of at least this many percentage points of active weight. The app screens and the
+# API keep the finer 1bp/2bp significance (data._significance_threshold): a phone buzz has to be worth buzzing for.
+# NEW / REMOVED positions and catch-up "refreshed" notes are exempt: those are events, not sizes.
+NOTIFY_MIN_PP = 0.10
+
+
+def notify_worthy(change, fund):
+    """True when a guarded daily change belongs in a push digest."""
+    if change['type'] in ('NEW', 'REMOVED'):
+        return True
+    return abs(change['activeWeightDelta']) >= NOTIFY_MIN_PP
+
+
 def build_events(day):
     """Guarded active deltas only; an unavailable book is not an exit."""
     current, previous = data.get_latest_holdings(), data.get_previous_holdings()
@@ -26,7 +39,7 @@ def build_events(day):
     # This shared function implements catch-up, price drift, splits and junk exclusion.
     for change in data.compute_daily_changes():
         fund, delta = change['fund'], change['activeWeightDelta']
-        if fund not in eligible or abs(delta) < data._significance_threshold(fund):
+        if fund not in eligible or not notify_worthy(change, fund):
             continue
         action = ('opened' if change['type'] == 'NEW' else
                   'closed' if change['type'] == 'REMOVED' else

@@ -231,15 +231,35 @@ def test_missing_fund_and_unparseable_dates_cannot_create_exits(notifications,sy
     assert all(e['kind']=='catch-up' for e in job.build_events('2026-10-12'))
 
 
-def test_significance_uses_active_not_raw_and_fund_threshold(notifications,synthetic_history,monkeypatch):
+def test_digest_floor_is_notification_only_and_events_are_exempt(notifications,synthetic_history,monkeypatch):
     from api import notification_job as job
-    # The shared diff remains the only producer of active values; inject its output
-    # to isolate notification eligibility exactly at its existing boundaries.
-    records=[{'fund':'AVUV','ticker':t,'activeWeightDelta':delta,'weightDelta':20,'type':'CHANGED'}
-             for t,delta in [('NOISE',0.0099),('EXACT',0.01),('DRIFT',0.0)]]
+    assert job.NOTIFY_MIN_PP==0.10
+    # The shared diff remains the only producer of active values; inject its output to isolate notification
+    # eligibility. 0.02 passes the API's own significance but is below the 0.10 pp push floor.
+    spec=[('SIG',0.02,'CHANGED'),('JUST_UNDER',0.0999,'CHANGED'),('EXACT',0.10,'CHANGED'),('BIG_UP',0.55,'CHANGED'),
+          ('BIG_DOWN',-0.10,'CHANGED'),('SMALL_DOWN',-0.0999,'CHANGED'),('DRIFT',0.0,'CHANGED'),
+          ('TINY_NEW',0.0004,'NEW'),('TINY_EXIT',-0.0004,'REMOVED')]
+    records=[{'fund':'AVUV','ticker':t,'activeWeightDelta':d,'weightDelta':20,'type':k} for t,d,k in spec]
     monkeypatch.setattr(data,'compute_daily_changes',lambda:records)
     trades=[e for e in job.build_events('2026-10-12') if e['kind']=='trade']
-    assert [e['ticker'] for e in trades]==['EXACT']
+    assert [e['ticker'] for e in trades]==['EXACT','BIG_UP','BIG_DOWN','TINY_NEW','TINY_EXIT']
+    assert data._significance_threshold('AVUV')<job.NOTIFY_MIN_PP
+
+
+def test_catch_up_refresh_notes_ignore_the_floor(notifications,synthetic_history,monkeypatch):
+    from api import notification_job as job
+    monkeypatch.setattr(data,'compute_daily_changes',lambda:[])
+    monkeypatch.setattr(data,'get_catch_up_funds',lambda:{'AVUV':'2026-09-25'})
+    events=job.build_events('2026-10-12')
+    assert [e['kind'] for e in events]==['catch-up']
+
+
+def test_significance_uses_active_not_raw(notifications,synthetic_history,monkeypatch):
+    from api import notification_job as job
+    records=[{'fund':'AVUV','ticker':'RAWONLY','activeWeightDelta':0.0,'weightDelta':20,'type':'CHANGED'},
+             {'fund':'AVUV','ticker':'ACTIVE','activeWeightDelta':0.25,'weightDelta':0.01,'type':'CHANGED'}]
+    monkeypatch.setattr(data,'compute_daily_changes',lambda:records)
+    assert [e['ticker'] for e in job.build_events('2026-10-12') if e['kind']=='trade']==['ACTIVE']
 
 
 def test_exhausted_and_expired_outbox_is_not_sent(notifications,synthetic_history,monkeypatch):

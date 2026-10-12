@@ -34,7 +34,7 @@ node scripts/play/set-version-floor.mjs 57             # dry run: "next producti
 node scripts/play/set-version-floor.mjs 57 --apply     # raises the EAS counter (it never lowers it)
 npx eas-cli build:version:get -p android -e production # confirm: 57; the next build becomes 58
 ```
-`versionName` comes from `version` in `app.config.ts` (`0.1.0`). Because `runtimeVersion` is `appVersion`, **the version string is also the OTA runtime**: the preview APKs (0.1.0) and a production build at 0.1.0 would share a runtime, so a preview OTA could reach production users. Bump to **1.0.0** before the first production build (a separate runtime) and publish OTAs per runtime. Internal-track builds can stay on whatever version you like; just never let an OTA target a runtime you do not mean to.
+`versionName` comes from `version` in `app.config.ts`, now **`1.0.0`**. Because `runtimeVersion` is `appVersion`, **the version string is also the OTA runtime**: the 0.1.0 preview APKs and the 1.0.0 production build are separate runtimes, so a preview OTA can never reach production users. Publish OTAs per runtime (`eas update --channel production` targets 1.0.0 builds) and never let an OTA target a runtime you do not mean to. `versionCode` is managed remotely (`autoIncrement`).
 
 ## 3. `eas.json` production profile (reviewed and updated in this PR)
 
