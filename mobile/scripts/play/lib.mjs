@@ -7,7 +7,9 @@ import path from 'node:path';
 import fingerprint from './fingerprint.cjs';
 
 export const SECRETS = process.env.TT_PLAY_SECRETS ?? path.join(os.homedir(), 'secrets', 'tickertrace-play');
-export const APP_FULL_NAME = '@tradernetwork/tickertrace';
+// The Expo account that owns the project (same account as Vero). EAS_APP_FULL_NAME overrides it, e.g. while the
+// project is still moving between accounts.
+export const APP_FULL_NAME = process.env.EAS_APP_FULL_NAME ?? '@tradermatrix/tickertrace';
 export const APP_ID = 'pro.tickertrace.app';
 // The Play upload-key SHA-256, known only as its first and last bytes (confirmed against Play Console).
 export const EXPECT_PREFIX = '83:78:2F';

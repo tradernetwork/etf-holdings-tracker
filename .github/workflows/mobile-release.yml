@@ -5,11 +5,11 @@ name: "Mobile release (Android, build and submit to Play)"
 # (promoting internal -> production is a click in Play Console, or the eas-ops "release-android-production" action).
 # Pattern from tradernetwork/vero's build.yml. Or run it by hand with a profile.
 #
-# Needs the EXPO_TOKEN repo secret (robot token for the `tradernetwork` Expo account). Credentials:
+# Needs the EXPO_TOKEN repo secret (robot token for the `tradermatrix` Expo account, the same one as Vero). Credentials:
 #   production  -> EAS-hosted (the Play upload keystore is on EAS as default "play-upload-key"); versionCode is
 #                  remote with autoIncrement, so nothing in git needs bumping for versionCode.
-#   production submit -> the Google Play service-account key lives ON EAS (not in GitHub). Until it is uploaded
-#                  (mobile/scripts/play/upload-play-submit-key-to-eas.mjs) the "Check Play submit key" step fails with
+#   production submit -> the Google Play service-account key lives ON EAS (not in GitHub): attach Vero's existing key or
+#                  upload one (mobile/scripts/play/upload-play-submit-key-to-eas.mjs). Until it is attached the "Check Play submit key" step fails with
 #                  a clear message BEFORE the build is queued. See docs/PLAY_RELEASE.md, "CI/CD".
 #   preview     -> LOCAL credentials, which CI does not have: preview builds run from the machine that holds the key.
 #   development -> needs neither.

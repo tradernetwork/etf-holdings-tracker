@@ -12,7 +12,7 @@ const config: ExpoConfig = {
   scheme: "tickertrace",
   version: "1.0.0",
   // Expo account that owns the EAS project (linked with `eas init`).
-  owner: "tradernetwork",
+  owner: "tradermatrix",
   // Binary-pinned: an OTA update only reaches builds with the same app version.
   runtimeVersion: { policy: "appVersion" },
   // Portrait phones are the target, but we deliberately do NOT lock
