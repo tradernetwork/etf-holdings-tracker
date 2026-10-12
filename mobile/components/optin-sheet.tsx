@@ -40,6 +40,7 @@ const makeStyles = (c: Palette) =>
     sheet: {
       backgroundColor: c.card, borderTopLeftRadius: radii.card + 6, borderTopRightRadius: radii.card + 6,
       borderColor: c.border, borderWidth: 1, borderBottomWidth: 0, paddingHorizontal: spacing.lg, gap: spacing.md,
+      width: "100%", maxWidth: 560, alignSelf: "center",
     },
     handle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginTop: spacing.sm },
     title: { color: c.textPrimary, fontFamily: fonts.bodyBold, fontSize: 20, lineHeight: 26, marginTop: spacing.sm },

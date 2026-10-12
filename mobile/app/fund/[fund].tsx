@@ -2,7 +2,8 @@ import { Action } from "@/components/discovery-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { columnStyle } from "@/lib/layout";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { ActivityNote, DayHeader, OptionChangeRow, RollCard, TradeRow } from "@/components/fund/activity-rows";
 import {
@@ -66,6 +67,7 @@ interface Section { key: string; title: string; subtitle?: string; sort?: "stock
 const TAB_LABEL: Record<Tab, string> = { positions: "Positions", changes: "Changes", activity: "Activity", scores: "Scores", rotation: "Rotation" };
 
 export default function FundScreen() {
+  const { width: winWidth } = useWindowDimensions();
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const { fund: raw, tab: tabParam } = useLocalSearchParams<{ fund: string; tab?: string }>();
@@ -383,7 +385,7 @@ export default function FundScreen() {
       <SectionList<Item, Section>
         ref={listRef}
         style={styles.root}
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xxl }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xxl, ...columnStyle(winWidth, "table") }}
         sections={sections}
         keyExtractor={(item, i) => itemKey(item, i)}
         ListHeaderComponent={header}
