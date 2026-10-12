@@ -2,6 +2,12 @@
 
 Prepared 2026-10-11. **Nothing here has been submitted, uploaded to Play, or applied to EAS.** The two EAS scripts below were developed against EAS's read-only queries (their dry-run mode); no mutation has been run. Companion: `docs/PLAY_STORE_LISTING.md` (copy, graphics, Data safety, privacy delta) and `docs/NOTIFICATIONS_GO_LIVE.md`.
 
+> **Status, Oct 12 2026: DONE.**
+> - The Play **upload keystore** is in EAS as the default Android credential `play-upload-key` (SHA-256 `83:78:2F…A3:A9`, verified).
+> - The **versionCode floor is set to 100**: the next production build is **101**.
+> - The account also holds one extra, **unattached** copy of the same keystore from the first attempt (the fingerprint check below wrongly refused a genuine match, see section 2). It is safe to delete later in expo.dev → Credentials. Do not delete the one attached as `play-upload-key`.
+> - The fingerprint bug is fixed: EAS returns lower-case hex without colons, openssl prints upper-case with colons; both sides are now normalised (`scripts/play/fingerprint.cjs`, tested in `mobile/__tests__/play-scripts.test.ts`). A re-run of the dry run now reports "Already uploaded … default=true. Nothing to do."
+
 ## 0. Findings that change the plan
 
 1. **versionCode.** EAS's remote counter for this app is **3** (the v3 preview APK). The TWA's versionCode on Play is unknown from here. Play rejects any upload whose versionCode is not strictly greater than every versionCode ever uploaded to the listing, so the first production build could be rejected, or worse, succeed only on a track you did not intend. **Read the highest versionCode in Play Console (Release > App bundle explorer) and raise EAS's counter above it** with `scripts/play/set-version-floor.mjs` (section 2). `eas build:version:get -p android -e production` only reads EAS's own counter; it cannot see Play.
@@ -18,7 +24,7 @@ Needs: `~/secrets/tickertrace-play/{expo-token,signing.keystore,signing-key-info
 node scripts/play/upload-keystore-to-eas.mjs            # DRY RUN: verifies fingerprint, shows what EAS holds, changes nothing
 node scripts/play/upload-keystore-to-eas.mjs --apply    # creates the keystore, the app credentials row and the default build credentials
 ```
-Success prints `VERIFIED: EAS now holds the Play upload key as the default Android credential.` and the script is idempotent (it stops if EAS already has this exact certificate). Afterwards `eas credentials -p android` (production) shows keystore "play-upload-key". Never commit keystores or `credentials.json`.
+Success prints `VERIFIED: EAS now holds the Play upload key as the default Android credential.` and the script is idempotent (it stops if EAS already has this exact certificate; fingerprints are compared with colons, case and spacing ignored). Afterwards `eas credentials -p android` (production) shows keystore "play-upload-key". Never commit keystores or `credentials.json`.
 
 If you would rather do it by hand: `npx eas-cli credentials -p android`, choose **production**, **Keystore: Manage everything needed to build your project**, **Upload a keystore** (from `~/secrets/tickertrace-play/signing.keystore`; the passwords and alias are in `signing-key-info.txt`), then confirm the SHA-256 shown starts `83:78:2F` and ends `A3:A9`.
 
@@ -90,8 +96,8 @@ Download the `.aab` from the EAS build page. Optionally inspect it: `bundletool`
 
 ## 8. Checklist
 
-- [ ] `upload-keystore-to-eas.mjs` dry run reviewed, then `--apply`
-- [ ] Highest Play versionCode read from Play Console; `set-version-floor.mjs` run; `build:version:get` shows it
+- [x] `upload-keystore-to-eas.mjs` dry run reviewed, then `--apply` (done Oct 12; default `play-upload-key`)
+- [x] Highest Play versionCode read from Play Console; `set-version-floor.mjs` run (floor 100, next build 101; done Oct 12)
 - [ ] EAS production environment variables set (section 3); version bumped to 1.0.0 (section 2)
 - [ ] `/api/v1/stock/{ticker}` slowness fixed or consciously accepted for internal testing only
 - [ ] Privacy policy change merged and live; Data safety (Release A) entered
