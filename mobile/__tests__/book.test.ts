@@ -1,7 +1,7 @@
 import {
   activityLines, buildBook, daysBetween, dteLabel, formatExpiry, formatStrike, isExpired, moneynessChip,
   normalizeOptionType, optionExtrasOf, optionKey, optionSubtitle, optionTitle, rowsFromFundPayload, sideLabel,
-  sleeveOf, sortGroups, sortLegs, sortStocks,
+  isCashName, sleeveOf, sortGroups, sortLegs, sortStocks,
 } from "../lib/book";
 import type { FundResponse, HoldingsResponse } from "../lib/types";
 import arkkFund from "./fixtures/arkk-fund.json";
@@ -77,6 +77,20 @@ describe("sleeves", () => {
     expect(by("First American Government Obligations")).toBe("cash");
     expect(by("MSTR US 11/20/26 C135")).toBe("option");
   });
+  it("treats CASH as a whole word: Cashbuild, Eurocash, FirstCash and friends stay stocks, real cash lines stay cash", () => {
+    const row = (name: string, ticker: string, assetClass?: string) => ({ isOption: false, name, ticker, assetClass });
+    for (const [name, ticker] of [
+      ["CASHBUILD LTD COMMON STOCK ZAR.01", "CSB"], ["EUROCASH SA COMMON STOCK PLN1.0", "EUR"], ["METCASH LTD COMMON STOCK", "MTS"],
+      ["TREASURY WINE ESTATES LTD COMMON STOCK", "TWE"], ["BILL HOLDINGS INC COMMON STOCK USD.00001", "BILL"], ["FirstCash Holdings, Inc.", "FCFS"], ["JAPAN CASH MACHINE CO LTD COMMON STOCK", "6418"], ["LANCASHIRE HOLDINGS LTD COMMON STOCK USD.5", "LRE"],
+    ]) {
+      expect(sleeveOf(row(name, ticker, "equity"))).toBe("stock");
+      expect(sleeveOf(row(name, ticker))).toBe("stock"); // an older server with no assetClass
+    }
+    for (const name of ["CASH", "Cash & Other", "USD CASH", "Cash Equivalent", "Net Cash"]) expect(sleeveOf(row(name, "OTHER"))).toBe("cash");
+    expect(isCashName("CASHBUILD LTD COMMON STOCK")).toBe(false);
+    expect(isCashName("CASH & OTHER")).toBe(true);
+  });
+
   it("does not mistake Pathward Financial (ticker CASH) for cash, even if the server classes it as cash", () => {
     // Pathward Financial's real ticker is CASH; the server has classed it "cash" (reported).
     const pathward = { isOption: false, ticker: "CASH", name: "PATHWARD FINANCIAL INC COMMON STOCK USD.01", assetClass: "cash" };

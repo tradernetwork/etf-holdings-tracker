@@ -226,7 +226,13 @@ REAL_COMPANIES = [
     ('ACP', 'abrdn Income Credit Strategies Fund'),
     ('FBTC', 'Fidelity Wise Origin Bitcoin Fund'),
     ('CASH', 'PATHWARD FINANCIAL INC COMMON STOCK USD.01'),   # real ticker CASH
+    ('CSB', 'CASHBUILD LTD COMMON STOCK ZAR.01'),            # AVEM, 2026-10-12: name starts with CASH
+    ('LRE', 'LANCASHIRE HOLDINGS LTD COMMON STOCK USD.5'),
+    ('FCFS', 'FIRSTCASH HOLDINGS INC'),
+    ('CCV', 'CASH CONVERTERS INTERNATIONAL LTD'),
+    ('BILL', 'BILL HOLDINGS INC COMMON STOCK USD.00001'),    # the T-bill hint 'BILL ' once made it a Treasury
 ]
+CASH_NAMES = ['CASH', 'Cash', 'CASH & OTHER', 'CASH & EQUIVALENTS', 'CASH EQUIVALENT', 'USD CASH', 'Net Cash', 'CASH COLLATERAL USD']
 
 
 def test_is_money_market_catches_the_funds_and_no_company():
@@ -251,12 +257,31 @@ def test_money_market_funds_are_cash_in_assetclass_and_income_sleeves():
     assert income._sleeve_of({'Ticker': '912797UK1', 'Name': 'United States Treasury Bill 10/15/2026'}) == 'treasury'
     for t, n in REAL_COMPANIES:
         assert data.holding_asset_class({'Ticker': t, 'Name': n}) == 'equity', (t, n)
+        assert income._sleeve_of({'Ticker': t, 'Name': n}) == 'equity', (t, n)
+
+
+def test_cash_is_a_whole_word_never_a_company_prefix():
+    from api import data, income
+    for n in CASH_NAMES:
+        row = {'Ticker': 'OTHER', 'Name': n}
+        assert data.is_cash_name(n), n
+        assert data.holding_asset_class(row) == 'cash', n
+        assert income._sleeve_of(row) == 'cash', n
+    # The word inside a longer token is not cash, and a company/share-class name can never be cash.
+    for n in ('CASHBUILD LTD COMMON STOCK ZAR.01', 'EUROCASH SA COMMON STOCK PLN1.0', 'METCASH LTD COMMON STOCK',
+              'FirstCash Holdings, Inc.', 'JAPAN CASH MACHINE CO LTD COMMON STOCK', 'CASH CONVERTERS INTERNATIONAL LTD'):
+        assert not data.is_cash_name(n), n
+    assert not data.is_cash_name('CASHFLOW SERVICES')           # not the whole word
+    assert data.holding_asset_class({'Ticker': 'CSB', 'Name': 'CASHBUILD LTD COMMON STOCK ZAR.01'}) == 'equity'
+    # Other income cash phrases still work, but never on a company
+    assert income._sleeve_of({'Ticker': '', 'Name': 'NET OTHER ASSETS'}) == 'cash'
+    assert income._sleeve_of({'Ticker': 'XYZ', 'Name': 'PAYABLE HOLDINGS INC COMMON STOCK'}) == 'equity'
 
 
 def test_live_book_invariants_for_cash_classification():
     """On the committed current book: every 5-letter-XX ticker is cash, and nothing named like a common stock is."""
     import pytest
-    from api import data
+    from api import data, income
     rows = data.get_latest_holdings()
     if not rows:
         pytest.skip('no history data checked in')
@@ -268,3 +293,5 @@ def test_live_book_invariants_for_cash_classification():
             assert cls == 'cash', (r.get('ETF Ticker'), t, n, cls)
         if 'COMMON STOCK' in n.upper():
             assert cls != 'cash', (r.get('ETF Ticker'), t, n, cls)
+            # The Income screen's sleeves share the rule (a substring 'CASH' once made Cashbuild, Metcash, FirstCash ... cash).
+            assert income._sleeve_of(r) not in ('cash', 'treasury'), (r.get('ETF Ticker'), t, n)
