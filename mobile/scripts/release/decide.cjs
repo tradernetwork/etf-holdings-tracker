@@ -53,7 +53,7 @@ function decide({ enabled, appVersion, localFingerprint, baseline }) {
     return { action: 'build', reason: `App version is ${appVersion} but the latest production build is ${baseline.appVersion}. A new runtime has no binary to receive an OTA, so build one.` };
   }
   if (baseline.hash !== localFingerprint) {
-    return { action: 'build', reason: `Native fingerprint changed (${baseline.hash.slice(0, 8)} -> ${localFingerprint.slice(0, 8)}) at app version ${appVersion}. An OTA could crash installs on the old binary, so a binary is built and submitted instead; no OTA for this commit. Bump `version` in app.config.ts with native changes: otherwise the old and new binaries share a runtime and later OTAs reach both.` };
+    return { action: 'build', reason: `Native fingerprint changed (${baseline.hash.slice(0, 8)} -> ${localFingerprint.slice(0, 8)}) at app version ${appVersion}. An OTA could crash installs on the old binary, so a binary is built and submitted instead; no OTA for this commit. Bump "version" in app.config.ts with native changes: otherwise the old and new binaries share a runtime and later OTAs reach both.` };
   }
   return { action: 'ota', reason: `Native fingerprint unchanged (${localFingerprint.slice(0, 8)}) at app version ${appVersion}: a JS-only change, safe as an OTA.` };
 }
