@@ -42,6 +42,8 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .data import (
+    _is_company_name,
+    is_cash_name,
     is_cash_placeholder,
     is_money_market,
     EXCLUDED_FUNDS,
@@ -95,7 +97,9 @@ ARCHETYPES = {
 }
 
 _TREASURY_HINTS = ('TREASURY', 'T-BILL', 'TBILL', 'BILL ')
-_CASH_HINTS = ('CASH', 'MONEY MARKET', 'MMKT', 'OBLIGATIONS', 'GOVERNMENT & AGENCY',
+# Phrases that mark a cash line. The bare word CASH is NOT here: it is matched as a whole token by data.is_cash_name
+# (a substring would sweep up CASHBUILD, EUROCASH, FirstCash), and a company name is never cash (see _is_cash_hint).
+_CASH_HINTS = ('MONEY MARKET', 'MMKT', 'OBLIGATIONS', 'GOVERNMENT & AGENCY',
                'NET OTHER', 'OTHER ASSET', 'PAYABLE', 'RECEIVABLE')
 _SWAP_HINTS = ('SWAP', 'WEEKLYPAY')
 _CASH_TICKERS = {'WEEK', 'B', 'TBILL'}   # 'CASH' handled by data.is_cash_placeholder: Pathward (a stock) uses it
@@ -103,6 +107,13 @@ _CASH_TICKERS = {'WEEK', 'B', 'TBILL'}   # 'CASH' handled by data.is_cash_placeh
 
 def _is_option(r: dict) -> bool:
     return bool((r.get('Option_Type') or '').strip())
+
+
+def _is_cash_hint(name: str) -> bool:
+    """Cash by name: the whole word CASH or a cash phrase, and never a company / share-class name."""
+    if is_cash_name(name):
+        return True
+    return not _is_company_name(name) and any(h in name for h in _CASH_HINTS)
 
 
 def _sleeve_of(r: dict) -> str:
@@ -114,11 +125,12 @@ def _sleeve_of(r: dict) -> str:
     # A money-market FUND is cash even when its name says Treasury ("... Treasury Obligations ..."): checked before the T-bill hints.
     if is_money_market(ticker, name):
         return 'cash'
-    if any(h in name for h in _TREASURY_HINTS) or ticker in _CASH_TICKERS:
+    # A company is never a T-bill: TREASURY WINE ESTATES LTD COMMON STOCK is a stock.
+    if (not _is_company_name(name) and any(h in name for h in _TREASURY_HINTS)) or ticker in _CASH_TICKERS:
         return 'treasury'
     if is_cash_placeholder(ticker, name):
         return 'cash'
-    if any(h in name for h in _CASH_HINTS) or (len(ticker) == 5 and ticker.endswith('XX')):
+    if _is_cash_hint(name) or (len(ticker) == 5 and ticker.endswith('XX')):
         return 'cash'
     return 'equity'
 

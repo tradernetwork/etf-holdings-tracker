@@ -12,7 +12,11 @@ export type Sleeve = "stock" | "option" | "treasury" | "cash" | "swap";
 
 // Mirrors api/income.py `_sleeve_of` so the app and the Income screen agree on what a row is.
 const TREASURY_HINTS = ["TREASURY", "T-BILL", "TBILL", "BILL "];
-const CASH_HINTS = ["CASH", "MONEY MARKET", "MMKT", "OBLIGATIONS", "GOVERNMENT & AGENCY", "NET OTHER", "OTHER ASSET", "PAYABLE", "RECEIVABLE"];
+// The word CASH is matched as a whole token (never CASHBUILD, EUROCASH, FirstCash) and a company / share-class name is never cash.
+const CASH_HINTS = ["MONEY MARKET", "MMKT", "OBLIGATIONS", "GOVERNMENT & AGENCY", "NET OTHER", "OTHER ASSET", "PAYABLE", "RECEIVABLE"];
+const COMPANY_RE = /\b(COMMON STOCK|ORD|ADR|ETF|INC|CORP|CORPORATION|LTD|PLC|HOLDINGS|BANCORP|FINANCIAL|CO|COMPANY|GROUP|SA|NV|AG)\b/;
+/** Cash by name, mirroring api/data.py is_cash_name + api/income.py _is_cash_hint. `name` is upper-case. */
+export const isCashName = (name: string): boolean => !COMPANY_RE.test(name) && (/\bCASH\b/.test(name) || CASH_HINTS.some((h) => name.includes(h)));
 const SWAP_HINTS = ["SWAP", "WEEKLYPAY"];
 const CASH_TICKERS = new Set(["WEEK", "B", "TBILL", "CASH"]);
 
@@ -22,7 +26,7 @@ export function sleeveOf(r: Pick<HoldingRow, "isOption" | "name" | "ticker"> & {
   const ticker = (r.ticker ?? "").toUpperCase();
   // Pathward Financial's real ticker is CASH, so a ticker/class of "cash" is only trusted for non-company names.
   const looksLikeCompany = /\b(INC|CORP|CO|LTD|PLC|COMMON STOCK)\b/.test(name);
-  const nameHint = [...SWAP_HINTS, ...TREASURY_HINTS, ...CASH_HINTS].some((h) => name.includes(h));
+  const nameHint = SWAP_HINTS.some((h) => name.includes(h)) || (!COMPANY_RE.test(name) && TREASURY_HINTS.some((h) => name.includes(h))) || isCashName(name);
   // The server's assetClass (API #156) is authoritative for the non-equity classes, and since the money-market fix it
   // also classes FGXXX-style funds as cash. The two guards below stay for older servers: a company whose ticker is
   // CASH (Pathward, once classed "cash") and money-market funds an older server called "equity" (handled by the hints).
@@ -31,8 +35,8 @@ export function sleeveOf(r: Pick<HoldingRow, "isOption" | "name" | "ticker"> & {
     return r.assetClass === "other" ? "cash" : r.assetClass;
   }
   if (SWAP_HINTS.some((h) => name.includes(h))) return "swap";
-  if (TREASURY_HINTS.some((h) => name.includes(h)) || (CASH_TICKERS.has(ticker) && !looksLikeCompany)) return "treasury";
-  if (CASH_HINTS.some((h) => name.includes(h)) || (ticker.length === 5 && ticker.endsWith("XX"))) return "cash";
+  if ((!COMPANY_RE.test(name) && TREASURY_HINTS.some((h) => name.includes(h))) || (CASH_TICKERS.has(ticker) && !looksLikeCompany)) return "treasury";
+  if (isCashName(name) || (ticker.length === 5 && ticker.endsWith("XX"))) return "cash";
   return "stock";
 }
 

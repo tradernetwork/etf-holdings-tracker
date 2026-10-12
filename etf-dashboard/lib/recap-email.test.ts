@@ -8,7 +8,7 @@
 
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { renderRecapEmail, TM_REF_URL, type RecapEmailInput } from './recap-email.js';
+import { renderRecapEmail, TM_REF_URL, type RecapEmailInput } from './recap-email.ts';
 
 const SAMPLE: RecapEmailInput = {
     weekLabel: 'WEEK OF OCT 6 – 10',
