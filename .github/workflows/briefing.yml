@@ -1,0 +1,25 @@
+name: Morning Discord Briefing
+
+on:
+  schedule:
+    # 13:30 UTC weekdays: after the 12:00 scrape and the box's 15-minute sync
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Post briefing
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "DISCORD_WEBHOOK_URL not set — skipping."
+            exit 0
+          fi
+          python3 scripts/discord_briefing.py

@@ -81,7 +81,7 @@ def _build_payload(briefing: dict, sector_flow: dict) -> dict:
     top_sells = briefing.get("topSells", [])[:5]
     as_of = briefing.get("asOfDate") or ""
 
-    tm_block = f"See whether the options tape agreed on these buys, live on TraderMatrix: {TM_REF_URL}"
+    tm_block = f"Did the options tape agree with today's buys? → see it on TraderMatrix: {TM_REF_URL}"
 
     buys_text = (
         "\n".join(_fmt_signal(s, "buying") for s in top_buys) or "_No significant buys_"
@@ -90,14 +90,18 @@ def _build_payload(briefing: dict, sector_flow: dict) -> dict:
         "\n".join(_fmt_signal(s, "selling") for s in top_sells) or "_No significant sells_"
     )
     sectors_text = _fmt_sectors(sector_flow)
-    date_label = as_of or datetime.datetime.utcnow().strftime("%b %-d")
+    try:
+        day = datetime.date.fromisoformat(as_of)
+    except ValueError:
+        day = datetime.datetime.utcnow().date()
+    date_label = f"{day:%b} {day.day}"
 
     return {
         "username": "TickerTrace",
         "avatar_url": "https://tickertrace.pro/icon-192.png",
         "embeds": [
             {
-                "title": f"{date_label} · Institutional briefing",
+                "title": f"TickerTrace · {date_label} briefing",
                 "url": "https://tickertrace.pro/dashboard",
                 # Gold left border (0xE0B03A) per the Channels mock
                 "color": EMBED_COLOR,
@@ -125,7 +129,7 @@ def _build_payload(briefing: dict, sector_flow: dict) -> dict:
                 ],
                 "footer": {
                     "text": "TickerTrace · A TraderMatrix product · tickertrace.pro",
-                    "icon_url": "https://tickertrace.pro/icon-192.png",
+                    "icon_url": "https://tickertrace.pro/brand/tm-mark.png",
                 },
                 "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             }
