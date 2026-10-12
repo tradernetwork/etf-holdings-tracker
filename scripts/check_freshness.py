@@ -28,8 +28,13 @@ Usage:
 import datetime
 import json
 import os
+from pathlib import Path
 import sys
 import urllib.request
+
+# Share the API's NYSE calendar without external dependencies or API calls.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from api.data import _is_trading_day
 
 API_BASE = (sys.argv[1] if len(sys.argv) > 1 else "https://api.tickertrace.pro").rstrip("/")
 MAX_BUSINESS_DAY_LAG = 1   # alert when the live DATA is >1 business day behind
@@ -38,6 +43,24 @@ MAX_COMMITS_BEHIND = 5     # alert when the deployed CODE is >5 commits behind m
                            # on its own, so being 1-2 behind is normal transient lag.
 MAX_FUND_LAG = 3           # alert when a fund's own holdings are >3 business days behind
 REPO = "tradernetwork/etf-holdings-tracker"
+
+def required_snapshot_date(now: datetime.datetime, *, require_due: bool = False) -> datetime.date | None:
+    """The latest session whose 21:00 UTC delivery deadline has elapsed.
+
+    Strict late-canary runs still enforce yesterday if GitHub delays them past
+    midnight. Morning checks retain the existing relaxed business-day rule.
+    """
+    now = now.astimezone(datetime.timezone.utc)
+    day = now.date()
+    after_deadline = now.hour >= 21
+    if not require_due:
+        return day if after_deadline and _is_trading_day(day.isoformat()) else None
+    if not after_deadline:
+        day -= datetime.timedelta(days=1)
+    while not _is_trading_day(day.isoformat()):
+        day -= datetime.timedelta(days=1)
+    return day
+
 
 def business_days_between(start: datetime.date, end: datetime.date) -> int:
     """Count weekdays strictly after `start` up to and including `end`."""
@@ -90,12 +113,19 @@ def main() -> int:
         return 1
 
     asof = datetime.date.fromisoformat(asof_str)
-    today = datetime.datetime.now(datetime.timezone.utc).date()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.date()
     lag = business_days_between(asof, today)
     print(f"Live API: {API_BASE} | asOfDate={asof} | today(UTC)={today} | business-day lag={lag}")
 
     failed = False
-    if lag > MAX_BUSINESS_DAY_LAG:
+    due = required_snapshot_date(now, require_due=os.environ.get('REQUIRE_DAILY_SNAPSHOT') == '1')
+    if due is not None and asof < due:
+        print(f"::error::MISSED DAILY SNAPSHOT — expected at least {due} by 21:00 UTC; "
+              f"live API still serves {asof}. Check scheduled scrape delivery, failed runs "
+              "and sync_data.sh. Dispatch scrape.yml manually if today's run is missing.")
+        failed = True
+    elif lag > MAX_BUSINESS_DAY_LAG:
         print(f"::error::STALE DATA — live site is {lag} business days behind (asOf {asof}). "
               f"The daily scrape or the box self-sync (sync_data.sh) likely broke.")
         failed = True
