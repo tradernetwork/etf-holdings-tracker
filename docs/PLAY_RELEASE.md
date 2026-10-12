@@ -108,7 +108,7 @@ Download the `.aab` from the EAS build page. Optionally inspect it: `bundletool`
 
 ## 9. CI/CD (GitHub Actions)
 
-Ported from `tradernetwork/vero` (`build.yml`, `ota-update.yml`, `eas-ops.yml`). All three need the **`EXPO_TOKEN`** repo secret (a robot token for the `tradernetwork` Expo account). Production signing uses the **EAS-hosted** upload keystore (`play-upload-key`) and `versionCode` is remote with `autoIncrement`, so nothing about credentials or version codes lives in GitHub.
+Ported from `tradernetwork/vero` (`build.yml`, `ota-update.yml`, `eas-ops.yml`). All three need the **`EXPO_TOKEN`** repo secret (a robot token for the **`tradermatrix`** Expo account, the same account as Vero; the project was moved there from `tradernetwork`, same project id `788fe7b7…`, and `owner` in `app.config.ts` is `tradermatrix`). Production signing uses the **EAS-hosted** upload keystore (`play-upload-key`) and `versionCode` is remote with `autoIncrement`, so nothing about credentials or version codes lives in GitHub.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
@@ -124,11 +124,21 @@ The tag is only a trigger: the build uses the `app.config.ts` version, and the w
 
 **Ship a JS-only fix (OTA):** Actions → *OTA update (Android)* → Run workflow → pick the channel and a message. It reaches installs on the **same runtime** (the `app.config.ts` version) at their next cold launch. Native code, plugins or a version change need a new build instead. Note the preview APKs from before 1.0.0 are on runtime 0.1.0 and no longer receive OTAs from `main`; a preview OTA now targets runtime 1.0.0 builds.
 
-**One-time step: the Google Play service-account key goes to EAS, not GitHub.** Without it, `eas submit` and `--auto-submit` cannot publish, so every submitting path first runs `scripts/play/check-submit-key.mjs`, which fails **before the build is queued** with: *"No Google Play service-account key on EAS for pro.tickertrace.app … see docs/PLAY_RELEASE.md, section CI/CD"*. To create the key: Play Console → Setup → API access → link a Google Cloud project → create a service account, grant it release permissions on the app, create a JSON key. Then, from `mobile/`:
-```bash
-node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json          # dry run
-node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json --apply
-```
-It prints only the service account's `client_email` and key id (never the private key), is idempotent, and attaches the key as the app's submission key via the GraphQL mutations `createGoogleServiceAccountKey` and `setGoogleServiceAccountKeyForSubmissions`. Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `status` action.
+**One-time step: a Google Play service-account key goes on EAS, not GitHub.** Without it, `eas submit` and `--auto-submit` cannot publish, so every submitting path first runs `scripts/play/check-submit-key.mjs`, which fails **before the build is queued** with: *"No Google Play service-account key on EAS for pro.tickertrace.app … see docs/PLAY_RELEASE.md, section CI/CD"*. Two ways, both from `mobile/` (dry run unless `--apply`; they print only the service account's `client_email` and key ids, never a private key; idempotent):
+
+1. **Reuse Vero's key (preferred; same Expo account).** Vero's service account (`eas-play-submit@…`) already sits on the `tradermatrix` account, so it only needs attaching to this app. In Play Console it must also be granted access to the `pro.tickertrace.app` listing (Users and permissions → invite the service-account email with release permissions).
+   ```bash
+   node scripts/play/upload-play-submit-key-to-eas.mjs --use-existing eas-play-submit@<project>.iam.gserviceaccount.com          # or the key id; dry run
+   node scripts/play/upload-play-submit-key-to-eas.mjs --use-existing eas-play-submit@<project>.iam.gserviceaccount.com --apply
+   ```
+   An unknown key lists the account's keys by id and email (never contents). This calls only `setGoogleServiceAccountKeyForSubmissions`.
+2. **Upload a new key.** Play Console → Setup → API access → create a service account with release permissions and a JSON key, then
+   ```bash
+   node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json          # dry run
+   node scripts/play/upload-play-submit-key-to-eas.mjs ~/secrets/tickertrace-play/play-service-account.json --apply
+   ```
+   (`createGoogleServiceAccountKey` then `setGoogleServiceAccountKeyForSubmissions`.)
+
+Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `status` action. The scripts address the app as `@tradermatrix/tickertrace` (`EAS_APP_FULL_NAME` overrides, e.g. `@tradernetwork/tickertrace` if the transfer is not done yet). **Merge the `owner` change only after the transfer completes:** `eas` rejects a project whose `owner` differs from the account that holds the project id. Whoever moves `EXPO_TOKEN` to a `tradermatrix` token (GitHub secret and `~/secrets/tickertrace-play/expo-token`) does not need to touch the workflows.
 
 `eas.json` submit profiles: `production` (track `internal`, the default for every build) and `production-release` (track `production`, used only by `eas-ops` → `release-android-production`).

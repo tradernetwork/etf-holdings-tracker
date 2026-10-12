@@ -8,7 +8,7 @@ const app = await appAndCredentials();
 const key = app.androidAppCredentials[0]?.googleServiceAccountKeyForSubmissions ?? null;
 if (!key) {
   const msg = `No Google Play service-account key on EAS for ${APP_ID}, so builds cannot be submitted to Play. ` +
-    'Upload it once with mobile/scripts/play/upload-play-submit-key-to-eas.mjs; see docs/PLAY_RELEASE.md, section "CI/CD".';
+    'Attach one once with mobile/scripts/play/upload-play-submit-key-to-eas.mjs (--use-existing <keyId|clientEmail> for a key the Expo account already holds, or a service-account JSON); see docs/PLAY_RELEASE.md, section "CI/CD".';
   console.error(`::error title=No Play submit key on EAS::${msg}`);
   console.error(msg);
   process.exit(1);
