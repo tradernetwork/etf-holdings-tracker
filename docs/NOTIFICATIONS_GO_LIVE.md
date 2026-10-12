@@ -85,7 +85,7 @@ The app picks the update up on the next cold start (it checks on launch, applies
 | `expo-notifications` config plugin | yes (`app.config.ts` plugins) | yes |
 | Android 13+ `POST_NOTIFICATIONS` | yes: declared in the library's own `AndroidManifest.xml` (expo-notifications 57.0.22, line 3) and requested at runtime only after the user taps Enable | yes |
 | Notification channel `digest` | created at enable time (`setNotificationChannelAsync`) | yes |
-| `projectId` for `getExpoPushTokenAsync` | yes: `extra.eas.projectId = 788fe7b7-8733-4492-a5a4-1ba03cd8fb0c` (read by `easProjectId()`) | yes |
+| `projectId` for `getExpoPushTokenAsync` | yes: `extra.eas.projectId = 832c4b83-bff1-4577-a1d1-0cee447e72c3` (read by `easProjectId()`) | yes |
 | `google-services.json` (FCM) in the APK | **no** | **required** (this PR makes `app.config.ts` pick it up from `GOOGLE_SERVICES_JSON`) |
 | FCM V1 key in EAS | unknown, assume no | required |
 | Same signing key, so v4 installs over v3 | n/a | preview profile uses the local Play upload key (`credentialsSource: local`): build from the machine that holds `credentials.json` |

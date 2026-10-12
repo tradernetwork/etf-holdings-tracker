@@ -61,13 +61,13 @@ const config: ExpoConfig = {
   ],
   extra: {
     eas: {
-      projectId: "788fe7b7-8733-4492-a5a4-1ba03cd8fb0c",
+      projectId: "832c4b83-bff1-4577-a1d1-0cee447e72c3",
     },
   },
   // Over-the-air JS updates. Binary-pinned by runtimeVersion (appVersion policy, above); each
   // eas.json build profile sets its own `channel`.
   updates: {
-    url: "https://u.expo.dev/788fe7b7-8733-4492-a5a4-1ba03cd8fb0c",
+    url: "https://u.expo.dev/832c4b83-bff1-4577-a1d1-0cee447e72c3",
   },
 };
 
