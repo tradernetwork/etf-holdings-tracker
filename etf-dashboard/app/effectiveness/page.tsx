@@ -8,6 +8,7 @@ import {
     TrendingUp, ArrowRight, AlertTriangle, Share2, Copy, Check, ExternalLink
 } from 'lucide-react';
 import { SiteNav } from '@/components/site-nav';
+import { FlowChip } from '@/components/flow-chip';
 import { DataTable, type DataTableColumn, type DataTableRow } from '@/components/data-table';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tickertrace.pro';
@@ -30,6 +31,7 @@ interface FundSummary {
     premiumCapture: { score: number | null; netPremium: number; hedgeCostRatio: number | null };
     hedgeRatio: { score: number | null; coverageRatio: number | null; netPortfolioDelta: number | null };
     concentrationRisk: { score: number | null; hhi: number | null; uniqueUnderlyings: number };
+    topUnderlying?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -300,6 +302,7 @@ export default function EffectivenessPage() {
                                     align: 'center',
                                     mobilePriority: idx < 4 ? 'lg' : 'xl',
                                 })),
+                                { key: 'trade', header: <span className="text-tm-gold-bright font-bold">Trade it</span>, align: 'right', mobilePriority: 'sm' },
                             ];
                             const rows: DataTableRow[] = sortedFunds.map((f) => {
                                 const cellClassName: Record<string, string | undefined> = {};
@@ -344,6 +347,9 @@ export default function EffectivenessPage() {
                                     cells[m.key] = <ScoreCell score={score} />;
                                     cellClassName[m.key] = scoreBg(score);
                                 }
+                                cells['trade'] = f.topUnderlying
+                                    ? <FlowChip placement="scores_row" ticker={f.topUnderlying} label={`${f.topUnderlying} flow ↗`} icon={false} />
+                                    : <FlowChip placement="scores_row" label="Check flow ↗" icon={false} />;
                                 return { key: f.fund, cells, cellClassName };
                             });
                             return (

@@ -44,6 +44,13 @@ import { KeyboardSearch } from '@/components/keyboard-search';
 import { ActivityHeatmap } from '@/components/activity-heatmap';
 import { AskTickerTrace } from '@/components/ask-tickertrace';
 import { ShareButtons } from '@/components/share-buttons';
+import { WatchStar } from '@/components/watch-star';
+import { FlowChip } from '@/components/flow-chip';
+import { FlowCheckCard, type FlowCheckRow } from '@/components/flow-check-card';
+import { TMMark } from '@/components/tm-mark';
+import { TMLink } from '@/components/tm-link';
+import { EmailCapture } from '@/components/email-capture';
+import Image from 'next/image';
 // Auth UI was removed when TickerTrace went fully open. ProGate was a no-op
 // pass-through and got inlined out — if/when we ever paywall something again,
 // reach for a fresh wrapper component rather than reviving the old surface.
@@ -193,6 +200,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
           {stats.exitsToday != null && (
             <KPICard title="Exits Today" value={stats.exitsToday.toString()} icon={<TrendingDown className="h-4 w-4 text-rose-400" />} tooltip="Positions fully closed today — tickers where a tracked fund went from holding shares to zero. Pair with 'New Today' to gauge how much the institutional book is turning over." />
           )}
+          <TMLink
+            placement="kpi_flow_confirmed"
+            className="bg-tm-gold/[.07] border border-tm-gold/35 rounded-lg px-4 py-2 min-w-[150px] hover:border-tm-gold/70 transition-colors block"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-xs text-tm-gold-bright font-medium uppercase tracking-wider">Live flow</span>
+              <TMMark size={16} />
+            </div>
+            <div className="text-xl font-bold font-mono text-tm-gold-bright tracking-tight">
+              See it →
+            </div>
+          </TMLink>
         </div>
       </div>
 
@@ -212,6 +231,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
       {/* Ticker Detail (if searched) */}
       {searchQuery && <TickerDetailCard detail={tickerDetail} query={searchQuery} />}
+
+      {/* Flow check card */}
+      {dailySignals && dailySignals.buying.length > 0 && (() => {
+        const checkRows: FlowCheckRow[] = dailySignals.buying.slice(0, 6).map(s => ({
+          ticker: s.ticker,
+          name: s.name,
+          etf: `+${s.totalWeightDelta.toFixed(2)}%`,
+          etfSub: s.fundDetails.map(f => f.fund).slice(0, 2).join(', ') + (s.fundDetails.length > 2 ? ` +${s.fundDetails.length - 2}` : ''),
+        }));
+        return <FlowCheckCard rows={checkRows} />;
+      })()}
 
       {/* Leaderboard home — what institutions as a whole are doing, plus the
           tracked-funds overview. The familiar "top buys/sells" landing view. */}
@@ -415,6 +445,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
                 />
               </div>
               <div className="border-t border-rule pt-4">
+                <EmailCapture placement="email_capture_signals" />
+              </div>
+              <div className="border-t border-rule pt-4">
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">
                   Share this dashboard
                 </h3>
@@ -441,6 +474,16 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
           </Card>
         </CollapsibleContent>
       </Collapsible>
+      {/* Endorsed footer */}
+      <footer className="border-t border-rule pt-5 pb-2 flex flex-col items-center gap-2 text-center">
+        <Image src="/brand/tm-lockup.png" alt="TraderMatrix" width={120} height={22} className="opacity-85 h-auto" />
+        <p className="text-xs text-slate-500">
+          TickerTrace is the free data layer of{' '}
+          <TMLink placement="footer" className="text-tm-gold-bright hover:text-white transition-colors">TraderMatrix</TMLink>
+          {' · part of the '}
+          <a href="https://tradernetwork.io" target="_blank" rel="noopener noreferrer" className="text-buy hover:text-white transition-colors">Trader Network</a>
+        </p>
+      </footer>
     </div>
   );
 }
@@ -512,6 +555,13 @@ function DivergenceRow({ divergence: d }: { divergence: ApiDivergence }) {
         </div>
         <span className="text-[10px] font-mono text-sell shrink-0 w-14">-{totalSell.toFixed(2)}%</span>
       </div>
+      <TMLink
+        placement="divergence_row"
+        ticker={d.ticker}
+        className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-tm-gold-bright hover:text-white transition-colors"
+      >
+        Funds are split on {d.ticker}. See which side the options flow is on ↗
+      </TMLink>
     </div>
   );
 }
@@ -671,6 +721,7 @@ function SectorFlowCard({ flows }: { flows: FlatSectorEntry[] }) {
 
   const inflowing = flows.filter(f => f.weightDelta > 0);
   const outflowing = flows.filter(f => f.weightDelta < 0);
+  const topInflow = inflowing[0];
 
   return (
     <Card className="bg-surface border-rule">
@@ -680,6 +731,19 @@ function SectorFlowCard({ flows }: { flows: FlatSectorEntry[] }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 space-y-3">
+        {topInflow && (
+          <TMLink
+            placement="sector_flow"
+            className="flex flex-col gap-0.5 rounded-xl border border-tm-gold/30 bg-tm-gold/[.06] px-3 py-2.5 hover:border-tm-gold/60 transition-colors"
+          >
+            <span className="text-xs font-bold text-tm-gold-bright">
+              Funds are rotating into {topInflow.sector} today.
+            </span>
+            <span className="text-[11px] text-slate-400">
+              See which names are getting sweeps right now on TraderMatrix →
+            </span>
+          </TMLink>
+        )}
         {inflowing.length > 0 && (
           <div>
             <h4 className="text-[10px] font-semibold uppercase tracking-widest text-buy mb-1.5">Money Flowing In</h4>
@@ -986,9 +1050,11 @@ function SignalRow({ signal, rank }: { signal: ApiSignal; rank: number }) {
           {signal.sector && (
             <span className="text-[9px] font-medium px-1.5 py-0 rounded border border-rule-strong bg-surface-elevated text-slate-500 leading-4 shrink-0">{signal.sector}</span>
           )}
+          <FlowChip placement="signal_row" ticker={signal.ticker} compact />
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        <WatchStar type="stock" symbol={signal.ticker} />
         <div className="flex flex-wrap gap-1 justify-end max-w-[100px]">
           {signal.fundDetails.map(f => (
             <FundBadge key={f.fund} fund={f.fund} />

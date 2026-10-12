@@ -80,7 +80,7 @@ function buildEmbed(props: DiscordWebhookProps) {
                     },
                 ],
                 footer: {
-                    text: 'TickerTrace • tickertrace.pro • giving retail a fighting chance',
+                    text: 'TickerTrace · A TraderMatrix product · tickertrace.pro',
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -177,7 +177,7 @@ export function DiscordWebhook(props: DiscordWebhookProps) {
             {expanded && (
                 <div className="px-4 pb-4 pt-1 space-y-3 border-t border-rule">
                     <p className="text-xs text-slate-500">
-                        Paste your Discord webhook URL — it's saved in your browser so you only need to do this once.
+                        Paste your Discord webhook URL — it&apos;s saved in your browser so you only need to do this once.
                     </p>
 
                     <div className="flex gap-2">
@@ -257,7 +257,7 @@ function EmbedPreview(props: DiscordWebhookProps) {
         <div className="mt-2">
             <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5 font-semibold">Preview</p>
             {/* Discord-style embed card */}
-            <div className="bg-[#2f3136] rounded border-l-4 border-l-equity p-3 space-y-2.5 text-[11px]">
+            <div className="bg-[#2f3136] rounded border-l-4 border-l-[#e0b03a] p-3 space-y-2.5 text-[11px]">
                 {/* Title */}
                 <div>
                     <a className="text-equity font-bold text-xs hover:underline cursor-pointer">🎯 TickerTrace Daily Intel</a>
@@ -312,7 +312,7 @@ function EmbedPreview(props: DiscordWebhookProps) {
 
                 {/* Footer */}
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 border-t border-[#40444b] pt-2">
-                    <span>TickerTrace • tickertrace.pro • giving retail a fighting chance</span>
+                    <span>TickerTrace · A TraderMatrix product · tickertrace.pro</span>
                 </div>
             </div>
         </div>

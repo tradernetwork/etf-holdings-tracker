@@ -30,6 +30,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import React, { Suspense } from 'react';
 import { FundEffectiveness } from '@/components/fund-effectiveness';
+import { WatchButton } from '@/components/watch-star';
+import { FlowChip } from '@/components/flow-chip';
+import { TMBridge } from '@/components/tm-bridge';
 import { RotationPanel } from '@/components/rotation-panel';
 import { FundPositions } from '@/components/fund-positions';
 import { catchUpLabel } from '@/lib/catch-up';
@@ -190,6 +193,7 @@ function FundHeader({ detail, aum, category }: {
                             valueClass={detail.flow.flowPct >= 0 ? 'text-buy' : 'text-sell'}
                         />
                     )}
+                    <WatchButton type="fund" symbol={detail.fund} onLabel="Following" offLabel="Follow fund" />
                 </div>
             </div>
         </div>
@@ -206,7 +210,9 @@ async function ActiveEquityBody({ detail, fund, period }: {
     // limit 1000 — the marquee needs the TRUE entrance/exit count, so fetch
     // the whole window. Even AVUV (~800 holdings) tops out around 800 changes
     // monthly, so 1000 captures every move without clipping.
-    const res = await api.changes({ fund, period, limit: 1000 }, { throwOnError: false });
+    const [res] = await Promise.all([
+        api.changes({ fund, period, limit: 1000 }, { throwOnError: false }),
+    ]);
     const changes = res?.changes ?? [];
 
     const entrances = changes.filter(c => c.type === 'NEW');
@@ -266,6 +272,25 @@ async function ActiveEquityBody({ detail, fund, period }: {
                     )}
                 </CardContent>
             </Card>
+
+            {/* fund_mirror bridge: only shown when there are real entrances */}
+            {entrances.length > 0 && (() => {
+                const top = entrances.slice(0, 3).map(r => r.ticker);
+                const periodWord = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
+                const titleText = top.length === 1
+                    ? `${fund} entered ${top[0]} ${periodWord}`
+                    : top.length === 2
+                        ? `${fund} added ${top[0]} and ${top[1]} ${periodWord}`
+                        : `${fund} added ${top[0]}, ${top[1]} and ${top[2]} ${periodWord}`;
+                return (
+                    <TMBridge
+                        placement="fund_mirror"
+                        title={titleText}
+                        body="Check whether the options flow agrees before you follow the trade."
+                        cta={`Check ${fund}'s buys →`}
+                    />
+                );
+            })()}
 
             {streaks.length > 0 && <StreakTracker streaks={streaks} />}
 
@@ -493,15 +518,17 @@ function MarqueeCard({ kind, records, period }: {
             ) : (
                 <div className="flex flex-wrap gap-1.5">
                     {records.slice(0, 16).map((r, i) => (
-                        <Link
-                            key={`${r.ticker}-${i}`}
-                            href={`/stocks/${r.ticker}`}
-                            title={`${r.name}${r.sector ? ' · ' + r.sector : ''}`}
-                            className="font-mono text-xs font-bold px-2 py-0.5 rounded border transition-opacity hover:opacity-80"
-                            style={{ color: accent, borderColor: `color-mix(in srgb, ${accent} 27%, transparent)`, backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)` }}
-                        >
-                            <span className={isEntrances ? '' : 'line-through'}>{r.ticker}</span>
-                        </Link>
+                        <span key={`${r.ticker}-${i}`} className="inline-flex items-center gap-1">
+                            <Link
+                                href={`/stocks/${r.ticker}`}
+                                title={`${r.name}${r.sector ? ' · ' + r.sector : ''}`}
+                                className="font-mono text-xs font-bold px-2 py-0.5 rounded border transition-opacity hover:opacity-80"
+                                style={{ color: accent, borderColor: `color-mix(in srgb, ${accent} 27%, transparent)`, backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)` }}
+                            >
+                                <span className={isEntrances ? '' : 'line-through'}>{r.ticker}</span>
+                            </Link>
+                            <FlowChip placement="fund_marquee_row" ticker={r.ticker} icon={false} compact />
+                        </span>
                     ))}
                     {records.length > 16 && (
                         <span className="text-xs text-slate-500 self-center">+{records.length - 16} more</span>

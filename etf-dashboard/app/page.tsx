@@ -1,16 +1,33 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ReferralTracker } from '@/components/referral-tracker';
 import { ShareButtons } from '@/components/share-buttons';
 import { DataFreshness } from '@/components/data-freshness';
+import { TMLink } from '@/components/tm-link';
+import { TMMark, TickerTraceLockup } from '@/components/tm-mark';
+import { FlowCheckCard } from '@/components/flow-check-card';
+import { EmailCapture } from '@/components/email-capture';
+import { api } from '@/lib/api';
 import {
-  TrendingUp, Zap, BarChart3, Search, GitFork, Bell,
+  TrendingUp, Zap, BarChart3, Search, GitFork,
   ArrowRight, CheckCircle2, Clock, Eye, Layers,
 } from 'lucide-react';
 import React from 'react';
 
-export const revalidate = 86400; // daily revalidation for landing page
+export const revalidate = 3600; // hourly — keeps fundsTracked + top-buys fresh
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Non-throwing so the page renders even if the API is down
+  const [briefing, stats] = await Promise.all([
+    // briefing is a few KB and cacheable; /signals is 2MB+ and never cached
+    api.briefing({ throwOnError: false }),
+    api.stats({ throwOnError: false }),
+  ]);
+
+  const fundsTracked = stats?.fundsTracked ?? 98;
+  // Top 3 buying signals — power the flow check module
+  const topBuys = briefing?.topBuys.slice(0, 3) ?? [];
+
   return (
     <div className="min-h-dvh bg-canvas text-white font-sans overflow-x-hidden">
       {/* Referral tracker — invisible, captures ?ref= param */}
@@ -18,35 +35,32 @@ export default function LandingPage() {
 
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-canvas/80 backdrop-blur-md border-b border-rule">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-xl font-bold text-equity tracking-tight">
-            TICKER<span className="text-white">TRACE</span>
-          </span>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+          <TickerTraceLockup size="md" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/dashboard" className="hidden md:block text-sm text-slate-400 hover:text-white transition-colors">
               Dashboard
             </Link>
-            <Link href="/effectiveness" className="text-sm text-slate-400 hover:text-white transition-colors">
+            <Link href="/effectiveness" className="hidden lg:block text-sm text-slate-400 hover:text-white transition-colors">
               Effectiveness
             </Link>
-            <Link href="/options-listings" className="text-sm text-slate-400 hover:text-white transition-colors">
+            <Link href="/options-listings" className="hidden lg:block text-sm text-slate-400 hover:text-white transition-colors">
               Options
             </Link>
-            <Link href="https://api.tickertrace.pro/docs" target="_blank" className="text-sm text-slate-400 hover:text-white transition-colors">
+            <Link href="https://api.tickertrace.pro/docs" target="_blank" className="hidden lg:block text-sm text-slate-400 hover:text-white transition-colors">
               API
             </Link>
-            <a
-              href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-meta-bright hover:text-white transition-colors border border-meta/30 hover:border-meta/60 px-3 py-1.5 rounded-md bg-meta/5"
+            <TMLink
+              placement="landing_nav"
+              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-tm-gold-bright hover:text-white transition-colors border border-tm-gold/30 hover:border-tm-gold/60 px-3 py-1.5 rounded-md bg-tm-gold/5"
               title="We track. TraderMatrix trades."
             >
-              🧠 TraderMatrix
-            </a>
+              <TMMark size={14} />
+              TraderMatrix
+            </TMLink>
             <Link
               href="/dashboard"
-              className="px-4 py-2 bg-equity text-canvas text-sm font-bold rounded-lg hover:bg-white transition-colors"
+              className="inline-flex items-center min-h-11 px-4 py-2 bg-equity text-canvas text-sm font-bold rounded-lg hover:bg-white transition-colors whitespace-nowrap"
             >
               Open Intel →
             </Link>
@@ -54,36 +68,34 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Open-access ribbon */}
-      <div className="bg-gradient-to-r from-meta/10 via-equity/10 to-buy/10 border-b border-meta/20">
-        <div className="max-w-6xl mx-auto px-6 py-2.5 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
+      {/* Gradient ribbon */}
+      <div className="bg-gradient-to-r from-tm-gold/10 via-equity/[.08] to-buy/[.08] border-b border-tm-gold/20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
           <span className="text-xs text-slate-300">
-            <span className="text-meta font-bold">TraderMatrix</span> trades the flow.{' '}
+            <span className="text-tm-gold-bright font-bold">TraderMatrix</span> trades the flow.{' '}
             <span className="text-equity font-bold">TickerTrace</span> shows you the daily ETF data underneath — free, no login.
           </span>
           <span className="hidden sm:inline text-slate-600">·</span>
-          <a
-            href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-bold text-meta-bright hover:text-white inline-flex items-center gap-1 transition-colors"
+          <TMLink
+            placement="landing_ribbon"
+            className="text-xs font-bold text-tm-gold-bright hover:text-white inline-flex items-center gap-1 min-h-11 sm:min-h-0 transition-colors"
           >
             See the live flow →
-          </a>
+          </TMLink>
         </div>
       </div>
 
-      {/* Hero — front-run institutions, two products in one stack */}
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
-        <div className="inline-flex items-center gap-2 bg-meta/10 border border-meta/20 text-meta-bright text-xs font-semibold px-4 py-2 rounded-full mb-8">
-          <span className="w-2 h-2 rounded-full bg-meta animate-pulse" />
+      {/* Hero */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 bg-tm-gold/10 border border-tm-gold/25 text-tm-gold-bright text-xs font-semibold px-4 py-2 rounded-full mb-8">
+          <span className="w-2 h-2 rounded-full bg-tm-gold animate-pulse" />
           LIVE INSTITUTIONAL FLOW · 100+ ACTIVE TRADERS
         </div>
         <DataFreshness />
 
         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-6">
           Front-run the institutions.<br />
-          <span className="bg-gradient-to-r from-meta via-equity to-buy bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-tm-gold via-equity to-buy bg-clip-text text-transparent">
             Before retail gets the memo.
           </span>
         </h1>
@@ -93,26 +105,25 @@ export default function LandingPage() {
         </p>
 
         <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          <span className="text-meta font-bold">TraderMatrix</span> shows what the smart money is doing
+          <span className="text-tm-gold-bright font-bold">TraderMatrix</span> shows what the smart money is doing
           in real time — sweeps, blocks, golden sweeps, decoded by AI.
           <span className="text-equity font-bold"> TickerTrace</span> is the daily ETF positioning layer
-          underneath: what 71 institutional funds are actually buying, normalized and free.
+          underneath: what {fundsTracked} institutional funds are actually buying, normalized and free.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-meta to-[#7c3aed] text-white font-bold text-lg rounded-xl hover:from-[#9060f0] hover:to-[#6d28d9] transition-all shadow-lg shadow-meta/20"
+          <TMLink
+            placement="landing_hero"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-tm-gold text-canvas font-bold text-lg rounded-xl hover:bg-tm-gold-bright transition-all shadow-lg shadow-tm-gold/20"
           >
-            🧠 Trade the Flow — TraderMatrix <ArrowRight className="h-5 w-5" />
-          </a>
+            <TMMark size={22} />
+            Trade the Flow on TraderMatrix <ArrowRight className="h-5 w-5" />
+          </TMLink>
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 px-8 py-4 bg-surface border border-equity/40 text-white font-semibold text-lg rounded-xl hover:bg-surface-hover hover:border-equity transition-colors"
           >
-            <Eye className="h-5 w-5 text-equity" /> Preview the Data — Free
+            <Eye className="h-5 w-5 text-equity" /> Preview the Data, Free
           </Link>
         </div>
 
@@ -121,8 +132,31 @@ export default function LandingPage() {
         </p>
       </section>
 
+      {/* Flow-confirmed / today's top ETF buys module */}
+      {topBuys.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-rule">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2">
+            Today’s top ETF buys — did the options tape agree?
+          </h2>
+          <p className="text-slate-400 text-center mb-10 max-w-lg mx-auto text-sm">
+            Highest-conviction institutional buys today. The live options flow behind them is on TraderMatrix.
+          </p>
+          <div className="max-w-4xl mx-auto">
+            <FlowCheckCard
+              rows={topBuys.map(sig => ({
+                ticker: sig.ticker,
+                name: sig.name,
+                etf: `+${sig.totalWeightDelta.toFixed(2)}%`,
+                etfSub: `${sig.providerCount} fund ${sig.providerCount === 1 ? 'family' : 'families'}`,
+              }))}
+              headerPlacement="landing_confirmed"
+            />
+          </div>
+        </section>
+      )}
+
       {/* The problem — 90-day delay explained */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-rule" id="why-retail-loses">
         <h2 className="text-3xl font-bold text-center mb-4">Why retail loses</h2>
         <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
           Speed of information. By the time the public sees institutional positioning, the trade is months old.
@@ -150,54 +184,55 @@ export default function LandingPage() {
       </section>
 
       {/* The Stack — how the two products fit together */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
         <h2 className="text-3xl font-bold text-center mb-4">The stack</h2>
         <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
           Two layers, one workflow. The free data layer feeds the paid execution layer.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          <div className="bg-gradient-to-br from-surface-gradient to-surface border border-meta/30 rounded-2xl p-8 shadow-lg shadow-meta/10">
-            <div className="text-xs font-bold text-meta-bright uppercase tracking-widest mb-3">Layer 1 · Execution</div>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">🧠</span>
-              <h3 className="text-2xl font-black text-white">TraderMatrix.Pro</h3>
+          {/* Layer 1: TraderMatrix */}
+          <div className="bg-gradient-to-br from-surface-gradient to-surface border border-tm-gold/30 rounded-2xl p-8 shadow-lg shadow-tm-gold/10">
+            <div className="text-xs font-bold text-tm-gold-bright uppercase tracking-widest mb-4">Layer 1 · Execution</div>
+            <div className="mb-5">
+              <Image src="/brand/tm-lockup.png" alt="TraderMatrix" width={180} height={32} className="h-8 w-auto" />
             </div>
             <p className="text-slate-300 mb-6">
               Real-time options flow detection. Sweeps, blocks, golden sweeps tracked as they hit the tape —
               with institutional conviction scoring and an AI coach that translates each signal into plain English.
             </p>
             <ul className="space-y-2 mb-8 text-sm text-slate-300">
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-meta shrink-0" />SWEEP / BLOCK / GOLDEN SWEEP flow detection</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-meta shrink-0" />TraderLady AI — every flow translated in real time</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-meta shrink-0" />7 screeners, GEX levels, congressional trades</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-meta shrink-0" />1-minute refresh · 24/7 market coverage</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-tm-gold shrink-0" />SWEEP / BLOCK / GOLDEN SWEEP flow detection</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-tm-gold shrink-0" />TraderLady AI — every flow translated in real time</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-tm-gold shrink-0" />7 screeners, GEX levels, congressional trades</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-tm-gold shrink-0" />1-minute refresh · 24/7 market coverage</li>
             </ul>
-            <a
-              href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-center py-3 rounded-xl font-bold transition-all bg-gradient-to-r from-meta to-[#7c3aed] text-white hover:from-[#9060f0] hover:to-[#6d28d9]"
+            <TMLink
+              placement="landing_stack"
+              className="block text-center py-3 rounded-xl font-bold transition-all bg-tm-gold text-canvas hover:bg-tm-gold-bright"
             >
               Start Free Trial →
-            </a>
+            </TMLink>
           </div>
 
+          {/* Layer 0: TickerTrace */}
           <div className="bg-gradient-to-br from-surface-gradient to-surface border border-equity/30 rounded-2xl p-8 shadow-lg shadow-equity/10">
-            <div className="text-xs font-bold text-equity uppercase tracking-widest mb-3">Layer 0 · Free Data</div>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">📊</span>
-              <h3 className="text-2xl font-black text-white">TickerTrace</h3>
+            <div className="text-xs font-bold text-equity uppercase tracking-widest mb-4">Layer 0 · Free Data</div>
+            <div className="flex items-center gap-2.5 mb-5">
+              <TMMark size={28} />
+              <span className="text-[22px] leading-none tracking-[.14em] text-tm-steel">
+                <span className="font-light">TICKER</span><span className="font-extrabold">TRACE</span>
+              </span>
             </div>
             <p className="text-slate-300 mb-6">
-              Daily ETF holdings, normalized across providers. 71 institutional funds tracked, every position
-              every day, with cross-fund conviction scoring and divergence detection. No login, no paywall.
+              Daily ETF holdings, normalized across providers. {fundsTracked} institutional funds tracked, every
+              position every day, with cross-fund conviction scoring and divergence detection. No login, no paywall.
             </p>
             <ul className="space-y-2 mb-8 text-sm text-slate-300">
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />ARK · Avantis · Amplify · Corgi · YieldMax · Roundhill · Kurv · REX · NestYield · Sprott · NicholasX</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />ARK · Avantis · Capital Group · YieldMax · Roundhill · Kurv · REX and more</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />Conviction scoring · streak tracking · sector flow</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />Activity heatmap · divergence alerts · option decoder</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />Open JSON API · same data TraderMatrix reads</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />Layering Radar · divergence alerts · option decoder</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-equity shrink-0" />Open JSON API + MCP server · same data TraderMatrix reads</li>
             </ul>
             <Link
               href="/dashboard"
@@ -209,8 +244,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Email capture — smart money recap, every Sunday */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-rule">
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3">Smart money recap, every Sunday</h2>
+          <p className="text-slate-400 mb-6 text-sm">
+            The week&apos;s biggest institutional buys, the new layering patterns, and which of them the options tape agreed with.
+          </p>
+          <EmailCapture placement="email_capture_landing" />
+        </div>
+      </section>
+
       {/* Features grid — capabilities across the stack */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
         <h2 className="text-3xl font-bold text-center mb-4">What you get</h2>
         <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
           The free data layer hands you everything below. The paid execution layer turns it into trades.
@@ -257,7 +303,7 @@ export default function LandingPage() {
       </section>
 
       {/* Option decoder callout */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
         <div className="bg-gradient-to-r from-surface to-surface-gradient border border-rule rounded-2xl p-10 text-center">
           <div className="text-4xl mb-4">💰 🛡️</div>
           <h2 className="text-3xl font-bold mb-4">Option flow, decoded</h2>
@@ -278,7 +324,7 @@ export default function LandingPage() {
       </section>
 
       {/* Competitor comparison */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
         <h2 className="text-3xl font-bold text-center mb-4">The data layer, vs. the alternatives</h2>
         <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
           Other tools charge $19–$500/mo for ETF data. TickerTrace gives it away free — and TraderMatrix
@@ -293,13 +339,13 @@ export default function LandingPage() {
                 <th className="px-4 py-3 text-center">TickerTrace</th>
                 <th className="px-4 py-3 text-center">13F Filings</th>
                 <th className="px-4 py-3 text-center">ETF Research Center</th>
-                <th className="px-4 py-3 text-center">Cathie's ARK Tracker</th>
+                <th className="px-4 py-3 text-center">Cathie&apos;s ARK Tracker</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-rule">
               <CompRow feature="Update frequency" us="Daily" them="Quarterly" etfrc="Daily" ark="Daily" />
               <CompRow feature="Data delay" us="Same day" them="90+ days" etfrc="Same day" ark="Same day" />
-              <CompRow feature="Cross-fund coverage" us="71 funds, 11 providers" them="All 13F filers" etfrc="Broad" ark="ARK only (6 ETFs)" />
+              <CompRow feature="Cross-fund coverage" us={`${fundsTracked} funds, 13 providers`} them="All 13F filers" etfrc="Broad" ark="ARK only (6 ETFs)" />
               <CompRow feature="Conviction scoring" us="✓" them="✗" etfrc="✗" ark="✗" />
               <CompRow feature="Streak tracking" us="✓" them="✗" etfrc="✗" ark="✗" />
               <CompRow feature="Option flow decoded" us="✓" them="✗" etfrc="✗" ark="✗" />
@@ -316,8 +362,8 @@ export default function LandingPage() {
       </section>
 
       {/* Final dual CTA — single conversion moment after the comparison table */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
-        <div className="bg-gradient-to-r from-[#1a1430] via-surface-gradient to-[#0a1a1f] border border-meta/20 rounded-2xl p-10 text-center">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
+        <div className="bg-gradient-to-r from-[#1a1308] via-surface-gradient to-[#0a1a1f] border border-tm-gold/20 rounded-2xl p-10 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">
             Stop trading <span className="text-sell">90-day-old</span> data.
           </h2>
@@ -326,14 +372,13 @@ export default function LandingPage() {
             pay six figures for — minus the prime brokerage.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-meta to-[#7c3aed] text-white font-bold rounded-xl hover:from-[#9060f0] hover:to-[#6d28d9] transition-all shadow-lg shadow-meta/20"
+            <TMLink
+              placement="landing_final"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-tm-gold text-canvas font-bold rounded-xl hover:bg-tm-gold-bright transition-all shadow-lg shadow-tm-gold/20"
             >
-              🧠 Start with TraderMatrix <ArrowRight className="h-5 w-5" />
-            </a>
+              <TMMark size={20} />
+              Start with TraderMatrix <ArrowRight className="h-5 w-5" />
+            </TMLink>
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-2 px-8 py-4 bg-surface border border-equity/40 text-white font-semibold rounded-xl hover:bg-surface-hover hover:border-equity transition-colors"
@@ -348,13 +393,19 @@ export default function LandingPage() {
       </section>
 
       {/* Changelog — patch notes from the trenches */}
-      <section className="max-w-6xl mx-auto px-6 py-20 border-t border-rule">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-rule">
         <h2 className="text-3xl font-bold text-center mb-3">Patch Notes from the Trenches</h2>
         <p className="text-slate-400 text-center mb-10 max-w-xl mx-auto text-sm">
           We ship constantly and document it honestly. Here&apos;s what landed recently.
         </p>
 
         <div className="max-w-2xl mx-auto space-y-4">
+          <ChangelogEntry
+            date="October 12, 2026"
+            tag="feature"
+            title="New TraderMatrix-endorsed logo, flow check bridges, and a watchlist that lives in your browser"
+            desc="The site finally looks like what it is. We swapped the old text logo for the real TickerTrace mark with the 'A TraderMatrix Product' line underneath it, because a product that feeds a paid platform should probably say so in the header, not just at the bottom of the page. The landing page got rebuilt around that — the big purple brain emoji is gone, the TraderMatrix CTAs are now the actual TraderMatrix gold, and every link out to them carries a placement ID so we can tell which parts of the page are actually driving clicks. We also added a flow check module right below the hero: it pulls today's top institutional buys and drops them next to a blurred TraderMatrix flow cell, so you can see the two layers side by side without having to already know what each product does. The watchlist is new and quiet — star any ticker on the dashboard or stocks page and it saves to your browser. Nothing to sign up for, nothing on our servers, just a small star that remembers what you were watching. Finally, the Sunday email recap has a real subscribe form now instead of a link that went nowhere."
+          />
           <ChangelogEntry
             date="October 11, 2026"
             tag="bugfix"
@@ -475,6 +526,12 @@ export default function LandingPage() {
             title="Option activity now has dates, sizes, and tells you what the trade actually was"
             desc="The option activity card on the income fund pages was a grid of contract names with ADDED or TRIMMED stickers and no dates, and it was quietly wrong. It judged ADDED versus TRIMMED from weight, and weight moves when the price moves, so KQQQ's synthetic positions showed as trimmed on days it held exactly the same number of contracts. It also called every call Capping upside, including the ones the fund bought. It is now a dated timeline of the last ten trading days built from actual contract counts. Changes of the same size on the same stock get paired up, so instead of two unrelated lines you see one roll from the 360 call expiring 9/18 to the 375 call expiring 10/2, 210 contracts, written. Spreads, synthetic stock and expiries get named for what they are, and every leg shows the before and after count. The separate rolls card folded into it. The positions table picked up an opened date on each option leg, and the fund header now shows the date on the issuer's own file and flags it when that file is stale, so a fund frozen since August can't pass itself off as current."
           />
+          <details className="group">
+            <summary className="cursor-pointer list-none text-center text-sm font-bold text-equity hover:text-white py-3 min-h-11 [&::-webkit-details-marker]:hidden">
+              <span className="group-open:hidden">Show older patch notes ↓</span>
+              <span className="hidden group-open:inline">Hide older patch notes ↑</span>
+            </summary>
+            <div className="space-y-4 mt-2">
           <ChangelogEntry
             date="September 27, 2026"
             tag="bugfix"
@@ -1495,6 +1552,8 @@ export default function LandingPage() {
             title="CUSIP → Ticker resolver"
             desc="Some funds only publish CUSIP identifiers (9-char codes), not ticker symbols. Built a cache + OpenFIGI fallback. Cache hit rate: ~95%. Cost: $0. Time spent debugging why 'N97284108' wasn't resolving: too long."
           />
+            </div>
+          </details>
         </div>
 
         <div className="mt-10 text-center">
@@ -1523,23 +1582,10 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-rule py-10 text-center text-slate-500 text-sm">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="text-equity font-bold">TICKER<span className="text-white">TRACE</span></span>
-          <span>·</span>
-          <span>giving retail a fighting chance</span>
-        </div>
-        <p className="text-xs mb-3">
-          A{' '}
-          <a
-            href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-meta hover:text-white transition-colors"
-          >
-            TraderMatrix
-          </a>{' '}
-          product · part of the{' '}
+      <footer className="border-t border-rule py-10 text-center text-slate-500 text-sm flex flex-col items-center gap-3">
+        <TickerTraceLockup size="md" />
+        <p className="text-xs text-slate-500">
+          giving retail a fighting chance · part of the{' '}
           <a
             href="https://tradernetwork.io"
             target="_blank"
@@ -1558,6 +1604,7 @@ export default function LandingPage() {
           {' · '}
           <a href="mailto:mphinance@gmail.com" className="hover:text-white transition-colors">Contact</a>
         </p>
+        <p className="text-[10px] text-slate-600">Referral link to TraderMatrix disclosed.</p>
       </footer>
     </div>
   );

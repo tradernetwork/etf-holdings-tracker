@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { FUND_PROVIDERS, FUND_AUM } from '@/lib/providers';
+import { FlowChip } from '@/components/flow-chip';
 
 interface Change {
     fund: string;
@@ -264,6 +265,19 @@ export function ChangesClient({ changes, providers }: {
             },
         },
         {
+            id: 'flow',
+            header: () => <div className="text-center" style={{ color: '#e0b03a', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.08em' }}>Flow</div>,
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Change } }) => {
+                if (row.original.isOption) return <div className="flex justify-center"><span className="text-slate-700 text-[10px]">-</span></div>;
+                return (
+                    <div className="flex justify-center">
+                        <FlowChip placement="changes_row" ticker={row.original.ticker} icon />
+                    </div>
+                );
+            },
+        },
+                {
             id: 'weightDelta',
             // Use active weight delta (price-drift removed) for both the
             // displayed value and sort magnitude.

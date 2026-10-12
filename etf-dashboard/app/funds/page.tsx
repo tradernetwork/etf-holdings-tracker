@@ -6,6 +6,7 @@ import { Building2, AlertCircle, ArrowUpRight, ArrowDownRight } from 'lucide-rea
 import Link from 'next/link';
 import { formatAum } from '@/lib/utils';
 import { PROVIDER_ORDER } from '@/lib/providers';
+import { TMBridge } from '@/components/tm-bridge';
 
 export const dynamic = 'force-dynamic';
 
@@ -208,6 +209,15 @@ export default async function FundsPage({
                     })}
                 </div>
             )}
+
+            {/* TM Bridge: holdings file after close, flow is live on TM */}
+            <TMBridge
+                compact
+                placement="funds_banner"
+                title="TraderMatrix shows the options flow behind these names during the session."
+                body="Holdings are filed after the close."
+                cta="Open live flow →"
+            />
 
             {resp === null ? (
                 <div className="bg-surface border border-rule rounded-xl p-10 text-center">

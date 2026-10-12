@@ -1,8 +1,8 @@
 {
   "id": "/dashboard",
-  "name": "TickerTrace — Institutional ETF Intelligence",
+  "name": "TickerTrace — a TraderMatrix product",
   "short_name": "TickerTrace",
-  "description": "Track daily institutional ETF holdings changes, conviction-scored signals, and options-income fund flows.",
+  "description": "Track daily institutional ETF holdings changes, conviction-scored signals, and options-income fund flows. A TraderMatrix product.",
   "lang": "en-US",
   "start_url": "/dashboard?source=twa",
   "scope": "/",
@@ -64,6 +64,16 @@
     {
       "name": "Stocks",
       "url": "/stocks?source=shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Watchlist",
+      "url": "/watchlist?source=shortcut",
       "icons": [
         {
           "src": "/icon-192.png",

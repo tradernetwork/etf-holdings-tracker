@@ -8,6 +8,8 @@ import {
     ChevronDown, ChevronUp, Activity, Landmark, TrendingUp,
     Flame, Trash2, Radio, ArrowLeft,
 } from "lucide-react";
+import { FlowChip } from "@/components/flow-chip";
+import { TMBridge } from "@/components/tm-bridge";
 import { getMWFExpirationStatus, MWF_TICKERS } from "@/lib/marketHours";
 import { SiteNav } from "@/components/site-nav";
 
@@ -48,36 +50,41 @@ function filterScanEntries(scan: CboeScanResult, category: CatFilter, search: st
 
 function TickerBadge({ ticker, name, type }: { ticker: string; name: string; type: "new" | "removed" }) {
     return (
-        <Link
-            href={`/stocks/${ticker}`}
-            className={`group flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${
-                type === "new"
-                    ? "bg-buy/5 border-buy/20 hover:border-buy/50 hover:bg-buy/10"
-                    : "bg-sell/5 border-sell/20 hover:border-sell/50 hover:bg-sell/10"
-            }`}
-        >
-            <div className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                type === "new" ? "bg-buy" : "bg-sell"
-            }`} />
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className={`font-mono font-bold text-sm tracking-wide ${type === "new" ? "text-buy" : "text-sell"}`}>
-                        {ticker}
-                    </span>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                        type === "new"
-                            ? "bg-buy/15 text-buy"
-                            : "bg-sell/15 text-sell"
-                    }`}>
-                        {type === "new" ? "NEW" : "REMOVED"}
-                    </span>
+        <div className="flex items-center gap-2">
+            <Link
+                href={`/stocks/${ticker}`}
+                className={`group flex flex-1 items-center gap-3 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${
+                    type === "new"
+                        ? "bg-buy/5 border-buy/20 hover:border-buy/50 hover:bg-buy/10"
+                        : "bg-sell/5 border-sell/20 hover:border-sell/50 hover:bg-sell/10"
+                }`}
+            >
+                <div className={`flex-shrink-0 w-2 h-2 rounded-full ${
+                    type === "new" ? "bg-buy" : "bg-sell"
+                }`} />
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <span className={`font-mono font-bold text-sm tracking-wide ${type === "new" ? "text-buy" : "text-sell"}`}>
+                            {ticker}
+                        </span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                            type === "new"
+                                ? "bg-buy/15 text-buy"
+                                : "bg-sell/15 text-sell"
+                        }`}>
+                            {type === "new" ? "NEW" : "REMOVED"}
+                        </span>
+                    </div>
+                    <p className="text-xs text-slate-400 truncate mt-0.5 group-hover:text-slate-300 transition-colors">
+                        {name}
+                    </p>
                 </div>
-                <p className="text-xs text-slate-400 truncate mt-0.5 group-hover:text-slate-300 transition-colors">
-                    {name}
-                </p>
-            </div>
-            <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-sm">→</span>
-        </Link>
+                <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-sm">→</span>
+            </Link>
+            {type === "new" && (
+                <FlowChip placement="listings_row" ticker={ticker} label="First-day flow ↗" />
+            )}
+        </div>
     );
 }
 
@@ -477,6 +484,16 @@ export default function OptionsListingsPage() {
                             ))
                         )}
                     </div>
+                )}
+
+                {/* listings_bridge */}
+                {!loading && history.length > 0 && (
+                    <TMBridge
+                        placement="listings_bridge"
+                        title="New options chains are worth watching on day one."
+                        body="TraderMatrix flags sweeps on fresh listings as they hit the tape."
+                        cta="Watch new-listing flow →"
+                    />
                 )}
 
                 {/* How it works */}

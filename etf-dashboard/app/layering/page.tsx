@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import { SiteNav } from '@/components/site-nav';
 import { Layers, ArrowRight, Sparkles } from 'lucide-react';
+import { FlowChip } from '@/components/flow-chip';
 import Link from 'next/link';
 import { formatAum } from '@/lib/utils';
 
@@ -34,7 +35,9 @@ export default async function LayeringPage({
     const sp = await searchParams;
     const windowDays = WINDOWS.includes(Number(sp.window)) ? Number(sp.window) : 7;
 
-    const resp = await api.layering({ windowDays, minFunds: 3, limit: 25 });
+    const [resp] = await Promise.all([
+        api.layering({ windowDays, minFunds: 3, limit: 25 }),
+    ]);
     const patterns = resp?.patterns ?? [];
 
     return (
@@ -107,9 +110,12 @@ export default async function LayeringPage({
                                             <span className="font-mono">{formatAum(p.consensusAum)} combined AUM</span>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0" title="Layering strength (0–100): blends how many distinct funds entered, how many separate fund families (cross-family agreement weighted highest), and their combined AUM. Scaled against the strongest active pattern.">
-                                        <div className="text-2xl font-black font-mono text-equity">{p.layeringStrength}</div>
-                                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">strength</div>
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        <div className="text-right" title="Layering strength (0–100): blends how many distinct funds entered, how many separate fund families (cross-family agreement weighted highest), and their combined AUM. Scaled against the strongest active pattern.">
+                                            <div className="text-2xl font-black font-mono text-equity">{p.layeringStrength}</div>
+                                            <div className="text-[10px] text-slate-500 uppercase tracking-wider">strength</div>
+                                        </div>
+                                        <FlowChip placement="layering_row" ticker={p.ticker} />
                                     </div>
                                 </div>
 

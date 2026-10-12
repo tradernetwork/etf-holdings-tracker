@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TickerTrace — Institutional ETF Intelligence",
+  title: "TickerTrace, a TraderMatrix product — Institutional ETF Intelligence",
   description: "Track daily institutional ETF holdings changes. What are institutions buying today?",
   // PWA groundwork (docs/REDESIGN-PLAN.md Phase 3) — a fixed bottom bar and
   // an installable app are the same job. Icons are real PNGs generated from

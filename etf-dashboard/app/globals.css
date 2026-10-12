@@ -25,6 +25,9 @@
   --color-sell: var(--sell);
   --color-meta: var(--meta);
   --color-meta-bright: var(--meta-bright);
+  --color-tm-gold: var(--tm-gold);
+  --color-tm-gold-bright: var(--tm-gold-bright);
+  --color-tm-steel: var(--tm-steel);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -108,6 +111,9 @@
   --sell: #ff4444;            /* negative / selling direction */
   --meta: #a78bfa;            /* cross-cutting meta: divergence, multi-family, generic "selected" */
   --meta-bright: #c4b5fd;
+  --tm-gold: #e0b03a;         /* TraderMatrix gold: every CTA that leaves for tradermatrix.pro */
+  --tm-gold-bright: #f2c95c;
+  --tm-steel: #c8d8ec;        /* TraderMatrix wordmark steel */
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

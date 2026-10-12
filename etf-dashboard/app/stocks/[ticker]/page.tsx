@@ -1,10 +1,15 @@
 import { api } from '@/lib/api';
 import type { TrendSignal } from '@/lib/api';
+import type { Metadata } from 'next';
 import { SiteNav } from '@/components/site-nav';
 import { WeightSparkline } from '@/components/weight-sparkline';
 import { DataTable, type DataTableColumn, type DataTableRow } from '@/components/data-table';
-import { FUND_PROVIDERS, FUND_AUM } from '@/lib/providers';
-import { ArrowLeft, ArrowUpRight, ArrowDownRight, Flame } from 'lucide-react';
+import { FUND_AUM } from '@/lib/providers';
+import { ShareButtons } from '@/components/share-buttons';
+import { WatchButton } from '@/components/watch-star';
+import { TMMark } from '@/components/tm-mark';
+import { TMLink } from '@/components/tm-link';
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Flame, Share2, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -61,10 +66,40 @@ function Delta({ label, value }: { label: string; value: number }) {
     );
 }
 
-export default async function StockPage({ params }: { params: Promise<{ ticker: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ ticker: string }> }): Promise<Metadata> {
     const { ticker: raw } = await params;
     const ticker = decodeURIComponent(raw).toUpperCase();
     const detail = await api.stock(ticker);
+    const title = detail
+        ? `${ticker} — ${detail.fundCount} funds · ${detail.institutional.signal} · TickerTrace`
+        : `${ticker} · TickerTrace`;
+    const description = detail
+        ? `${detail.name} is held by ${detail.fundCount} ETFs. Institutional blended weight: ${detail.institutional.blendedWeight.toFixed(3)}%. Track fund flows on TickerTrace.`
+        : `Institutional fund flows for ${ticker} on TickerTrace.`;
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            images: [`/stocks/${ticker}/opengraph-image`],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [`/stocks/${ticker}/opengraph-image`],
+        },
+    };
+}
+
+export default async function StockPage({ params }: { params: Promise<{ ticker: string }> }) {
+    const { ticker: raw } = await params;
+    const ticker = decodeURIComponent(raw).toUpperCase();
+
+    const [detail] = await Promise.all([
+        api.stock(ticker),
+    ]);
     if (!detail) notFound();
 
     const inst = detail.institutional;
@@ -92,41 +127,64 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
         ? detail.history[detail.history.length - 1].date
         : null;
 
+    const shareUrl = `https://tickertrace.pro/stocks/${ticker}`;
+    const shareTweet = `${ticker} is held by ${detail.fundCount} ETFs — institutional blended weight ${inst.blendedWeight.toFixed(2)}%. Track fund flows on TickerTrace:`;
+    const shareRedditTitle = `${ticker} institutional ETF flow — ${detail.fundCount} funds holding (${inst.signal})`;
+    const shareRedditText = `${detail.name} appears in ${detail.fundCount} ETF holdings.\n\nInstitutional blended weight: ${inst.blendedWeight.toFixed(3)}% — ${inst.signal}.\n\nI track this via TickerTrace (it's my project — full disclosure). Link: ${shareUrl}`;
+
     return (
         <div className="min-h-dvh bg-canvas text-foreground p-6 space-y-6 font-sans">
             <SiteNav />
 
+            {/* Header */}
             <div className="bg-surface border border-rule p-4 rounded-xl shadow-lg">
                 <Link href="/stocks" className="text-xs text-slate-500 hover:text-white transition-colors flex items-center gap-1 mb-2">
                     <ArrowLeft className="h-3 w-3" /> All stocks
                 </Link>
-                <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-3xl font-black tracking-tight font-mono text-equity">{detail.ticker}</h1>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${sig.cls}`}>{sig.label}</span>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h1 className="text-3xl font-black tracking-tight font-mono text-equity">{detail.ticker}</h1>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${sig.cls}`}>{sig.label}</span>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-1">
+                            {detail.name}
+                            {detail.sector && (
+                                <>
+                                    {' · '}
+                                    <Link
+                                        href={`/stocks?sector=${encodeURIComponent(detail.sector)}`}
+                                        className="hover:text-meta-bright hover:underline transition-colors"
+                                    >
+                                        {detail.sector}
+                                    </Link>
+                                </>
+                            )}
+                        </p>
+                        <p className="text-xs text-slate-500 font-mono mt-1">
+                            {asOfDate && <>{formatAsOfDate(asOfDate)} · </>}
+                            Held by {detail.fundCount} equity fund{detail.fundCount === 1 ? '' : 's'}
+                            {detail.fundCount > 1 && <> across {distinctFamilies} {distinctFamilies === 1 ? 'family' : 'families'}</>}
+                            {' · '}institutional blended weight {inst.blendedWeight.toFixed(3)}%
+                            {(inst.estimatedExposureM ?? 0) > 0 && (
+                                <> · ~{formatExposure(inst.estimatedExposureM!)} est. exposure</>
+                            )}
+                        </p>
+                    </div>
+                    {/* Watch + Share card buttons */}
+                    <div className="flex gap-2 flex-wrap shrink-0">
+                        <WatchButton type="stock" symbol={ticker} />
+                        <a
+                            href={`/stocks/${ticker}/opengraph-image`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 min-h-11 md:min-h-0 px-3 py-2 rounded-xl border border-rule-strong bg-surface-alt text-subtext hover:text-white text-xs font-bold transition-colors"
+                        >
+                            <Share2 className="h-3.5 w-3.5" />
+                            Share card
+                        </a>
+                    </div>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">
-                    {detail.name}
-                    {detail.sector && (
-                        <>
-                            {' · '}
-                            <Link
-                                href={`/stocks?sector=${encodeURIComponent(detail.sector)}`}
-                                className="hover:text-meta-bright hover:underline transition-colors"
-                            >
-                                {detail.sector}
-                            </Link>
-                        </>
-                    )}
-                </p>
-                <p className="text-xs text-slate-500 font-mono mt-1">
-                    {asOfDate && <>{formatAsOfDate(asOfDate)} · </>}
-                    Held by {detail.fundCount} equity fund{detail.fundCount === 1 ? '' : 's'}
-                    {detail.fundCount > 1 && <> across {distinctFamilies} {distinctFamilies === 1 ? 'family' : 'families'}</>}
-                    {' · '}institutional blended weight {inst.blendedWeight.toFixed(3)}%
-                    {(inst.estimatedExposureM ?? 0) > 0 && (
-                        <> · ~{formatExposure(inst.estimatedExposureM!)} est. exposure</>
-                    )}
-                </p>
             </div>
 
             {/* Trend: chart + D/W/M deltas */}
@@ -169,6 +227,64 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                                     ? 'Bought across every horizon — sustained accumulation.'
                                     : 'Sold across every horizon — sustained distribution.'}
                     </p>
+                </div>
+            </div>
+
+            {/* ── Live options flow panel (stock_flow_panel) ── */}
+            <div
+                className="rounded-xl border border-tm-gold/35 overflow-hidden"
+                style={{ background: 'linear-gradient(90deg,#111827,#14161c 60%,#18160f)' }}
+            >
+                {/* Panel header */}
+                <div className="px-4 py-3 border-b border-rule flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <TMMark size={22} />
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-black leading-tight">
+                                {ticker} options flow today{' '}
+                                <span className="text-tm-gold-bright">· live on TraderMatrix</span>
+                            </h2>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                The fund data above is end-of-day. This is what traders are doing with {ticker} right now.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Blurred, always. TickerTrace never shows flow: these tiles are meaningless
+                    filler (aria-hidden) that tease what TraderMatrix has. */}
+                <div className="relative">
+                    <div aria-hidden="true" className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-rule select-none">
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className="px-4 py-3 flex flex-col gap-1.5 blur-[4px]">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold px-2 py-px rounded-full border border-tm-gold/40 text-tm-gold-bright whitespace-nowrap">XXXXX</span>
+                                    <span className="text-[11px] text-slate-500 font-mono">xx:xx ET</span>
+                                </div>
+                                <div className="font-mono text-[13px] text-slate-200">Xx/Xx XxxC · $x.xM</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-tm-gold/40 bg-canvas/80 px-3 py-1.5 text-xs font-bold text-tm-gold-bright">
+                            <Lock className="h-3.5 w-3.5" /> See {ticker} flow on TraderMatrix
+                        </span>
+                    </div>
+                </div>
+
+                {/* Panel footer */}
+                <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-slate-400 flex-1 min-w-0">
+                        Unusual prints, strikes, size and TraderLady&apos;s read are all on TraderMatrix.
+                    </p>
+                    <TMLink
+                        placement="stock_flow_panel"
+                        ticker={ticker}
+                        className="shrink-0 inline-flex items-center px-4 py-2.5 rounded-xl font-extrabold text-[13px] text-canvas transition-colors hover:opacity-90"
+                        style={{ background: '#e0b03a' }}
+                    >
+                        Unlock {ticker} flow →
+                    </TMLink>
                 </div>
             </div>
 
@@ -312,6 +428,46 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                     })()}
                 </div>
             )}
+
+            {/* Alert upsell (stock_alert) */}
+            <div className="flex flex-wrap items-center gap-3.5 rounded-xl border border-tm-gold/30 bg-tm-gold/5 p-4">
+                <svg
+                    viewBox="0 0 24 24" fill="none" stroke="#e0b03a" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    className="w-[22px] h-[22px] shrink-0"
+                    aria-hidden="true"
+                >
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    <path d="M12 2v1" />
+                </svg>
+                <div className="flex-1 min-w-[200px]">
+                    <div className="text-sm font-bold text-white">Get pinged the next time a sweep hits {ticker}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">
+                        TickerTrace tracks the funds daily. TraderMatrix sends you an alert the minute the options flow moves.
+                    </div>
+                </div>
+                <TMLink
+                    placement="stock_alert"
+                    ticker={ticker}
+                    className="inline-flex items-center min-h-11 md:min-h-0 px-4 py-2 rounded-xl border border-tm-gold/50 text-tm-gold-bright text-[13px] font-extrabold whitespace-nowrap hover:border-tm-gold hover:text-white transition-colors"
+                >
+                    Set {ticker} alert →
+                </TMLink>
+            </div>
+
+            {/* Share row */}
+            <div className="space-y-2">
+                <p className="text-[11px] text-slate-500 text-center">Share {ticker} fund flow</p>
+                <ShareButtons
+                    url={shareUrl}
+                    tweet={shareTweet}
+                    redditTitle={shareRedditTitle}
+                    redditText={shareRedditText}
+                    size="sm"
+                    align="center"
+                />
+            </div>
         </div>
     );
 }

@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType } from 'react';
-import { Zap, TrendingUp, Layers, Coins, LayoutGrid } from 'lucide-react';
+import { Zap, TrendingUp, Layers, Coins, LayoutGrid, Star } from 'lucide-react';
+import { TickerTraceLockup, TMMark } from '@/components/tm-mark';
+import { TMLink } from '@/components/tm-link';
+import { useWatchlist } from '@/lib/watchlist';
 import { WORLD_META, type FundCategory } from '@/lib/providers';
 import { NavSearch } from '@/components/nav-search';
 
@@ -153,17 +156,36 @@ function ContextLinks({ links, pathname }: { links: { href: string; label: strin
  */
 function TraderMatrixCTA() {
     return (
-        <a
-            href="https://www.tradermatrix.pro/?ref=MPHINANCE"
-            target="_blank"
-            rel="noopener noreferrer"
+        <TMLink
+            placement="nav_cta"
             title="We track the moves. TraderMatrix helps you trade them."
-            className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 min-h-11 md:min-h-0 sm:px-3 text-[11px] sm:text-xs font-bold rounded-lg border border-meta/30 bg-gradient-to-r from-meta/10 to-equity/10 text-meta-bright hover:text-white hover:border-meta/60 transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 min-h-11 min-w-11 md:min-h-9 md:min-w-0 sm:px-3 text-[11px] sm:text-xs font-bold rounded-[10px] border border-tm-gold/40 bg-gradient-to-r from-tm-gold/15 to-tm-steel/5 text-tm-gold-bright hover:text-white hover:border-tm-gold/70 transition-colors whitespace-nowrap shrink-0"
         >
-            <span aria-hidden>🧠</span>
+            <TMMark size={16} />
             <span className="hidden lg:inline">Trade it on TraderMatrix →</span>
-            <span className="lg:hidden">TraderMatrix →</span>
-        </a>
+            <span className="hidden min-[370px]:inline lg:hidden" aria-label="TraderMatrix">→</span>
+        </TMLink>
+    );
+}
+
+/** Star + count badge, on every page. The list lives in this browser only. */
+function WatchlistLink({ pathname }: { pathname: string }) {
+    const { items } = useWatchlist();
+    const on = pathname === '/watchlist';
+    return (
+        <Link
+            href="/watchlist"
+            aria-label={`Watchlist, ${items.length} saved`}
+            title="Your watchlist"
+            className={`relative ml-auto md:ml-0 inline-flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-[10px] border bg-surface-alt transition-colors ${on ? 'border-tm-gold/50 text-tm-gold-bright' : 'border-rule-strong text-subtext hover:text-white'}`}
+        >
+            <Star className="h-4 w-4" />
+            {items.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-tm-gold px-1 text-[9px] font-extrabold text-canvas">
+                    {items.length}
+                </span>
+            )}
+        </Link>
     );
 }
 
@@ -182,12 +204,14 @@ export function SiteNav({ world }: { world?: World } = {}) {
                 so it never needs to scroll to stay reachable — the old rail
                 here existed only because the world switcher, five shared
                 links, and the CTA all had to fit in one row on a phone. */}
-            <div className="px-3 sm:px-4 py-2.5 flex items-center gap-1.5 sm:gap-3">
+            <div className="px-3 sm:px-4 py-2.5 flex items-center gap-1 sm:gap-3">
                 <Link
                     href="/dashboard"
-                    className="text-base sm:text-lg font-black tracking-tight text-equity hover:opacity-80 transition-opacity shrink-0"
+                    className="shrink-0 hover:opacity-80 transition-opacity"
+                    aria-label="TickerTrace, a TraderMatrix product"
                 >
-                    TICKER<span className="text-foreground">TRACE</span>
+                    <span className="sm:hidden"><TickerTraceLockup size="sm" /></span>
+                    <span className="hidden sm:inline"><TickerTraceLockup size="md" /></span>
                 </Link>
 
                 <div className="hidden md:flex items-center gap-1 flex-1 min-w-0 flex-wrap">
@@ -210,10 +234,10 @@ export function SiteNav({ world }: { world?: World } = {}) {
                     {showWorldChip && <WorldChip activeWorld={activeWorld} />}
                 </div>
 
-                {/* Pushes search + CTA to the right edge on mobile, where the
-                    destination row above is hidden. */}
-                <div className="flex-1 md:hidden" />
-
+                {/* The star's ml-auto pushes star + search + CTA to the right
+                    edge on mobile, where the destination row is hidden. No
+                    flex-1 spacer: its extra gap cost 6px the row can't spare. */}
+                <WatchlistLink pathname={pathname} />
                 <NavSearch />
                 <TraderMatrixCTA />
             </div>
@@ -224,9 +248,9 @@ export function SiteNav({ world }: { world?: World } = {}) {
                 wrapping row. Two stacked bordered rows cost a phone ~60px
                 of first-screen height for a handful of short pills. */}
             {(showWorldChip || contextLinks.length > 0) && (
-                <div className="px-3 sm:px-4 pb-2.5 flex flex-wrap items-center gap-1.5 border-t border-rule/60 pt-2">
+                <div className="px-3 sm:px-4 pb-2.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:overflow-visible border-t border-rule/60 pt-2">
                     {showWorldChip && (
-                        <div className="md:hidden">
+                        <div className="md:hidden shrink-0">
                             <WorldChip activeWorld={activeWorld} />
                         </div>
                     )}

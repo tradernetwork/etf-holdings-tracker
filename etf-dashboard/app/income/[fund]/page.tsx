@@ -3,6 +3,8 @@ import type { ApiIncomeBookRow, ApiIncomeFund } from '@/lib/api';
 import { SiteNav } from '@/components/site-nav';
 import { DataTable, type DataTableColumn, type DataTableRow } from '@/components/data-table';
 import { Coins, EyeOff, AlertTriangle } from 'lucide-react';
+import { FlowChip } from '@/components/flow-chip';
+import { TMBridge } from '@/components/tm-bridge';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -106,6 +108,7 @@ const bookColumns: DataTableColumn[] = [
     { key: 'room', header: 'Room', align: 'right' },
     { key: 'covered', header: 'Cov', align: 'right', mobilePriority: 'md' },
     { key: 'longLegs', header: 'Long legs', align: 'right', mobilePriority: 'lg' },
+    { key: 'flow', header: <span className="text-tm-gold-bright font-bold">Flow</span>, align: 'right', mobilePriority: 'sm' },
 ];
 
 function bookRows(book: ApiIncomeBookRow[]): DataTableRow[] {
@@ -156,6 +159,7 @@ function bookRows(book: ApiIncomeBookRow[]): DataTableRow[] {
                 ),
                 covered: <span className="font-mono text-[11px] text-slate-400 tabular-nums">{r.coveredFraction === null ? '—' : `${(r.coveredFraction * 100).toFixed(0)}%`}</span>,
                 longLegs: <span className="font-mono text-[11px] text-slate-500 tabular-nums">{r.longLegs.length > 0 ? r.longLegs.map(l => `${l.optionType[0]}${l.strike}`).join(' ') : '—'}</span>,
+                flow: <FlowChip placement="income_position_row" ticker={r.underlying} label="GEX ↗" icon={false} />,
             },
         };
     });
@@ -321,6 +325,32 @@ export default async function IncomeFundPage({ params }: { params: Promise<{ fun
                     </p>
                 </div>
             )}
+
+            {(() => {
+                const book = detail.book ?? [];
+                const bc = book
+                    .filter(r => r.writtenCall?.strike != null && r.spot != null && !r.spotSuppressed && r.equity != null)
+                    .sort((a, b) => (b.equity!.weight) - (a.equity!.weight))[0];
+                if (!bc) return (
+                    <TMBridge
+                        placement="income_fund_bridge"
+                        title={`${detail.fund} writes calls to generate income.`}
+                        body="TraderMatrix shows GEX levels and live flow so you can see where dealers are pinned."
+                        cta={`See ${detail.fund} flow →`}
+                    />
+                );
+                const pct = ((bc.writtenCall!.strike! - bc.spot!) / bc.spot! * 100);
+                const dir = pct >= 0 ? 'above' : 'below';
+                return (
+                    <TMBridge
+                        placement="income_fund_bridge"
+                        ticker={bc.underlying}
+                        title={`${detail.fund}'s ${bc.underlying} $${bc.writtenCall!.strike!.toFixed(0)} call is ${Math.abs(pct).toFixed(1)}% ${dir} spot.`}
+                        body="Check whether the options flow agrees before you write the same strike."
+                        cta={`See ${bc.underlying} at $${bc.writtenCall!.strike!.toFixed(0)} →`}
+                    />
+                );
+            })()}
 
             <div className="flex gap-3 text-xs">
                 <Link href="/income" className="text-slate-400 hover:text-income">← All Premium Sellers</Link>

@@ -1,10 +1,11 @@
 import { api } from '@/lib/api';
-import type { ApiTickerIndexEntry } from '@/lib/api';
 import { SiteNav } from '@/components/site-nav';
 import { DataTable, type DataTableColumn, type DataTableRow } from '@/components/data-table';
 import { FUND_PROVIDERS, PROVIDER_ORDER } from '@/lib/providers';
 import { ArrowUpRight, ArrowDownRight, LineChart, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { WatchStar } from '@/components/watch-star';
+import { FlowChip } from '@/components/flow-chip';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,16 +17,6 @@ const SORTS: { key: Sort; label: string }[] = [
     { key: 'weight', label: 'Most weight' },
     { key: 'change', label: 'Biggest Δ today' },
     { key: 'streak', label: 'Longest streak' },
-];
-
-const SIGNALS: { key: Signal; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'buying', label: '↑ Net buying' },
-    { key: 'selling', label: '↓ Net selling' },
-    { key: 'streak', label: '🔥 Has streak' },
-    { key: 'new', label: '★ New today' },
-    { key: 'exit', label: '⎋ Exit today' },
-    { key: 'crossfam', label: '🏛 2+ families' },
 ];
 
 const SORT_DESC: Record<Sort, string> = {
@@ -88,7 +79,10 @@ export default async function StocksPage({
     // count and sort server-side. 150 tickers covers everything institutionally
     // significant, so nothing noteworthy gets missed.
     const apiSort: 'funds' | 'weight' = sort === 'weight' ? 'weight' : 'funds';
-    const resp = await api.tickers(apiSort, 150);
+
+    const [resp] = await Promise.all([
+        api.tickers(apiSort, 150),
+    ]);
     let tickers = resp?.tickers ?? [];
 
     if (sort === 'change') {
@@ -161,6 +155,16 @@ export default async function StocksPage({
         crossfam: baseForSignalCounts.filter(t => (t.distinctProviders ?? 0) >= 2).length,
     };
 
+    const SIGNALS: { key: Signal; label: string }[] = [
+        { key: 'all', label: 'All' },
+        { key: 'buying', label: '↑ Net buying' },
+        { key: 'selling', label: '↓ Net selling' },
+        { key: 'streak', label: '🔥 Has streak' },
+        { key: 'new', label: '★ New today' },
+        { key: 'exit', label: '⎋ Exit today' },
+        { key: 'crossfam', label: '🏛 2+ families' },
+    ];
+
     const filterDesc = [
         provider ? `from ${provider}` : '',
         sector ? `in ${sector}` : '',
@@ -209,25 +213,28 @@ export default async function StocksPage({
                 ))}
             </div>
 
-            {/* Signal filter pills — buy/sell/streak slices, always shown */}
+            {/* Signal filter pills —  */}
             {resp !== null && (
                 <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] text-slate-500 font-mono shrink-0">signal:</span>
-                    {SIGNALS.map(sig => (
-                        <Link
-                            key={sig.key}
-                            href={stocksUrl({ sort: sort !== 'funds' ? sort : undefined, sector: sector || undefined, signal: sig.key !== 'all' ? sig.key : undefined, provider: provider || undefined })}
-                            scroll={false}
-                            className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${signal === sig.key
-                                ? 'bg-buy/20 border-buy/40 text-buy'
-                                : 'bg-surface-elevated border-rule-strong text-slate-400 hover:text-white'}`}
-                        >
-                            {sig.label}
-                            {sig.key !== 'all' && signalCounts[sig.key] > 0 && (
-                                <span className="ml-1 opacity-50">({signalCounts[sig.key]})</span>
-                            )}
-                        </Link>
-                    ))}
+                    {SIGNALS.map(sig => {
+                        const isActive = signal === sig.key;
+                        const activeClass = 'bg-buy/20 border-buy/40 text-buy';
+                        const inactiveClass = 'bg-surface-elevated border-rule-strong text-slate-400 hover:text-white';
+                        return (
+                            <Link
+                                key={sig.key}
+                                href={stocksUrl({ sort: sort !== 'funds' ? sort : undefined, sector: sector || undefined, signal: sig.key !== 'all' ? sig.key : undefined, provider: provider || undefined })}
+                                scroll={false}
+                                className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${isActive ? activeClass : inactiveClass}`}
+                            >
+                                {sig.label}
+                                {sig.key !== 'all' && (
+                                    <span className="ml-1 opacity-60">({signalCounts[sig.key]})</span>
+                                )}
+                            </Link>
+                        );
+                    })}
                 </div>
             )}
 
@@ -312,103 +319,123 @@ export default async function StocksPage({
             ) : (
             (() => {
                 const stockColumns: DataTableColumn[] = [
+                    { key: 'watch', header: '', headerClassName: 'w-8 px-2' },
                     { key: 'rank', header: '#', align: 'right', headerClassName: 'w-12' },
                     { key: 'ticker', header: 'Ticker' },
                     { key: 'name', header: 'Name', mobilePriority: 'md' },
                     { key: 'funds', header: 'Funds', align: 'right' },
-                    { key: 'totalWeight', header: 'Total wt', align: 'right' },
+                    { key: 'totalWeight', header: 'Total wt', align: 'right', mobilePriority: 'sm' },
                     { key: 'netChange', header: 'Δ today', align: 'right' },
+                    { key: 'flow', header: <span className="text-tm-gold-bright font-semibold">Live flow</span> },
                     { key: 'heldBy', header: 'Held by', mobilePriority: 'lg' },
                 ];
-                const rows: DataTableRow[] = displayed.map((t, i) => ({
-                    key: t.ticker,
-                    cells: {
-                        rank: <span className="font-mono text-slate-600">{i + 1}</span>,
-                        ticker: (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <Link href={`/stocks/${t.ticker}`} className="font-mono font-bold text-equity hover:underline">
-                                    {t.ticker}
-                                </Link>
-                                {t.newEntryFunds?.length > 0 && (
-                                    <span
-                                        className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-buy/30 bg-buy/10 text-buy"
-                                        title={`New position today: ${t.newEntryFunds.join(', ')}`}
-                                    >
-                                        NEW
-                                    </span>
-                                )}
-                                {(t.exitFunds?.length ?? 0) > 0 && (
-                                    <span
-                                        className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-warning/30 bg-warning/10 text-warning"
-                                        title={`Fully exited today: ${t.exitFunds!.join(', ')}`}
-                                    >
-                                        EXIT
-                                    </span>
-                                )}
-                                {t.streak != null && Math.abs(t.streak) >= 3 && (
-                                    <span
-                                        className={`text-[9px] font-bold px-1.5 py-0 leading-4 rounded border ${
-                                            t.streak > 0
-                                                ? 'border-warning/30 bg-warning/10 text-warning'
-                                                : 'border-sell/30 bg-sell/10 text-sell'
-                                        }`}
-                                        title={`${Math.abs(t.streak)}-day ${t.streak > 0 ? 'buying' : 'selling'} streak`}
-                                    >
-                                        {t.streak > 0 ? '▲' : '▼'} {Math.abs(t.streak)}d
-                                    </span>
-                                )}
-                                {(t.distinctProviders ?? 0) >= 2 && (
-                                    <span
-                                        className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-meta/30 bg-meta/10 text-meta-bright"
-                                        title={`Held by ${t.distinctProviders} distinct fund families — cross-family conviction`}
-                                    >
-                                        {t.distinctProviders} fam
-                                    </span>
-                                )}
-                            </div>
-                        ),
-                        name: (
-                            <div className="text-slate-400 text-xs max-w-[220px]">
-                                <div className="truncate">{t.name}</div>
-                                {t.sector && !sector && (
-                                    <span className="inline-block mt-0.5 text-[9px] font-medium px-1.5 py-0 rounded border border-rule-strong bg-surface-elevated text-slate-500 leading-4">
-                                        {t.sector}
-                                    </span>
-                                )}
-                            </div>
-                        ),
-                        funds: <span className="font-mono text-white font-semibold">{t.fundCount}</span>,
-                        totalWeight: <span className="font-mono text-slate-300">{t.totalWeight.toFixed(2)}%</span>,
-                        netChange: (
-                            <span className={`inline-flex items-center justify-end gap-0.5 font-mono font-semibold ${t.netChange > 0 ? 'text-buy' : t.netChange < 0 ? 'text-sell' : 'text-slate-500'}`}>
-                                {t.netChange > 0 ? <ArrowUpRight className="h-3 w-3" /> : t.netChange < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
-                                {t.netChange === 0 ? '—' : `${t.netChange > 0 ? '+' : ''}${t.netChange.toFixed(3)}%`}
-                            </span>
-                        ),
-                        heldBy: (
-                            <div className="flex flex-wrap gap-1">
-                                {t.funds.slice(0, 6).map(f => (
-                                    <Link
-                                        key={f}
-                                        href={`/fund/${f}`}
-                                        title={FUND_PROVIDERS[f] ?? f}
-                                        className="font-mono text-[10px] px-1.5 py-0.5 rounded border border-rule-strong bg-surface-elevated text-slate-400 hover:text-white"
-                                    >{f}</Link>
-                                ))}
-                                {t.funds.length > 6 && (
-                                    <span className="text-[10px] text-slate-600 px-1 py-0.5">+{t.funds.length - 6}</span>
-                                )}
-                            </div>
-                        ),
-                    },
-                }));
+                const rows: DataTableRow[] = displayed.map((t, i) => {
+                    return {
+                        key: t.ticker,
+                        cells: {
+                            watch: (
+                                <div className="flex items-center justify-center">
+                                    <WatchStar type="stock" symbol={t.ticker} />
+                                </div>
+                            ),
+                            rank: <span className="font-mono text-slate-600">{i + 1}</span>,
+                            ticker: (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Link href={`/stocks/${t.ticker}`} className="font-mono font-bold text-equity hover:underline">
+                                        {t.ticker}
+                                    </Link>
+                                    {t.newEntryFunds?.length > 0 && (
+                                        <span
+                                            className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-buy/30 bg-buy/10 text-buy"
+                                            title={`New position today: ${t.newEntryFunds.join(', ')}`}
+                                        >
+                                            NEW
+                                        </span>
+                                    )}
+                                    {(t.exitFunds?.length ?? 0) > 0 && (
+                                        <span
+                                            className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-warning/30 bg-warning/10 text-warning"
+                                            title={`Fully exited today: ${t.exitFunds!.join(', ')}`}
+                                        >
+                                            EXIT
+                                        </span>
+                                    )}
+                                    {t.streak != null && Math.abs(t.streak) >= 3 && (
+                                        <span
+                                            className={`text-[9px] font-bold px-1.5 py-0 leading-4 rounded border ${
+                                                t.streak > 0
+                                                    ? 'border-warning/30 bg-warning/10 text-warning'
+                                                    : 'border-sell/30 bg-sell/10 text-sell'
+                                            }`}
+                                            title={`${Math.abs(t.streak)}-day ${t.streak > 0 ? 'buying' : 'selling'} streak`}
+                                        >
+                                            {t.streak > 0 ? '▲' : '▼'} {Math.abs(t.streak)}d
+                                        </span>
+                                    )}
+                                    {(t.distinctProviders ?? 0) >= 2 && (
+                                        <span
+                                            className="text-[9px] font-bold px-1.5 py-0 leading-4 rounded border border-meta/30 bg-meta/10 text-meta-bright"
+                                            title={`Held by ${t.distinctProviders} distinct fund families — cross-family conviction`}
+                                        >
+                                            {t.distinctProviders} fam
+                                        </span>
+                                    )}
+                                </div>
+                            ),
+                            name: (
+                                <div className="text-slate-400 text-xs max-w-[220px]">
+                                    <div className="truncate">{t.name}</div>
+                                    {t.sector && !sector && (
+                                        <span className="inline-block mt-0.5 text-[9px] font-medium px-1.5 py-0 rounded border border-rule-strong bg-surface-elevated text-slate-500 leading-4">
+                                            {t.sector}
+                                        </span>
+                                    )}
+                                </div>
+                            ),
+                            funds: <span className="font-mono text-white font-semibold">{t.fundCount}</span>,
+                            totalWeight: <span className="font-mono text-slate-300">{t.totalWeight.toFixed(2)}%</span>,
+                            netChange: (
+                                <span className={`inline-flex items-center justify-end gap-0.5 font-mono font-semibold ${t.netChange > 0 ? 'text-buy' : t.netChange < 0 ? 'text-sell' : 'text-slate-500'}`}>
+                                    {t.netChange > 0 ? <ArrowUpRight className="h-3 w-3" /> : t.netChange < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
+                                    {t.netChange === 0 ? '—' : `${t.netChange > 0 ? '+' : ''}${t.netChange.toFixed(3)}%`}
+                                </span>
+                            ),
+                            flow: (
+                                <FlowChip
+                                    placement="stocks_table_flow"
+                                    ticker={t.ticker}
+                                />
+                            ),
+                            heldBy: (
+                                <div className="flex flex-wrap gap-1">
+                                    {t.funds.slice(0, 6).map(f => (
+                                        <Link
+                                            key={f}
+                                            href={`/fund/${f}`}
+                                            title={FUND_PROVIDERS[f] ?? f}
+                                            className="font-mono text-[10px] px-1.5 py-0.5 rounded border border-rule-strong bg-surface-elevated text-slate-400 hover:text-white"
+                                        >{f}</Link>
+                                    ))}
+                                    {t.funds.length > 6 && (
+                                        <span className="text-[10px] text-slate-600 px-1 py-0.5">+{t.funds.length - 6}</span>
+                                    )}
+                                </div>
+                            ),
+                        },
+                    };
+                });
                 return (
-                    <DataTable
-                        columns={stockColumns}
-                        rows={rows}
-                        emptyMessage="No stocks match these filters."
-                        wrapperClassName="rounded-lg"
-                    />
+                    <>
+                        <DataTable
+                            columns={stockColumns}
+                            rows={rows}
+                            emptyMessage="No stocks match these filters."
+                            wrapperClassName="rounded-lg"
+                        />
+                        <p className="text-[11px] text-slate-500 text-center px-4">
+                            Live options flow isn&apos;t shown here. Tap <span className="text-tm-gold-bright">Check flow</span> on any row to see it on TraderMatrix.
+                        </p>
+                    </>
                 );
             })()
             )}

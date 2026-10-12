@@ -19,6 +19,8 @@ import {
     type ChatTurn,
     type CommonTool,
 } from '@/lib/chat-providers';
+import { TMMark } from '@/components/tm-mark';
+import { TMLink } from '@/components/tm-link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.tickertrace.pro';
 const STORAGE_PROVIDER = 'tt_chat_provider';
@@ -32,6 +34,14 @@ const STARTER_PROMPTS = [
     'Show me ARK’s biggest moves',
     'Do these signals actually make money?',
 ];
+
+/** Keywords in the user's last question that trigger the TraderLady handoff card. */
+const FLOW_KEYWORDS = ['sweep', 'gex', 'dark pool', 'congress', 'flow', 'unusual activity', 'blocks', 'options flow', 'traderlady', 'tradermatrix'];
+
+function hasFlowKeyword(text: string): boolean {
+    const lower = text.toLowerCase();
+    return FLOW_KEYWORDS.some(k => lower.includes(k));
+}
 
 const SYSTEM_PROMPT = `You are TickerTrace's analyst assistant. You answer questions about institutional ETF holdings — what funds like ARK Invest, YieldMax, Avantis, Corgi Funds, Roundhill, REX Shares, Kurv, and NestYield are buying, selling, and holding.
 
@@ -382,6 +392,23 @@ export function AskTickerTrace() {
 
                 <div ref={bottomRef} />
             </div>
+
+            {/* TraderLady handoff — shown when the user's last question touches flow/sweeps/GEX/congress */}
+            {messages.length >= 2 && hasFlowKeyword(messages.findLast(m => m.role === 'user')?.content ?? '') && (
+                <div className="mx-4 mb-2 flex flex-wrap items-center gap-3 rounded-xl border border-tm-gold/35 bg-tm-gold/[.06] px-4 py-3">
+                    <TMMark size={22} />
+                    <div className="flex-1 min-w-[200px]">
+                        <p className="text-xs font-bold text-white">Intraday options flow lives on TraderMatrix.</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">ETF holdings show end-of-day positions — TraderLady sees live sweeps, blocks and GEX.</p>
+                    </div>
+                    <TMLink
+                        placement="ask_handoff"
+                        className="inline-flex min-h-11 md:min-h-0 items-center gap-1.5 rounded-xl bg-tm-gold px-4 py-2 text-xs font-extrabold text-canvas whitespace-nowrap hover:bg-tm-gold-bright transition-colors"
+                    >
+                        Ask TraderLady →
+                    </TMLink>
+                </div>
+            )}
 
             {/* Composer */}
             <form

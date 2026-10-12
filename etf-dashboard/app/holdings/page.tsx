@@ -3,6 +3,7 @@ import { columns } from './columns';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { SiteNav } from '@/components/site-nav';
+import { TMBridge } from '@/components/tm-bridge';
 import { parseHoldingsQuery, queryHoldings } from '@/lib/holdings-query';
 import { catchUpLabel } from '@/lib/catch-up';
 
@@ -57,6 +58,15 @@ export default async function HoldingsPage({
                 <div className="bg-surface border border-rule rounded-xl overflow-hidden shadow-xl p-4">
                     <DataTable columns={columns} result={result} />
                 </div>
+
+                {/* holdings_export_bridge — compact gold bridge after the table */}
+                <TMBridge
+                    placement="holdings_export_bridge"
+                    title="TraderMatrix has 7 ready-made screeners"
+                    body="that use this data alongside live flow."
+                    cta="Open screeners →"
+                    compact
+                />
             </div>
         </div>
     );

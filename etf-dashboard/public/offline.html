@@ -5,11 +5,23 @@
 <style>
 html,body{height:100%;margin:0;background:#0a0f1e;color:#e6ecff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;box-sizing:border-box}
-img{width:72px;height:72px;border-radius:16px}
+.lockup{display:flex;align-items:center;gap:10px}
+.lockup img{width:40px;height:40px;object-fit:contain}
+.wordmark{display:flex;flex-direction:column;gap:4px;text-align:left}
+.wordmark-text{font-size:17px;line-height:1;letter-spacing:.14em;color:#c8d8ec}
+.wordmark-text .thin{font-weight:300}
+.wordmark-text .heavy{font-weight:800}
+.wordmark-sub{font-size:8px;font-weight:600;letter-spacing:.22em;color:#e0b03a;text-transform:uppercase}
 h1{font-size:20px;margin:0}p{margin:0;color:#8b97b8;max-width:28ch;line-height:1.5}
-button{margin-top:6px;min-height:48px;padding:0 28px;border:0;border-radius:12px;background:#00ff88;color:#04210f;font-weight:700;font-size:16px}
+button{margin-top:6px;min-height:48px;padding:0 28px;border:0;border-radius:12px;background:#00ff88;color:#04210f;font-weight:700;font-size:16px;cursor:pointer}
 </style></head><body><main>
-<img src="/icon-192.png" alt="" width="72" height="72">
+<div class="lockup">
+  <img src="/brand/tm-mark.png" alt="" width="40" height="40">
+  <div class="wordmark">
+    <div class="wordmark-text"><span class="thin">TICKER</span><span class="heavy">TRACE</span></div>
+    <div class="wordmark-sub">A TraderMatrix product</div>
+  </div>
+</div>
 <h1>No signal.</h1>
 <p>You're offline. Holdings data needs a connection; the tape will be here when you're back.</p>
 <button onclick="location.reload()">Retry</button>
