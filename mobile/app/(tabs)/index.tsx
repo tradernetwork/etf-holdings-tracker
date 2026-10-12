@@ -1,3 +1,4 @@
+import { TM_URL } from "@/lib/tm";
 import { CATEGORY_OPTIONS as CATEGORIES } from "@/lib/discovery/scope";
 import { Action } from "@/components/discovery-ui";
 import { TrendPreview } from "@/components/institutional-trend";
@@ -23,7 +24,6 @@ import type { TodayStats } from "@/lib/today/types";
 import { deltaColor, display, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 
-const REFERRAL_URL = "https://www.tradermatrix.pro/?ref=MPHINANCE";
 
 export default function Today() {
   const c = useTheme();
@@ -202,7 +202,7 @@ export default function Today() {
             Data as of {formatShortDate(asOf)}
             {staleCount > 0 ? ` · ${staleCount} ${staleCount === 1 ? "fund is" : "funds are"} on an older disclosure` : ""}
           </Hint>
-          <Tappable onPress={() => Linking.openURL(REFERRAL_URL)} style={{ justifyContent: "center" }}>
+          <Tappable onPress={() => Linking.openURL(TM_URL)} style={{ justifyContent: "center" }}>
             <Text style={styles.referral}>Explore the setup on TraderMatrix · referral link</Text>
           </Tappable>
         </View>
