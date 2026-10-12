@@ -1,0 +1,135 @@
+name: Mobile auto-release (push to main)
+
+# Every push to main that changes the app releases it, like the website (Vercel) and the API (Vultr sync) already do:
+#   JS-only change      -> OTA to the `production` channel (reaches installs on this app version at their next cold launch)
+#   native change       -> production BUILD with --auto-submit to the Play INTERNAL track, and NO OTA for that commit
+# The choice is made from Expo's native fingerprint compared with the latest production build on EAS, plus the app version
+# (runtimeVersion is the appVersion policy, so an OTA only reaches binaries at the SAME version; an OTA after a native change
+# could crash old binaries). Rules and rollback: docs/PLAY_RELEASE.md, "Auto-release".
+#
+# Nothing ships on red: the mobile tsc + jest gate runs here AND the main CI run for the same commit must succeed.
+# Kill switch: repo variable MOBILE_AUTO_RELEASE ("false" = log and exit; unset or anything else = on):
+#   gh variable set MOBILE_AUTO_RELEASE --body false     # off
+#   gh variable set MOBILE_AUTO_RELEASE --body true      # on
+# Needs the EXPO_TOKEN repo secret. Tests, docs and scripts do not ship the app, so they do not trigger it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "!mobile/**/*.md"
+      - "!mobile/__tests__/**"
+      - "!mobile/scripts/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Decide and report only (publish and build nothing)"
+        type: boolean
+        default: true
+
+# One release at a time. While one runs, only the NEWEST pending run is kept: a newer push supersedes a queued older one,
+# and the newest commit always carries every earlier change. Shared with the other mobile workflows.
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.sha }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      COMMIT_SUBJECT: ${{ github.event.head_commit.message }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Kill switch
+        id: switch
+        working-directory: .
+        run: |
+          if [ "${{ vars.MOBILE_AUTO_RELEASE }}" = "false" ]; then
+            echo "MOBILE_AUTO_RELEASE is false: auto-release is switched off, nothing to do."
+            echo "## Mobile auto-release is OFF (MOBILE_AUTO_RELEASE=false)" >> "$GITHUB_STEP_SUMMARY"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.switch.outputs.enabled == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.switch.outputs.enabled == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        if: steps.switch.outputs.enabled == 'true'
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install
+        if: steps.switch.outputs.enabled == 'true'
+        run: npm ci
+
+      - name: Typecheck and test
+        if: steps.switch.outputs.enabled == 'true'
+        run: npx tsc --noEmit && npx jest
+
+      # The whole repo CI (pytest, next build, dashboard tests, mobile) must be green for this exact commit.
+      - name: Main CI must be green for this commit
+        if: steps.switch.outputs.enabled == 'true' && github.event_name == 'push'
+        working-directory: .
+        run: |
+          for i in $(seq 1 18); do   # CI starts within seconds of the push; allow 3 minutes for it to appear
+            id=$(gh run list --workflow ci.yml --commit "$SHA" --json databaseId --jq '.[0].databaseId // empty')
+            [ -n "$id" ] && break
+            sleep 10
+          done
+          if [ -z "$id" ]; then echo "::error::No CI run found for $SHA; not releasing."; exit 1; fi
+          echo "waiting for CI run $id"
+          timeout 1500 gh run watch "$id" --exit-status --interval 20 || { echo "::error::CI is not green for $SHA; not releasing."; exit 1; }
+
+      - name: Decide OTA or build
+        if: steps.switch.outputs.enabled == 'true'
+        id: decide
+        run: |
+          app_version=$(grep -m1 -oE 'version: "[^"]+"' app.config.ts | sed -E 's/version: "([^"]+)"/\1/')
+          echo "app version: $app_version"
+          eas fingerprint:generate --platform android --environment production --json --non-interactive > /tmp/fingerprint.json
+          eas build:list --platform android --build-profile production --limit 10 --json --non-interactive > /tmp/builds.json
+          node scripts/release/decide.mjs --enabled true --app-version "$app_version" --local /tmp/fingerprint.json --builds /tmp/builds.json | tee /tmp/decision.txt
+        # a "blocked" decision exits 1 here and the run goes red: nothing is released when it cannot tell
+
+      - name: Report
+        if: always() && steps.switch.outputs.enabled == 'true'
+        run: |
+          { echo "## Mobile auto-release: $(head -c 400 /tmp/decision.txt 2>/dev/null || echo 'no decision')"; echo; echo "Commit: \`$SHA\`  dry run: \`$DRY_RUN\`"; } >> "$GITHUB_STEP_SUMMARY"
+
+      # JS-only: OTA to production. The message goes through an env var, never interpolated into the shell.
+      - name: Publish OTA to production
+        if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'ota' && env.DRY_RUN != 'true'
+        run: |
+          subject=$(printf '%s' "$COMMIT_SUBJECT" | head -n1)
+          [ -n "$subject" ] || subject=$(git log -1 --format=%s)
+          eas update --channel production --environment production --platform android --clear-cache --message "$subject (${SHA:0:7})" --non-interactive
+
+      # Native change (or a new app version): a binary is needed. Fail before queueing if EAS cannot submit it.
+      - name: Check Play submit key
+        if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
+        run: node scripts/play/check-submit-key.mjs
+
+      - name: Queue production build with auto-submit (Play internal)
+        if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
+        run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
