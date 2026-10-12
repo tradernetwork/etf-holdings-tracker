@@ -1,3 +1,4 @@
+import { isExcludedHolding } from '@/lib/cash-name';
 import { getLatestHoldings, getDailyDiff, getLatestHoldingsDate } from '@/lib/holdings';
 
 /**
@@ -37,7 +38,6 @@ export interface HoldingsResult {
 }
 
 const PAGE_SIZES = [10, 20, 30, 40, 50, 100];
-const EXCLUDED_TICKERS = new Set(['CASH', 'OTHER', '', 'USD', 'MARGIN', 'TBILL']);
 const SORTABLE = new Set<string>(HOLDINGS_COLUMNS);
 const TEXT_COLUMNS = new Set(['ETF Ticker', 'Ticker', 'Name', 'Option_Type', 'Option_Expiry']);
 
@@ -87,9 +87,8 @@ function loadBook() {
     const book: Record<string, any>[] = [];
     let changed = 0;
     for (const h of data) {
-        const name = String(h.Name || '').toLowerCase();
-        if (EXCLUDED_TICKERS.has(String(h.Ticker || '').toUpperCase())) continue;
-        if (name.includes('cash') || name.includes('treasury bill')) continue;
+        // Cash lines, T-bills and blank tickers are left out; real companies whose name merely contains "cash" stay (lib/cash-name.ts).
+        if (isExcludedHolding(h.Ticker, h.Name)) continue;
         const change = changeMap.get(`${h['ETF Ticker']}|${h.Ticker}`);
         const row: Record<string, any> = {};
         for (const k of HOLDINGS_COLUMNS) row[k] = (h as any)[k];
