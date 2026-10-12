@@ -1,0 +1,56 @@
+name: OTA update (Android)
+
+# Push a JS-only update without a store build. An OTA reaches every install on the SAME runtime
+# (runtimeVersion is the appVersion in mobile/app.config.ts, 1.0.0) on the chosen channel at its next
+# cold launch, so it is gated on tsc + jest. Anything touching native code or plugins needs a new build instead.
+# Needs the EXPO_TOKEN repo secret. Expo SDK 57 requires --environment, so the EAS environment of the same name
+# (preview / production) must exist and hold the EXPO_PUBLIC_* variables.
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Update message (shown in expo.dev)
+        required: false
+        default: "OTA update"
+      channel:
+        description: Channel (and EAS environment)
+        type: choice
+        options: [preview, production]
+        default: preview
+
+concurrency:
+  group: mobile-ota
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHANNEL: ${{ inputs.channel }}
+      MESSAGE: ${{ inputs.message }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Typecheck and test
+        run: npx tsc --noEmit && npx jest
+
+      # The message goes through an env var, never interpolated into the shell command.
+      - name: Publish OTA update
+        run: eas update --channel "$CHANNEL" --environment "$CHANNEL" --platform android --clear-cache --message "$MESSAGE" --non-interactive

@@ -38,9 +38,18 @@
     }
   },
   "submit": {
+    // Default: every production build goes to the Play INTERNAL testing track. Promoting from there is a click in Play Console.
     "production": {
       "android": {
         "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
+    // Used only by the eas-ops "release-android-production" action: straight to the Play PRODUCTION track
+    // (Google review still applies). The Play service-account key lives on EAS, not in GitHub or this repo.
+    "production-release": {
+      "android": {
+        "track": "production",
         "releaseStatus": "completed"
       }
     }
