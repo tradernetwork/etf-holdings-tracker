@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import fingerprint from './fingerprint.cjs';
 
 export const SECRETS = process.env.TT_PLAY_SECRETS ?? path.join(os.homedir(), 'secrets', 'tickertrace-play');
 export const APP_FULL_NAME = '@tradernetwork/tickertrace';
@@ -43,6 +44,8 @@ export function localSha256(keystorePath, password) {
   const out = execFileSync('openssl', ['x509', '-noout', '-fingerprint', '-sha256'], { input: pem, stdio: ['pipe', 'pipe', 'ignore'] }).toString();
   return out.trim().split('=')[1].toUpperCase();
 }
+
+export const { normFp, sameFp } = fingerprint;
 
 export const fingerprintMatchesPlay = (fp) => fp.startsWith(EXPECT_PREFIX) && fp.endsWith(EXPECT_SUFFIX);
 
