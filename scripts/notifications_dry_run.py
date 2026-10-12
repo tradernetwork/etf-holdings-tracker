@@ -115,14 +115,14 @@ def main():
             if e['kind'] == 'trade':
                 if e['fund'] in catch_up:
                     failures.append(f'{name}: catch-up fund {e["fund"]} leaked as a trade')
-                if abs(e['activeWeightDelta']) < data._significance_threshold(e['fund']):
-                    failures.append(f'{name}: {e["fund"]} {e["ticker"]} below significance threshold')
+                if e['type'] not in ('NEW', 'REMOVED') and abs(e['activeWeightDelta']) < job.NOTIFY_MIN_PP:
+                    failures.append(f'{name}: {e["fund"]} {e["ticker"]} below the {job.NOTIFY_MIN_PP} pp notification floor')
             elif e['fund'] not in {f['symbol'] for f in follows if f['kind'] == 'fund'}:
                 failures.append(f'{name}: catch-up notice for a fund the device does not follow')
         if len(payload['body']) > 240:
             failures.append(f'{name}: body is {len(payload["body"])} chars (long for a notification)')
     lines += ['## Checks', '']
-    lines += [f'- FAIL: {f}' for f in failures] or ['- PASS: no catch-up fund leaked as a trade; every trade is above its significance threshold; catch-up notices only for explicitly followed funds; empty digests send nothing.']
+    lines += [f'- FAIL: {f}' for f in failures] or ['- PASS: no catch-up fund leaked as a trade; every resized trade is at or above the 0.10 pp notification floor (NEW/EXIT are exempt); catch-up notices only for explicitly followed funds; empty digests send nothing.']
     report = '\n'.join(lines) + '\n'
     print(report)
     if a.out:

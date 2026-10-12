@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   name: "TickerTrace",
   slug: "tickertrace",
   scheme: "tickertrace",
-  version: "0.1.0",
+  version: "1.0.0",
   // Expo account that owns the EAS project (linked with `eas init`).
   owner: "tradernetwork",
   // Binary-pinned: an OTA update only reaches builds with the same app version.

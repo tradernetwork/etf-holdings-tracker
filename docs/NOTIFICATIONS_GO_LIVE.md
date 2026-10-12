@@ -90,7 +90,7 @@ The app picks the update up on the next cold start (it checks on launch, applies
 | FCM V1 key in EAS | unknown, assume no | required |
 | Same signing key, so v4 installs over v3 | n/a | preview profile uses the local Play upload key (`credentialsSource: local`): build from the machine that holds `credentials.json` |
 
-`runtimeVersion` is `appVersion` (0.1.0). A v4 built at 0.1.0 shares the runtime with v3, so a preview OTA also reaches any still-installed v3 (harmless: it falls back to `awaitingBuild`). If you bump the version, publish the OTA to the new runtime.
+`runtimeVersion` is `appVersion`. Preview APKs were built at 0.1.0 and share that runtime, so a preview OTA also reaches any still-installed preview build (harmless: it falls back to `awaitingBuild`). Production builds are **1.0.0**, a separate runtime that never receives preview-channel OTAs; publish an OTA to the production channel/runtime 1.0.0 deliberately.
 
 ## 3. FCM + v4 build: exact user steps (about 20 minutes)
 
