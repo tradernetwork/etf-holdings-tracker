@@ -114,7 +114,7 @@ ChromeOS runs the Play build of the app; no separate artifact. `plugins/with-chr
 In Play Console, once the new build is on a track:
 
 1. **Release > Setup > Advanced settings > Device catalog** (or Release > Reach and devices > Device catalog): confirm ChromeOS devices are *not* excluded, and that the uploaded build's supported-device count rose / shows Chromebook models. Look under Device catalog > Device exclusion rules for any rule that excludes the "Chromebook" form factor.
-2. **Main store listing > Chromebook screenshots (optional)**: add at least 4 large-screen shots (16:9 or 16:10, 1366x768 or larger). Without them the app can still be listed, but Play may rank it lower on large screens. Candidates: the web export at 1366x768, Terminal and Paper themes.
+2. **Main store listing > Chromebook screenshots (optional)**: add at least 4 large-screen shots (16:9 or 16:10, 1366x768 or larger). Without them the app can still be listed, but Play may rank it lower on large screens. Ready-made 1366x768 and 1920x1080 web-export shots (Terminal and Paper; today, explore, following, changes, fund ARKK, options) are in `store-assets/android/v2/chromebook/`.
 3. Smoke-test on a Chromebook or the Android Studio ChromeOS/desktop emulator: resize the window, snap it half-screen, use mouse wheel, hover, Enter in search, Esc to close the filter sheet.
 
 ## 9. CI/CD (GitHub Actions)
