@@ -13,6 +13,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLayout } from "@/lib/layout";
 import { type Freshness } from "@/lib/format";
 import { fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -32,6 +33,7 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const c = useTheme();
   const styles = useStyles(makeStyles);
+  const { column } = useLayout();
   return (
     <ScrollView
       style={styles.screen}
@@ -40,6 +42,7 @@ export function Screen({
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.xxl,
         gap: spacing.md,
+        ...column,
       }}
       refreshControl={
         onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={c.accent} /> : undefined
@@ -197,7 +200,15 @@ export function Tappable({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, minHeight: MIN_TAP }, style]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      // `hovered` only exists on web (mouse); undefined on touch, so phones are unchanged.
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+        { opacity: pressed ? 0.7 : hovered ? 0.85 : 1, minHeight: MIN_TAP },
+        style,
+      ]}
+    >
       {children}
     </Pressable>
   );

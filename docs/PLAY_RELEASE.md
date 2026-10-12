@@ -40,7 +40,7 @@ node scripts/play/set-version-floor.mjs 57             # dry run: "next producti
 node scripts/play/set-version-floor.mjs 57 --apply     # raises the EAS counter (it never lowers it)
 npx eas-cli build:version:get -p android -e production # confirm: 57; the next build becomes 58
 ```
-`versionName` comes from `version` in `app.config.ts`, now **`1.0.0`**. Because `runtimeVersion` is `appVersion`, **the version string is also the OTA runtime**: the 0.1.0 preview APKs and the 1.0.0 production build are separate runtimes, so a preview OTA can never reach production users. Publish OTAs per runtime (`eas update --channel production` targets 1.0.0 builds) and never let an OTA target a runtime you do not mean to. `versionCode` is managed remotely (`autoIncrement`).
+`versionName` comes from `version` in `app.config.ts`, now **`1.0.1`** (bumped with the ChromeOS manifest change and the new icons, which together changed the native fingerprint). Because `runtimeVersion` is `appVersion`, **the version string is also the OTA runtime**: the 0.1.0 preview APKs and the 1.0.0 production build are separate runtimes, so a preview OTA can never reach production users. Publish OTAs per runtime (`eas update --channel production` targets 1.0.0 builds) and never let an OTA target a runtime you do not mean to. `versionCode` is managed remotely (`autoIncrement`).
 
 ## 3. `eas.json` production profile (reviewed and updated in this PR)
 
@@ -104,7 +104,18 @@ Download the `.aab` from the EAS build page. Optionally inspect it: `bundletool`
 - [ ] AAB built; uploaded to **Internal** testing by hand; install-over-TWA test passes
 - [ ] Listing copy, 8 screenshots, feature graphic, icon, ratings, audience, ads declaration complete
 - [ ] Production staged rollout 5 % > 20 % > 50 % > 100 % with vitals checked between steps
+- [ ] Chromebook check done (section 8a)
 - [ ] assetlinks.json removed only after the TWA is gone (section 7)
+
+## 8a. Chromebooks (ChromeOS)
+
+ChromeOS runs the Play build of the app; no separate artifact. `plugins/with-chromeos.ts` (registered in `app.config.ts`) declares `android.hardware.touchscreen` (plus `screen.portrait` / `screen.landscape`) as `required="false"` and sets `resizeableActivity="true"`. Without it Play treats the touchscreen as implicitly required and hides the app from non-touch Chromebooks. **This is a manifest change: it ships only in the next store build (AAB), never as an OTA update.**
+
+In Play Console, once the new build is on a track:
+
+1. **Release > Setup > Advanced settings > Device catalog** (or Release > Reach and devices > Device catalog): confirm ChromeOS devices are *not* excluded, and that the uploaded build's supported-device count rose / shows Chromebook models. Look under Device catalog > Device exclusion rules for any rule that excludes the "Chromebook" form factor.
+2. **Main store listing > Chromebook screenshots (optional)**: add at least 4 large-screen shots (16:9 or 16:10, 1366x768 or larger). Without them the app can still be listed, but Play may rank it lower on large screens. Candidates: the web export at 1366x768, Terminal and Paper themes.
+3. Smoke-test on a Chromebook or the Android Studio ChromeOS/desktop emulator: resize the window, snap it half-screen, use mouse wheel, hover, Enter in search, Esc to close the filter sheet.
 
 ## 9. CI/CD (GitHub Actions)
 

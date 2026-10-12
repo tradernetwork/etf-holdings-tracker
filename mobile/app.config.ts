@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   name: "TickerTrace",
   slug: "tickertrace",
   scheme: "tickertrace",
-  version: "1.0.0",
+  version: "1.0.1",
   // Expo account that owns the EAS project (linked with `eas init`).
   owner: "tradermatrix",
   // Binary-pinned: an OTA update only reaches builds with the same app version.
@@ -48,6 +48,8 @@ const config: ExpoConfig = {
     "expo-router",
     // Local/push notifications (daily digest). Android 13+ POST_NOTIFICATIONS is requested at runtime, after an explicit opt-in.
     "expo-notifications",
+    // ChromeOS: touchscreen not required (non-touch Chromebooks), explicitly resizable window.
+    "./plugins/with-chromeos",
     [
       "expo-splash-screen",
       {

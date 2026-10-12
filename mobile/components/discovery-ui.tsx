@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { router } from "expo-router";
 import {
   FlatList,
+  useWindowDimensions,
   SectionList,
   type SectionListData,
   type SectionListRenderItem,
@@ -11,6 +12,7 @@ import {
   View,
   type ListRenderItem,
 } from "react-native";
+import { columnStyle } from "@/lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, Hint, Mono, Note, Tappable, Badge, FreshnessLabel } from "./ui";
 import { useTheme } from "@/lib/theme-context";
@@ -117,7 +119,8 @@ export function ListPage<T>({
   dense?: boolean;
 }) {
   const c = useTheme(),
-    insets = useSafeAreaInsets();
+    insets = useSafeAreaInsets(),
+    { width } = useWindowDimensions();
   return (
     <View style={{ flex: 1, backgroundColor: c.canvas }}>
       <FlatList
@@ -134,6 +137,7 @@ export function ListPage<T>({
           paddingTop: 8,
           paddingBottom: insets.bottom + 28,
           gap: dense ? 0 : 10,
+          ...columnStyle(width, "table"),
         }}
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 10 }}>{header}</View>
@@ -410,7 +414,8 @@ export function SectionPage<T extends { id: string }>({
   showHeaders?: boolean;
 }) {
   const c = useTheme(),
-    insets = useSafeAreaInsets();
+    insets = useSafeAreaInsets(),
+    { width } = useWindowDimensions();
   return (
     <View style={{ flex: 1, backgroundColor: c.canvas }}>
       <SectionList
@@ -427,6 +432,7 @@ export function SectionPage<T extends { id: string }>({
           paddingHorizontal: 18,
           paddingTop: 8,
           paddingBottom: insets.bottom + 28,
+          ...columnStyle(width, "table"),
         }}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 8 }}>{header}</View>

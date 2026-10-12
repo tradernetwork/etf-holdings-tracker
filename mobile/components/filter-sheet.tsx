@@ -100,6 +100,10 @@ const makeStyles = (c: Palette) =>
     borderBottomWidth: 0,
     paddingHorizontal: spacing.lg,
     maxHeight: "80%",
+    // Wide windows: a centred 560dp panel instead of a window-wide slab (no-op on phones).
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
   },
   handle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginTop: spacing.sm },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: spacing.sm },
