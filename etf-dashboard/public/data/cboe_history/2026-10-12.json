@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-12T20:34:32.093768+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5349,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 576
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "XRPN": "ARMADA ACQUISITION CORP II COM CL A"
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
