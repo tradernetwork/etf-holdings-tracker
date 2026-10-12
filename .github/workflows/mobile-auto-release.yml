@@ -73,10 +73,10 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - uses: expo/expo-github-action@v8
+      - uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e # v8
         if: steps.switch.outputs.enabled == 'true'
         with:
-          eas-version: latest
+          eas-version: 24.13.0
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install
