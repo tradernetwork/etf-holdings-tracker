@@ -402,6 +402,12 @@ export default async function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 12, 2026"
+            tag="bugfix"
+            title="The daily scrape gets a second alarm clock"
+            desc="GitHub skipped Monday's scheduled scrape without even creating a failed run. We've moved the primary off the busy hour, added a backup that skips an already-committed day, and taught the freshness canary to complain when today's snapshot is missing after 21:00 UTC. Manual retries still work. Two alarm clocks are better than one, but we're not pretending GitHub cron has become a guarantee."
+          />
+          <ChangelogEntry
+            date="October 12, 2026"
             tag="feature"
             title="New TraderMatrix-endorsed logo, flow check bridges, and a watchlist that lives in your browser"
             desc="The site finally looks like what it is. We swapped the old text logo for the real TickerTrace mark with the 'A TraderMatrix Product' line underneath it, because a product that feeds a paid platform should probably say so in the header, not just at the bottom of the page. The landing page got rebuilt around that — the big purple brain emoji is gone, the TraderMatrix CTAs are now the actual TraderMatrix gold, and every link out to them carries a placement ID so we can tell which parts of the page are actually driving clicks. We also added a flow check module right below the hero: it pulls today's top institutional buys and drops them next to a blurred TraderMatrix flow cell, so you can see the two layers side by side without having to already know what each product does. The watchlist is new and quiet — star any ticker on the dashboard or stocks page and it saves to your browser. Nothing to sign up for, nothing on our servers, just a small star that remembers what you were watching. Finally, the Sunday email recap has a real subscribe form now instead of a link that went nowhere."

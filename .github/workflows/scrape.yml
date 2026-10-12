@@ -2,21 +2,49 @@ name: Daily ETF Holdings Scrape
 
 on:
   schedule:
-    # Run at 12:00 UTC (7:00 AM EST) every weekday (Monday-Friday)
-    - cron: '0 12 * * 1-5'
+    # Off-hour minutes reduce GitHub's documented scheduler peak/drop risk.
+    - cron: '17 18 * * 1-5'
+    # Recovery attempt; both schedules can still be delayed or dropped.
+    - cron: '37 20 * * 1-5'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
   contents: write
 
+# Serialize primary, backup and manual runs; never cancel a running scrape.
+concurrency:
+  group: daily-holdings-scrape
+  cancel-in-progress: false
+
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.guard.outputs.run }}
+      snapshot_date: ${{ steps.guard.outputs.snapshot_date }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # A queued backup must check current main, not its event-time SHA.
+          ref: main
+      - name: Check whether today's snapshot is missing
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: python3 scripts/scrape_schedule.py
+
   scrape:
+    needs: preflight
+    if: needs.preflight.outputs.run == 'true'
+    env:
+      SNAPSHOT_DATE: ${{ needs.preflight.outputs.snapshot_date }}
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
@@ -51,7 +79,7 @@ jobs:
           # Copy to latest
           cp normalized_holdings.csv etf-dashboard/public/data/holdings_latest.csv
           # Create dated snapshot
-          TODAY=$(date +%Y-%m-%d)
+          TODAY="${SNAPSHOT_DATE}"
           cp normalized_holdings.csv etf-dashboard/public/data/history/holdings_${TODAY}.csv
           # Keep only last 30 days of history
           find etf-dashboard/public/data/history -name "holdings_*.csv" -type f -mtime +30 -delete
@@ -100,7 +128,7 @@ jobs:
           # report. The yfinance price cache is gitignored — it persists via the
           # actions cache above.
           git add normalized_holdings.csv etf-dashboard/public/data/ analyses/*_rotation.md
-          TODAY=$(date +%Y-%m-%d)
+          TODAY="${SNAPSHOT_DATE}"
           if git diff --quiet && git diff --staged --quiet; then
             echo "No changes to commit."
             exit 0
