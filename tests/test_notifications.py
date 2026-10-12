@@ -394,3 +394,24 @@ def test_subscribe_ip_limit_is_30_per_hour_but_token_quota_stays(notifications):
     for _ in range(5):
         assert c2.post('/notifications/subscribe',json={'transport':'expo','token':TOKEN}).status_code==201
     assert c2.post('/notifications/subscribe',json={'transport':'expo','token':TOKEN}).status_code==429
+
+
+def test_accepted_digest_renews_the_idle_clock_but_a_silent_device_still_expires(notifications,synthetic_history,monkeypatch):
+    """The privacy text promises deletion after 180 days UNUSED. A phone that only receives digests is in use."""
+    from api import notification_job as job,push_delivery
+    live=notifications.create_device(TOKEN)
+    notifications.replace_follows(live['deviceId'],[{'kind':'ticker','symbol':'TSLA'}])
+    idle=notifications.create_device('ExponentPushToken[bbbbbbbbbbbbbbbbbbbbbb]')
+    t0=100000.0
+    with sqlite3.connect(notifications.DB_PATH) as db:
+        db.execute('update devices set updated=?',(t0,))
+    day100=t0+100*86400
+    job.prepare_daily(day100)
+    monkeypatch.setattr(push_delivery,'send_expo',lambda *a:{'status':'ok','id':'t1'})
+    assert job.send_pending(day100+60)==1           # Expo accepted a digest for the live device at day 100
+    monkeypatch.setattr(push_delivery,'get_receipts',lambda ids:{})
+    job.run_once(now=t0+185*86400)                  # 185 days after both last "management" calls
+    with sqlite3.connect(notifications.DB_PATH) as db:
+        ids={r[0] for r in db.execute('select id from devices')}
+    assert idle['deviceId'] not in ids              # never used again: deleted after 180 days
+    assert live['deviceId'] in ids                  # last digest 85 days ago: still registered

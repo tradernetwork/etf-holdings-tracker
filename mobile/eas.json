@@ -24,7 +24,17 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "env": { "EXPO_PUBLIC_API_URL": "https://api.tickertrace.pro" }
+      // Play wants an Android App Bundle (not an APK). Signed with the Play UPLOAD key held by EAS
+      // (hosted credentials): upload it once with scripts/play/upload-keystore-to-eas.mjs.
+      "android": { "buildType": "app-bundle" },
+      // EXPO_PUBLIC_* come from the EAS "production" environment (see docs/PLAY_RELEASE.md). They are
+      // also pinned here so a build never depends on that environment being filled in, and the
+      // notifications client flag is explicitly OFF until the backend is live.
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.tickertrace.pro",
+        "EXPO_PUBLIC_NOTIFICATIONS_BACKEND": "0"
+      }
     }
   },
   "submit": {

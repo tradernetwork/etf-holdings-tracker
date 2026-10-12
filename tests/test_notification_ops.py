@@ -47,3 +47,14 @@ def test_purge_removes_everything_and_requires_yes(ops):
         o.main(['purge'])
     assert o.main(['purge', '--yes']) == 0
     assert 'devices: 0' in o.status()
+
+
+def test_purge_one_device_by_prefix_keeps_the_others(ops):
+    store, o = ops
+    d1 = store.create_device(TOKEN)
+    d2 = store.create_device('ExponentPushToken[bbbbbbbbbbbbbbbbbbbbbb]')
+    assert o.purge(d1['deviceId'][:8]) == 1
+    out = o.status()
+    assert 'devices: 1' in out and d2['deviceId'][:8] in out and d1['deviceId'][:8] not in out
+    with pytest.raises(SystemExit):
+        o.purge('zzzzzzzz')                          # no match: refuses rather than deleting everything
