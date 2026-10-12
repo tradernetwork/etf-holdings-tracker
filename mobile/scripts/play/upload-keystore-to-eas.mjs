@@ -10,7 +10,7 @@
 // Play upload key (83:78:2F...A3:A9). Idempotent: does nothing if EAS already holds this exact key.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_ID, APP_FULL_NAME, SECRETS, appAndCredentials, fingerprintMatchesPlay, gql, localSha256, readKeyInfo } from './lib.mjs';
+import { APP_ID, APP_FULL_NAME, SECRETS, appAndCredentials, fingerprintMatchesPlay, gql, localSha256, readKeyInfo, sameFp } from './lib.mjs';
 
 const apply = process.argv.includes('--apply');
 const ksPath = path.join(SECRETS, 'signing.keystore');
@@ -25,7 +25,7 @@ console.log(`EAS app          : ${APP_FULL_NAME} (${app.id}), owner ${app.ownerA
 const creds = app.androidAppCredentials[0] ?? null;
 const lists = creds?.androidAppBuildCredentialsList ?? [];
 console.log(`EAS Android creds: ${creds ? `app credentials ${creds.id}, ${lists.length} build credential set(s)` : 'none yet'}`);
-const already = lists.find((b) => b.androidKeystore?.sha256CertificateFingerprint?.toUpperCase() === fp);
+const already = lists.find((b) => sameFp(b.androidKeystore?.sha256CertificateFingerprint, fp));
 if (already) {
   console.log(`Already uploaded: build credentials "${already.name}" (${already.id}), default=${already.isDefault}. Nothing to do.`);
   process.exit(0);
@@ -46,7 +46,7 @@ const ks = await gql(
 );
 const keystoreId = ks.androidKeystore.createAndroidKeystore.id;
 console.log(`created keystore ${keystoreId}`);
-if (ks.androidKeystore.createAndroidKeystore.sha256CertificateFingerprint?.toUpperCase() !== fp) throw new Error('EAS reports a different fingerprint than the local keystore; stop and investigate (the keystore was created but NOT attached).');
+if (!sameFp(ks.androidKeystore.createAndroidKeystore.sha256CertificateFingerprint, fp)) throw new Error('EAS reports a different fingerprint than the local keystore; stop and investigate (the keystore was created but NOT attached).');
 
 let credsId = creds?.id;
 if (!credsId) {
@@ -64,6 +64,6 @@ const b = await gql(
 console.log(`attached build credentials ${b.androidAppBuildCredentials.createAndroidAppBuildCredentials.id} (default)`);
 
 const after = await appAndCredentials();
-const ok = after.androidAppCredentials[0]?.androidAppBuildCredentialsList.some((x) => x.isDefault && x.androidKeystore?.sha256CertificateFingerprint?.toUpperCase() === fp);
+const ok = after.androidAppCredentials[0]?.androidAppBuildCredentialsList.some((x) => x.isDefault && sameFp(x.androidKeystore?.sha256CertificateFingerprint, fp));
 console.log(ok ? 'VERIFIED: EAS now holds the Play upload key as the default Android credential.' : 'WARNING: could not verify the default credential; check `eas credentials -p android`.');
 process.exit(ok ? 0 : 1);
