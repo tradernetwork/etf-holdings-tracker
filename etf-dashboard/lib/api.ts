@@ -812,7 +812,7 @@ async function apiFetchResource<T>(path: string, opts: ApiOptions = {}): Promise
     try {
         return await rawFetch<T>(path, revalidate, retries);
     } catch (e) {
-        if (e instanceof ApiError && e.status === 404) return null;
+        if (e instanceof ApiError && (e.status === 404 || e.status === 400)) return null; // 400 = malformed id (e.g. "Cash&Other"): not found, not a 500
         throw e;
     }
 }
