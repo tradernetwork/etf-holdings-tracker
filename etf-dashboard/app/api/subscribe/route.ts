@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                // TraderMatrix's API rejects bare node/undici user agents (403).
+                'User-Agent': 'TickerTrace/1.0',
                 ...(process.env.SUBSCRIBE_WEBHOOK_KEY ? { 'x-tickertrace-key': process.env.SUBSCRIBE_WEBHOOK_KEY } : {}),
             },
             body: JSON.stringify({ email, placement, source: 'tickertrace' }),
