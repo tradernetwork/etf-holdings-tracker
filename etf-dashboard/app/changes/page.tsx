@@ -40,11 +40,14 @@ export default async function ChangesPage({
     // /signals payload truncates to the top 50 by magnitude, which silently
     // drops broad value funds like Avantis whose per-name deltas are tiny.
     // Equity changes come from /changes; option activity from /activity.
+    // An API hiccup (the proxy 502s now and then) must not 500 the page: each
+    // call degrades to null, and the page says so when the main list is missing.
+    const safe = <T,>(p: Promise<T>) => p.catch((e) => { console.error('changes page fetch failed:', e); return null; });
     const [changesResp, activity, institutional, trend] = await Promise.all([
-        api.changes({ period, limit: 5000 }),
-        api.activity(period),
-        api.institutional(period, 25),
-        api.institutionalTrend(12),
+        safe(api.changes({ period, limit: 5000 })),
+        safe(api.activity(period)),
+        safe(api.institutional(period, 25)),
+        safe(api.institutionalTrend(12)),
     ]);
 
     const asOfDate = changesResp?.asOfDate ?? 'unknown';
@@ -129,6 +132,12 @@ export default async function ChangesPage({
                     >{p.label}</Link>
                 ))}
             </div>
+
+            {!changesResp && (
+                <div role="alert" className="rounded-xl border border-tm-gold/30 bg-tm-gold/5 px-4 py-3 text-sm text-slate-300">
+                    The live feed is catching its breath, so today&apos;s change list isn&apos;t loaded. Refresh in a minute.
+                </div>
+            )}
 
             {institutional && <InstitutionalSummary flow={institutional} />}
 
