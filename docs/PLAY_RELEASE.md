@@ -142,3 +142,44 @@ The tag is only a trigger: the build uses the `app.config.ts` version, and the w
 Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `status` action. The scripts address the app as `@tradermatrix/tickertrace` (`EAS_APP_FULL_NAME` overrides, e.g. `@tradernetwork/tickertrace` if the transfer is not done yet). **Merge the `owner` change only after the transfer completes:** `eas` rejects a project whose `owner` differs from the account that holds the project id. Whoever moves `EXPO_TOKEN` to a `tradermatrix` token (GitHub secret and `~/secrets/tickertrace-play/expo-token`) does not need to touch the workflows.
 
 `eas.json` submit profiles: `production` (track `internal`, the default for every build) and `production-release` (track `production`, used only by `eas-ops` → `release-android-production`).
+
+## 10. Auto-release on push to main
+
+`.github/workflows/mobile-auto-release.yml` releases the app on every push to `main` that changes `mobile/**` (docs, tests and `scripts/` do not ship the app, so they do not trigger it), the way Vercel releases the website and the Vultr sync releases the API.
+
+**Gate: nothing ships on red.** The workflow runs mobile `tsc` + `jest`, then waits for the repo's own `CI` run for the same commit (pytest, next build, dashboard tests, mobile) and aborts unless it succeeded.
+
+**What it ships** (`mobile/scripts/release/decide.cjs`, unit-tested in `mobile/__tests__/release-decide.test.ts`). It computes the current Android native fingerprint (`eas fingerprint:generate --platform android --environment production`) and compares it with the newest live production build on EAS (`eas build:list`, a queued build counts, so a second push never builds twice):
+
+| Situation | Action |
+|---|---|
+| fingerprint unchanged, same app version | **OTA** to the `production` channel: `eas update --channel production --environment production --platform android --clear-cache --message "<commit subject> (<sha>)"` |
+| fingerprint changed | **Build**: `eas build --profile production --auto-submit` (Play internal track). **No OTA for that commit.** |
+| `version` in `app.config.ts` differs from the latest build's | **Build** (a new runtime has no binary to receive an OTA) |
+| no production build, or its fingerprint is not recorded | **Blocked**: the run goes red and ships nothing; release once by hand (`git tag mobile-v… && git push origin mobile-v…`) |
+| `MOBILE_AUTO_RELEASE` is `false` | Nothing: logs and exits |
+
+**Why a native change never gets an OTA.** `runtimeVersion` is the `appVersion` policy, so an OTA reaches every install on that *app version*. If native code changed but the version did not, the old binary and the JS would no longer match and the OTA could crash installs on the old binary. So the change is built as a binary instead. **Bump `version` in `app.config.ts` in the same PR as any native change** (a new dependency with native code, a plugin, permissions, `app.config.ts` native fields). The version bump gives the new binary its own runtime, so later OTAs reach only binaries that contain the native code; without it, the old and new binaries share a runtime and OTAs reach both. The workflow's build message says so.
+
+**One release at a time.** All mobile workflows share the `mobile-release` concurrency group. While one runs, only the newest pending run is kept, so a newer push supersedes a queued older one (the newest commit contains the earlier changes too). A run in progress is never cancelled.
+
+**Kill switch** (repo variable `MOBILE_AUTO_RELEASE`, unset means on):
+```bash
+gh variable set MOBILE_AUTO_RELEASE --body false    # off: pushes log "switched off" and release nothing
+gh variable set MOBILE_AUTO_RELEASE --body true     # on again
+gh variable get MOBILE_AUTO_RELEASE
+```
+**Dry run:** Actions → *Mobile auto-release* → Run workflow (dry run on by default) prints the decision (OTA / build / blocked and why) without publishing or building. Use it to check the fingerprint comparison before relying on it; if it always says "build" with no native change, the local and EAS fingerprints are not comparable, so turn the switch off and look at `eas fingerprint:compare`.
+
+**Rollback an OTA** (runtime 1.0.0, channel/branch `production`). List recent updates, then either roll back or republish:
+```bash
+cd mobile
+eas update:list --branch production --platform android --limit 10        # find the bad group id and the last good one
+# 1. Roll back: republishes the group published BEFORE the bad one (the bad group must be the latest on its branch and runtime)
+eas update:rollback <BAD-GROUP-ID> --platform android --message "rollback: <why>" --non-interactive
+# 2. Or republish a specific earlier group as the newest update
+eas update:republish --group <GOOD-GROUP-ID> --destination-channel production --platform android --message "republish <good>" --non-interactive
+```
+Installs pick the rollback up at their next cold launch. To stop further releases while you investigate, set `MOBILE_AUTO_RELEASE` to `false` first. A bad **binary** cannot be rolled back (Play never accepts a lower versionCode): halt the rollout in Play Console and ship a fixed build (section 7). The manual **OTA update (Android)** workflow (`ota-update.yml`) can also publish a fix to a channel by hand.
+
+**Safe to land now:** production users are on the internal track only (1.0.0 build 102), so an early OTA or build reaches testers, not the public.
