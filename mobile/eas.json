@@ -38,18 +38,19 @@
     }
   },
   "submit": {
-    // Default: every production build goes to the Play INTERNAL testing track. Promoting from there is a click in Play Console.
+    // Default (decision 2026-10-13): every production build, from a mobile-v* tag or the push-to-main auto-release, is
+    // submitted straight to the Play PRODUCTION track. Google review still applies to each one, and a native release cannot be
+    // rolled back to a lower versionCode (docs/PLAY_RELEASE.md). The Play service-account key lives on EAS, not in GitHub.
     "production": {
       "android": {
-        "track": "internal",
+        "track": "production",
         "releaseStatus": "completed"
       }
     },
-    // Used only by the eas-ops "release-android-production" action: straight to the Play PRODUCTION track
-    // (Google review still applies). The Play service-account key lives on EAS, not in GitHub or this repo.
-    "production-release": {
+    // Opt-in internal testing track, only via the eas-ops "submit-android-internal" action.
+    "internal": {
       "android": {
-        "track": "production",
+        "track": "internal",
         "releaseStatus": "completed"
       }
     }

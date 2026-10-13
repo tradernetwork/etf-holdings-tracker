@@ -3,14 +3,15 @@ name: EAS ops (Android)
 # Manual EAS chores that need EXPO_TOKEN, which only exists as an Actions secret. `status` is read-only.
 # Pattern from tradernetwork/vero's eas-ops.yml. Both submit actions need the Google Play service-account key on EAS
 # (mobile/scripts/play/upload-play-submit-key-to-eas.mjs); without it they stop with a clear message first.
+# Store submissions go to Play PRODUCTION by default (eas.json submit.production); submit-android-internal is the opt-in internal track.
 on:
   workflow_dispatch:
     inputs:
       op:
-        description: "status = list builds/updates; submit-android = latest finished production build to the Play INTERNAL track; release-android-production = new production build from this ref, submitted to the Play PRODUCTION track (Google review still applies)"
+        description: "status = list builds/updates; submit-android = latest finished production build to the Play PRODUCTION track (Google review applies); submit-android-internal = the same build to the Play INTERNAL testing track only; release-android-production = new production build from this ref, submitted to Play PRODUCTION"
         required: true
         type: choice
-        options: [status, submit-android, release-android-production]
+        options: [status, submit-android, submit-android-internal, release-android-production]
         default: status
 
 concurrency:
@@ -57,18 +58,20 @@ jobs:
         run: node scripts/play/check-submit-key.mjs
 
       # Newest FINISHED production-profile build, by id, so a preview or development build can never be picked up.
-      - name: Submit latest Android production build (internal track)
-        if: inputs.op == 'submit-android'
+      - name: Submit latest Android production build (${{ inputs.op == 'submit-android-internal' && 'internal' || 'production' }} track)
+        if: inputs.op == 'submit-android' || inputs.op == 'submit-android-internal'
+        env:
+          SUBMIT_PROFILE: ${{ inputs.op == 'submit-android-internal' && 'internal' || 'production' }}
         run: |
           id=$(eas build:list --platform android --build-profile production --status finished --limit 1 --json --non-interactive | jq -r '.[0].id // empty')
           if [ -z "$id" ]; then echo "::error::No finished production Android build to submit. Run the Mobile release workflow first."; exit 1; fi
           echo "build id: $id"
-          eas submit --platform android --profile production --id "$id" --non-interactive
+          eas submit --platform android --profile "$SUBMIT_PROFILE" --id "$id" --non-interactive
 
-      # Builds this exact ref and submits that build by id (the production-release submit profile = Play production track).
+      # Builds this exact ref and submits that build by id (the production submit profile = Play production track).
       - name: Build and release to Play production
         if: inputs.op == 'release-android-production'
         run: |
           id=$(eas build --platform android --profile production --non-interactive --json | jq -r '.[0].id')
           echo "build id: $id"
-          eas submit --platform android --profile production-release --id "$id" --non-interactive
+          eas submit --platform android --profile production --id "$id" --non-interactive

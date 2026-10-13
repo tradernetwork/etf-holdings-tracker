@@ -53,7 +53,7 @@ npx eas-cli build:version:get -p android -e production # confirm: 57; the next b
 | `env.EXPO_PUBLIC_API_URL` | `https://api.tickertrace.pro` | pinned so a build never depends on EAS variables being filled in |
 | `env.EXPO_PUBLIC_NOTIFICATIONS_BACKEND` | `"0"` | notifications client flag explicitly OFF (code checks `=== "1"`) |
 | `autoIncrement` | `true` | with `appVersionSource: remote` |
-| `submit.production.android` | `track: internal`, `releaseStatus: completed` | first upload goes to **internal testing**, never straight to production |
+| `submit.production.android` | `track: production`, `releaseStatus: completed` | **decision 2026-10-13:** store builds go straight to Play **production** (the old TWA was live; "why would we have broken stuff out there"). Google review applies to each one. `submit.internal` is the opt-in internal-track profile |
 
 Also set the same variables in the EAS production **environment**, because `eas update --environment production` (required on SDK 57) ignores `eas.json` env and `.env`:
 ```bash
@@ -99,7 +99,7 @@ Download the `.aab` from the EAS build page. Optionally inspect it: `bundletool`
 - [x] `upload-keystore-to-eas.mjs` dry run reviewed, then `--apply` (done Oct 12; default `play-upload-key`)
 - [x] Highest Play versionCode read from Play Console; `set-version-floor.mjs` run (floor 100, next build 101; done Oct 12)
 - [ ] EAS production environment variables set (section 3); version bumped to 1.0.0 (section 2)
-- [ ] `/api/v1/stock/{ticker}` slowness fixed or consciously accepted for internal testing only
+- [ ] `/api/v1/stock/{ticker}` slowness fixed or consciously accepted (store builds now go to production)
 - [ ] Privacy policy change merged and live; Data safety (Release A) entered
 - [ ] AAB built; uploaded to **Internal** testing by hand; install-over-TWA test passes
 - [ ] Listing copy, 8 screenshots, feature graphic, icon, ratings, audience, ads declaration complete
@@ -123,15 +123,15 @@ Ported from `tradernetwork/vero` (`build.yml`, `ota-update.yml`, `eas-ops.yml`).
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `mobile-release.yml` | push a tag `mobile-v*`, or run it by hand with a profile | `tsc` + jest gate, then `eas build -p android --profile production --non-interactive --no-wait --auto-submit`: EAS builds and **submits to the Play internal track** when the build finishes (the job ends in about a minute). One run at a time (`concurrency`). Non-production profiles build without submitting. |
+| `mobile-release.yml` | push a tag `mobile-v*`, or run it by hand with a profile | `tsc` + jest gate, then `eas build -p android --profile production --non-interactive --no-wait --auto-submit`: EAS builds and **submits to the Play PRODUCTION track** when the build finishes (the job ends in about a minute). One run at a time (`concurrency`). Non-production profiles build without submitting. |
 | `ota-update.yml` | run by hand: message + channel (`preview` or `production`) | `tsc` + jest gate, then `eas update --channel X --environment X --platform android --clear-cache` (SDK 57 requires `--environment`; the EAS environment of that name must exist). |
-| `eas-ops.yml` | run by hand: `status`, `submit-android` or `release-android-production` | `status` lists builds/updates/channel and whether a Play submit key exists. `submit-android` submits the newest **finished production-profile** build (by id) to the internal track. `release-android-production` builds this ref and submits that build to the **production** track with the `production-release` submit profile (Google review still applies). |
+| `eas-ops.yml` | run by hand: `status`, `submit-android`, `submit-android-internal` or `release-android-production` | `status` lists builds/updates/channel and whether a Play submit key exists. `submit-android` submits the newest **finished production-profile** build (by id) to the Play **production** track; `submit-android-internal` submits it to the **internal testing** track only (the `internal` submit profile). `release-android-production` builds this ref and submits that build to **production** (Google review still applies). |
 
 **Release an app build:** make sure `version` in `mobile/app.config.ts` is what you want (it is also the OTA runtime), then
 ```bash
 git tag mobile-v1.0.1 && git push origin mobile-v1.0.1
 ```
-The tag is only a trigger: the build uses the `app.config.ts` version, and the workflow warns if the tag disagrees. Watch the build on expo.dev; the submit to the internal track happens automatically after it. Promote internal → production in Play Console, or run `eas-ops` → `release-android-production`.
+The tag is only a trigger: the build uses the `app.config.ts` version, and the workflow warns if the tag disagrees. Watch the build on expo.dev; the submit to the **production** track happens automatically after it, then Google reviews it (see "Store releases go to production" below).
 
 **Ship a JS-only fix (OTA):** Actions → *OTA update (Android)* → Run workflow → pick the channel and a message. It reaches installs on the **same runtime** (the `app.config.ts` version) at their next cold launch. Native code, plugins or a version change need a new build instead. Note the preview APKs from before 1.0.0 are on runtime 0.1.0 and no longer receive OTAs from `main`; a preview OTA now targets runtime 1.0.0 builds.
 
@@ -152,7 +152,7 @@ The tag is only a trigger: the build uses the `app.config.ts` version, and the w
 
 Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `status` action. The scripts address the app as `@tradermatrix/tickertrace` (`EAS_APP_FULL_NAME` overrides, e.g. `@tradernetwork/tickertrace` if the transfer is not done yet). **Merge the `owner` change only after the transfer completes:** `eas` rejects a project whose `owner` differs from the account that holds the project id. Whoever moves `EXPO_TOKEN` to a `tradermatrix` token (GitHub secret and `~/secrets/tickertrace-play/expo-token`) does not need to touch the workflows.
 
-`eas.json` submit profiles: `production` (track `internal`, the default for every build) and `production-release` (track `production`, used only by `eas-ops` → `release-android-production`).
+`eas.json` submit profiles: `production` (track `production`, the default for every build, tag or auto-release) and `internal` (track `internal`, only via `eas-ops` → `submit-android-internal`).
 
 ## 10. Auto-release on push to main
 
@@ -165,7 +165,7 @@ Check it with `node scripts/play/check-submit-key.mjs` or the `eas-ops` → `sta
 | Situation | Action |
 |---|---|
 | fingerprint unchanged, same app version | **OTA** to the `production` channel: `eas update --channel production --environment production --platform android --clear-cache --message "<commit subject> (<sha>)"` |
-| fingerprint changed | **Build**: `eas build --profile production --auto-submit` (Play internal track). **No OTA for that commit.** |
+| fingerprint changed | **Build**: `eas build --profile production --auto-submit` (Play **production** track, Google review applies). **No OTA for that commit.** |
 | `version` in `app.config.ts` differs from the latest build's | **Build** (a new runtime has no binary to receive an OTA) |
 | no production build, or its fingerprint is not recorded | **Blocked**: the run goes red and ships nothing; release once by hand (`git tag mobile-v… && git push origin mobile-v…`) |
 | `MOBILE_AUTO_RELEASE` is `false` | Nothing: logs and exits |
@@ -193,4 +193,9 @@ eas update:republish --group <GOOD-GROUP-ID> --destination-channel production --
 ```
 Installs pick the rollback up at their next cold launch. To stop further releases while you investigate, set `MOBILE_AUTO_RELEASE` to `false` first. A bad **binary** cannot be rolled back (Play never accepts a lower versionCode): halt the rollout in Play Console and ship a fixed build (section 7). The manual **OTA update (Android)** workflow (`ota-update.yml`) can also publish a fix to a channel by hand.
 
-**Safe to land now:** production users are on the internal track only (1.0.0 build 102), so an early OTA or build reaches testers, not the public.
+### Store releases go to production (decision 2026-10-13)
+Every store build, from a `mobile-v*` tag or from the auto-release's native-change path, is submitted to the Play **production** track with `releaseStatus: completed`; there is no internal-track stop unless you ask for one (`eas-ops` → `submit-android-internal`). The reasoning: the old TWA was live while the native app sat on the internal track, and "why would we have broken stuff out there". So:
+- **Google review still applies to every store build.** A production submission is not live until Google approves it, which can take hours to days, and OTAs published meanwhile only reach installs that already have a binary on that runtime.
+- **A native release cannot be rolled back to a lower versionCode.** Play never accepts a lower one. If a store build is bad, **halt the rollout in Play Console** (Release → Production → Halt rollout; installs that already have it keep it) and ship a **higher** versionCode (EAS `autoIncrement` provides it: push the fix, or tag again). The old TWA's versionCode is below the native app's, so it cannot be restored either.
+- JS-only changes are **not** store releases: they keep shipping as OTAs to the `production` channel, which is also the faster fix path for most bugs (rollback commands above).
+- The auto-release now means a push by anyone to `main` that changes native code or the app version results in a **public** store submission. Keep native changes deliberate (bump `version` with them) and use the kill switch (`MOBILE_AUTO_RELEASE=false`) while preparing risky ones.

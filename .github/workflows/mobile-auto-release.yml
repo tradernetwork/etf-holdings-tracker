@@ -2,7 +2,7 @@ name: Mobile auto-release (push to main)
 
 # Every push to main that changes the app releases it, like the website (Vercel) and the API (Vultr sync) already do:
 #   JS-only change      -> OTA to the `production` channel (reaches installs on this app version at their next cold launch)
-#   native change       -> production BUILD with --auto-submit to the Play INTERNAL track, and NO OTA for that commit
+#   native change       -> production BUILD with --auto-submit to the Play PRODUCTION track (Google review applies), and NO OTA for that commit
 # The choice is made from Expo's native fingerprint compared with the latest production build on EAS, plus the app version
 # (runtimeVersion is the appVersion policy, so an OTA only reaches binaries at the SAME version; an OTA after a native change
 # could crash old binaries). Rules and rollback: docs/PLAY_RELEASE.md, "Auto-release".
@@ -130,6 +130,6 @@ jobs:
         if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
         run: node scripts/play/check-submit-key.mjs
 
-      - name: Queue production build with auto-submit (Play internal)
+      - name: Queue production build with auto-submit (Play production)
         if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
         run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit

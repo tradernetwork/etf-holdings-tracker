@@ -32,7 +32,7 @@ function localHash(json) {
 /**
  * @returns {{action: 'ota'|'build'|'skip'|'blocked', reason: string}}
  *  ota     publish an OTA to the production channel
- *  build   queue a production build with --auto-submit (Play internal); NO OTA for this commit
+ *  build   queue a production build with --auto-submit (Play production track); NO OTA for this commit
  *  skip    release switched off
  *  blocked cannot tell (no baseline / no fingerprint): nothing ships, a human must look
  */
