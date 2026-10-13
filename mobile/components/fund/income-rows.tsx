@@ -48,6 +48,9 @@ function roleColor(role: PositionLeg["role"], c: Palette): string {
 /** The snapshot (file) date of the fund's income book; expiry labels count from today, not from it. */
 export const SnapshotDate = createContext<string | null>(null);
 
+/** False for a fund with no option legs at all: its rows leave out Covered / Upside / DTE (see lib/optionPresence.ts). */
+export const FundHasOptions = createContext(true);
+
 /** The soonest-expiry DTE, shifted from the file's date to today ("exp" once past). */
 function dteStat(fileDte: number | null, asOf: string | null): string {
   if (fileDte == null) return "—";
@@ -84,6 +87,7 @@ export function LegRow({ leg, ticker, opened }: { leg: PositionLeg; ticker?: str
 export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened: Map<string, string>; open: boolean; onToggle: () => void }) {
   const c = useTheme();
   const snapshot = useContext(SnapshotDate);
+  const hasOptions = useContext(FundHasOptions);
   const styles = useStyles(makeStyles);
   const { p } = r;
   const note = qtyNote(p);
@@ -110,9 +114,13 @@ export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened:
         <Stat label="Shares" value={formatCount(p.totalShares) + (p.totalShares < 0 ? " short" : "")} />
         <Stat label="Price" value={p.spotSuppressed ? "⚠ n/a" : price(p.price)} color={p.spotSuppressed ? c.isNew : undefined} />
         <Stat label="Δ shares" value={r.sharesDelta == null ? "—" : formatShares(r.sharesDelta)} color={r.sharesDelta == null ? undefined : r.sharesDelta > 0 ? c.buy : c.sell} />
-        <View style={styles.stat}><Hint>Covered</Hint><CoverageBar pct={p.coveragePct} />{p.nakedShares > 0 ? <Text style={{ color: c.sell, fontFamily: fonts.body, fontSize: 10 }}>{formatCount(p.nakedShares)} sh naked</Text> : null}</View>
-        <View style={styles.stat}><Hint>Upside</Hint><UpsideText pct={r.upside} /></View>
-        <Stat label="DTE" value={dteStat(r.dte, snapshot)} />
+        {hasOptions ? (
+          <>
+            <View style={styles.stat}><Hint>Covered</Hint><CoverageBar pct={p.coveragePct} />{p.nakedShares > 0 ? <Text style={{ color: c.sell, fontFamily: fonts.body, fontSize: 10 }}>{formatCount(p.nakedShares)} sh naked</Text> : null}</View>
+            <View style={styles.stat}><Hint>Upside</Hint><UpsideText pct={r.upside} /></View>
+            <Stat label="DTE" value={dteStat(r.dte, snapshot)} />
+          </>
+        ) : null}
       </View>
       {open ? p.legs.map((l, i) => <LegRow key={i} leg={l} opened={opened.get(optionKeyOf(p.ticker, l))} />) : null}
     </View>
@@ -152,11 +160,12 @@ export function ExpiryHeader({ expiry, dte, count }: { expiry: string; dte: numb
 export function IncomeSummary({ summary, legCount, topSector, shortBook, incomeLegVisible, archetype }: { summary: PositionsSummary; legCount: number; topSector: string | null; shortBook: boolean; incomeLegVisible?: boolean; archetype?: { label?: string; summary?: string } }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
+  const hasOptions = useContext(FundHasOptions);
   return (
     <Card style={{ gap: spacing.sm }}>
       <Text style={styles.title}>Positions</Text>
       {archetype?.label ? <Text style={styles.line}><Text style={{ color: c.textPrimary, fontFamily: fonts.bodyBold }}>{archetype.label}</Text>{archetype.summary ? `: ${archetype.summary}` : ""}</Text> : null}
-      {summary.coveredPct != null ? (
+      {!hasOptions ? null : summary.coveredPct != null ? (
         <>
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg, rowGap: 2 }}>
             <Text style={styles.line}><Mono bold style={{ color: c.buy }}>{summary.coveredPct.toFixed(0)}%</Mono> covered</Text>
@@ -176,7 +185,7 @@ export function IncomeSummary({ summary, legCount, topSector, shortBook, incomeL
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg, rowGap: 2 }}>
         <Hint><Mono style={{ fontSize: 12 }}>{summary.stockPositions}</Mono> stocks</Hint>
-        <Hint><Mono style={{ fontSize: 12 }}>{legCount}</Mono> live option legs</Hint>
+        {hasOptions ? <Hint><Mono style={{ fontSize: 12 }}>{legCount}</Mono> live option legs</Hint> : null}
         <Hint><Mono style={{ fontSize: 12 }}>{summary.otherPctNav.toFixed(0)}%</Mono> in T-bills &amp; cash</Hint>
         {topSector ? <Hint>Top sector <Text style={{ color: c.textSecondary }}>{topSector}</Text></Hint> : null}
       </View>

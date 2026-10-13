@@ -226,6 +226,10 @@ function useUrlState() {
 //   md     + Qty, % NAV, Δ today
 //   lg     + Price, Upside room, DTE
 const COLS = 'grid gap-x-3 items-center min-w-[900px] grid-cols-[minmax(0,1.4fr)_0.9fr_0.8fr_0.9fr_0.6fr_0.8fr_0.9fr_0.8fr_0.5fr]';
+// Funds with no option legs at all (YMAX, the Roundhill *W funds) have nothing to cover, no upside room and no DTE: those three
+// columns, the coverage/expiry filters and the By-expiry view are left out for them. Funds with options keep everything.
+const COLS_NO_OPTIONS = 'grid gap-x-3 items-center min-w-[600px] grid-cols-[minmax(0,1.4fr)_0.9fr_0.8fr_0.9fr_0.6fr_0.8fr]';
+const OPTION_KEYS: SortKey[] = ['coverage', 'upside', 'dte'];
 const SHOW: Record<SortKey, string> = {
     symbol: '', qty: '', price: '', value: '', nav: '', delta: '', coverage: '', upside: '', dte: '',
 };
@@ -288,7 +292,7 @@ function LegRow({ leg, ticker, opened }: { leg: ApiPositionLeg; ticker?: string;
     );
 }
 
-function PositionRow({ r, opened }: { r: Row; opened: Map<string, string> }) {
+function PositionRow({ r, opened, hasOptions }: { r: Row; opened: Map<string, string>; hasOptions: boolean }) {
     const { p } = r;
     const synthetic = p.syntheticShares !== 0;
     const qtyNote = synthetic
@@ -299,7 +303,7 @@ function PositionRow({ r, opened }: { r: Row; opened: Map<string, string> }) {
     const liveLegs = p.legs.filter(l => !l.expired).length;
     return (
         <details className="group border-b border-rule last:border-b-0">
-            <summary className={`${COLS} cursor-pointer list-none py-2.5 px-2 hover:bg-white/[0.02] [&::-webkit-details-marker]:hidden`}>
+            <summary className={`${hasOptions ? COLS : COLS_NO_OPTIONS} cursor-pointer list-none py-2.5 px-2 hover:bg-white/[0.02] [&::-webkit-details-marker]:hidden`}>
                 <div className="min-w-0 flex items-center gap-1.5">
                     <ChevronRight className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform group-open:rotate-90 ${p.legs.length ? '' : 'invisible'}`} />
                     <div className="min-w-0">
@@ -323,14 +327,18 @@ function PositionRow({ r, opened }: { r: Row; opened: Map<string, string> }) {
                 <div className={`${SHOW.delta} ${NUM} text-xs ${r.sharesDelta == null ? 'text-slate-600' : r.sharesDelta > 0 ? 'text-buy' : 'text-sell'}`}>
                     {r.sharesDelta == null ? '—' : fmtSigned(r.sharesDelta)}
                 </div>
-                <div className="text-right">
-                    <CoverageBar pct={p.coveragePct} />
-                    {p.nakedShares > 0 && (
-                        <span className="block text-[10px] text-sell">{fmtShares(p.nakedShares)} sh naked</span>
-                    )}
-                </div>
-                <div className={`${SHOW.upside} ${NUM} text-xs`}><Upside pct={r.upside} /></div>
-                <div className={`${SHOW.dte} ${NUM} text-xs text-slate-400`}>{r.dte != null ? Math.round(r.dte) : '—'}</div>
+                {hasOptions && (
+                    <>
+                        <div className="text-right">
+                            <CoverageBar pct={p.coveragePct} />
+                            {p.nakedShares > 0 && (
+                                <span className="block text-[10px] text-sell">{fmtShares(p.nakedShares)} sh naked</span>
+                            )}
+                        </div>
+                        <div className={`${SHOW.upside} ${NUM} text-xs`}><Upside pct={r.upside} /></div>
+                        <div className={`${SHOW.dte} ${NUM} text-xs text-slate-400`}>{r.dte != null ? Math.round(r.dte) : '—'}</div>
+                    </>
+                )}
             </summary>
             {p.legs.length > 0 && (
                 <div className="bg-black/20 border-t border-rule/60">
@@ -448,6 +456,9 @@ export function FundPositions({ income, changes = [], span }: {
 
     // Stat strip — what the old Portfolio card's tiles carried.
     const legCount = positions.reduce((n, p) => n + p.legs.filter(l => !l.expired).length, 0);
+    // Any option leg on the book, expired or not: only a fund with none hides the option columns (never hide data that exists).
+    const hasOptions = positions.some(p => p.legs.length > 0) || (income.counts?.optionLegs ?? 0) > 0;
+    const sortKeys = (Object.keys(SORT_LABEL) as SortKey[]).filter(k => hasOptions || !OPTION_KEYS.includes(k));
     const bySector = new Map<string, number>();
     for (const r of allRows) if (r.sector !== UNCLASSIFIED) bySector.set(r.sector, (bySector.get(r.sector) ?? 0) + r.p.exposureValue);
     const topSector = [...bySector.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
@@ -472,7 +483,7 @@ export function FundPositions({ income, changes = [], span }: {
                     <span className="text-xs font-normal text-slate-500">as of {income.asOfDate}</span>
                     {span && <span className="text-xs font-normal text-slate-500">· Δ shares {span}</span>}
                 </CardTitle>
-                {summary.coveredPct != null ? (
+                {!hasOptions ? null : summary.coveredPct != null ? (
                     <div className="pt-3 space-y-2">
                         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
                             <span>
@@ -509,7 +520,7 @@ export function FundPositions({ income, changes = [], span }: {
                 )}
                 <div className="pt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
                     <span><span className="text-slate-300 font-mono">{summary.stockPositions}</span> stocks</span>
-                    <span><span className="text-slate-300 font-mono">{legCount}</span> option legs</span>
+                    {hasOptions && <span><span className="text-slate-300 font-mono">{legCount}</span> option legs</span>}
                     <span><span className="text-slate-300 font-mono">{summary.otherPctNav.toFixed(0)}%</span> in T-bills &amp; cash</span>
                     {topSector && <span>Top sector <span className="text-slate-300">{topSector}</span></span>}
                 </div>
@@ -545,12 +556,12 @@ export function FundPositions({ income, changes = [], span }: {
                                 aria-label="Sort by"
                                 className="bg-black/20 border border-rule rounded-md px-2 py-1.5 text-xs text-slate-300 lg:hidden"
                             >
-                                {(Object.keys(SORT_LABEL) as SortKey[]).flatMap(k => [
+                                {sortKeys.flatMap(k => [
                                     <option key={`${k}:desc`} value={`${k}:desc`}>{SORT_LABEL[k]} ↓</option>,
                                     <option key={`${k}:asc`} value={`${k}:asc`}>{SORT_LABEL[k]} ↑</option>,
                                 ])}
                             </select>
-                            <div className="flex rounded-md border border-rule overflow-hidden text-[11px] ml-auto">
+                            {hasOptions && <div className="flex rounded-md border border-rule overflow-hidden text-[11px] ml-auto">
                                 {(['stock', 'expiry'] as const).map(g => (
                                     <button
                                         key={g}
@@ -562,16 +573,17 @@ export function FundPositions({ income, changes = [], span }: {
                                         By {g}
                                     </button>
                                 ))}
-                            </div>
+                            </div>}
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5">
-                            {(Object.keys(COVERAGE_LABEL) as Coverage[]).map(c => (
+                            {hasOptions && (Object.keys(COVERAGE_LABEL) as Coverage[]).map(c => (
                                 <Chip key={c} active={cov === c} onClick={() => update({ cov: c === 'all' ? null : c })}>
                                     {COVERAGE_LABEL[c]}
                                 </Chip>
                             ))}
-                            <span className="hidden sm:block w-px h-4 bg-rule mx-1" aria-hidden />
+                            {hasOptions && <span className="hidden sm:block w-px h-4 bg-rule mx-1" aria-hidden />}
                             {(Object.keys(TOGGLE_LABEL) as Toggle[])
+                                .filter(t => hasOptions || t === 'changed')
                                 .filter(t => t !== 'synthetic' || anySynthetic)
                                 .map(t => (
                                     <Chip key={t} active={toggles.has(t)} onClick={() => flip(t)}>{TOGGLE_LABEL[t]}</Chip>
@@ -592,10 +604,10 @@ export function FundPositions({ income, changes = [], span }: {
                     </div>
                 )}
 
-                {allRows.length > 0 && group === 'stock' && (
+                {allRows.length > 0 && (group === 'stock' || !hasOptions) && (
                     <div className="overflow-x-auto" aria-label="Positions: swipe for all columns">
-                        <div className={`${COLS} px-2 py-2 text-[10px] uppercase tracking-wider text-slate-500 border-b border-rule`}>
-                            {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
+                        <div className={`${hasOptions ? COLS : COLS_NO_OPTIONS} px-2 py-2 text-[10px] uppercase tracking-wider text-slate-500 border-b border-rule`}>
+                            {sortKeys.map(k => (
                                 <div
                                     key={k}
                                     role="columnheader"
@@ -617,11 +629,11 @@ export function FundPositions({ income, changes = [], span }: {
                         </div>
                         {rows.length === 0 ? (
                             <p className="px-2 py-6 text-center text-xs text-slate-500">No positions match these filters.</p>
-                        ) : rows.map(r => <PositionRow key={r.p.ticker} r={r} opened={opened} />)}
+                        ) : rows.map(r => <PositionRow key={r.p.ticker} r={r} opened={opened} hasOptions={hasOptions} />)}
                     </div>
                 )}
 
-                {allRows.length > 0 && group === 'expiry' && (
+                {allRows.length > 0 && hasOptions && group === 'expiry' && (
                     expiryGroups.length === 0 ? (
                         <p className="px-2 py-6 text-center text-xs text-slate-500">No live option legs on the filtered positions.</p>
                     ) : expiryGroups.map(([exp, legs]) => {

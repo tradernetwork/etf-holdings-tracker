@@ -27,7 +27,7 @@ export async function FundHoldings({ fund, fallback, span }: { fund: string; fal
     } catch { /* Keep the labelled excerpt if the full book cannot be loaded. */ }
     if (!positions) return <>{fallback}<Link href={`/holdings?fund=${fund}`} className="text-equity">Open the full holdings browser →</Link></>;
     const columns: DataTableColumn[] = [
-        { key: 'ticker', header: 'Position' }, { key: 'shares', header: 'Shares / contracts', align: 'right' },
+        { key: 'ticker', header: 'Position' }, { key: 'shares', header: positions.some(p => p.isOption) ? 'Shares / contracts' : 'Shares', align: 'right' },
         { key: 'delta', header: 'Δ shares', align: 'right' }, { key: 'value', header: 'Market value', align: 'right' },
         { key: 'weight', header: 'Weight', align: 'right' }, { key: 'active', header: 'Δ active pp', align: 'right' },
     ];
