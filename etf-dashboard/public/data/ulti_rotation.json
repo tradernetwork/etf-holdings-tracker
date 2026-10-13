@@ -2,7 +2,7 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-10-12",
+  "asOf": "2026-10-13",
   "holdings": 20,
   "dates": [
     "2026-07-31",
@@ -16,7 +16,7 @@
     "2026-09-25",
     "2026-10-02",
     "2026-10-10",
-    "2026-10-12"
+    "2026-10-13"
   ],
   "themes": [
     "Uncategorized",
@@ -25,14 +25,14 @@
     "Crypto financials",
     "Clean energy",
     "Healthcare/biotech",
-    "Nuclear/uranium",
-    "Precious metals",
-    "Bitcoin miners",
-    "Other",
     "Space",
+    "Quantum",
     "Fintech",
+    "Nuclear/uranium",
     "Rare earth/materials",
-    "Quantum"
+    "Precious metals",
+    "Other",
+    "Bitcoin miners"
   ],
   "timeline": [
     {
@@ -156,7 +156,7 @@
       }
     },
     {
-      "date": "2026-10-12",
+      "date": "2026-10-13",
       "weights": {
         "Uncategorized": 44.17140903487791,
         "Semis/photonics": 19.844549687200914,
@@ -174,14 +174,14 @@
     "Crypto financials": 9.7,
     "Clean energy": 4.9,
     "Healthcare/biotech": 4.9,
-    "Nuclear/uranium": 0.0,
-    "Precious metals": 0.0,
-    "Bitcoin miners": 0.0,
-    "Other": 0.0,
     "Space": 0.0,
+    "Quantum": 0.0,
     "Fintech": 0.0,
+    "Nuclear/uranium": 0.0,
     "Rare earth/materials": 0.0,
-    "Quantum": 0.0
+    "Precious metals": 0.0,
+    "Other": 0.0,
+    "Bitcoin miners": 0.0
   },
   "churnSincePrior": {
     "added": [

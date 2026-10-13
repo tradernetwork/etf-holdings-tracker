@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-13T22:55:27.496712+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5345,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 576
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "OND": "PROSHARES TR ON-DEMAND ETF",
+        "SUPL": "PROSHARES TR SUPPLY CHAIN LOG",
+        "UCYB": "PROSHARES TR ULTRA CYBRSCURTY",
+        "VERS": "PROSHARES TR METAVERSE ETF"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
