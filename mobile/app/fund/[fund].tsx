@@ -11,7 +11,7 @@ import {
 } from "@/components/fund/book-rows";
 import { ChangeRow, StreakRow } from "@/components/fund/changes-rows";
 import { FactsCard, GradeHeader, MetricBlock, PeerCard } from "@/components/fund/effectiveness-view";
-import { ExpiryHeader, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, SnapshotDate, optionKeyOf } from "@/components/fund/income-rows";
+import { ExpiryHeader, FundHasOptions, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, SnapshotDate, optionKeyOf } from "@/components/fund/income-rows";
 import { RotationView } from "@/components/fund/rotation-view";
 import { Card, ErrorNote, Hint, Loading, Mono, Note, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -23,6 +23,7 @@ import {
 import { catchUpOf, changesForFund } from "@/lib/derive";
 import { activitySummary, formatDay } from "@/lib/activity";
 import { metricCards, effectivenessFacts, peerComparison, weightLines } from "@/lib/effectiveness";
+import { fundHasOptions } from "@/lib/optionPresence";
 import { deltaLabel } from "@/lib/deltaPeriod";
 import { formatCount, formatShortDate, formatUsd, formatWeight, freshnessLabel, fundAumUsd } from "@/lib/format";
 import { splitPeriod, PERIOD_LABEL } from "@/lib/fundChanges";
@@ -82,7 +83,10 @@ export default function FundScreen() {
 
   const tabs: Tab[] = useMemo(() => {
     if (!f) return ["positions"];
-    return income ? ["positions", "activity", "scores", ...(ROTATION_FUNDS.has(symbol) ? (["rotation"] as Tab[]) : [])] : ["positions", "changes"];
+    const rotation: Tab[] = ROTATION_FUNDS.has(symbol) ? ["rotation"] : [];
+    // An income fund with no option legs has no option activity and no strategy scores (the API has none): only its book (and rotation).
+    if (income && !fundHasOptions(f)) return ["positions", ...rotation];
+    return income ? ["positions", "activity", "scores", ...rotation] : ["positions", "changes"];
   }, [f, income, symbol]);
   // ?tab=scores etc. lets other screens (the effectiveness leaderboard) land on a specific tab.
   const [tab, setTab] = useState<Tab>((["positions", "changes", "activity", "scores", "rotation"] as const).find((t) => t === tabParam) ?? "positions");
@@ -124,6 +128,8 @@ export default function FundScreen() {
   }, [rows, f]);
 
   const inc = incomeQ.data;
+  // A fund with no option legs at all leaves out the option columns, sections and filters; one leg keeps them all (lib/optionPresence.ts).
+  const hasOptions = fundHasOptions(f, inc);
   const incomeBook = !!income && !!inc?.positions && !!inc.positionsSummary;
   const equityChanges = useMemo(() => (f?.recentChanges ?? []).filter((x) => !x.isOption), [f]);
   const posRows = useMemo(() => (incomeBook ? deriveRows(inc!.positions!, equityChanges) : []), [incomeBook, inc, equityChanges]);
@@ -165,7 +171,7 @@ export default function FundScreen() {
         if (group === "stock") {
           const data: Item[] = filtered.map((row) => ({ t: "pos", row }));
           if (filtered.length === 0) data.push({ t: "node", id: "nomatch", node: <Note>{posRows.length === 0 ? "No stock positions: this fund's book is option legs, T-bills and cash." : "No positions match these filters."}</Note> });
-          out.push({ key: "positions", title: "Stocks & option legs", subtitle: [`${filtered.length} of ${posRows.length}`, deltaLabel("Δ", span)].filter(Boolean).join(" · "), data });
+          out.push({ key: "positions", title: hasOptions ? "Stocks & option legs" : "Stocks", subtitle: [`${filtered.length} of ${posRows.length}`, deltaLabel("Δ", span)].filter(Boolean).join(" · "), data });
         } else if (group === "expiry") {
           const ladder = expiryLadder(filtered);
           const data: Item[] = ladder.flatMap((g) => [
@@ -287,7 +293,7 @@ export default function FundScreen() {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [f, book, activeTab, incomeBook, group, filtered, posRows, inc, equityChanges, stockSort, optionSort, showAllStocks, openBuckets, changesQ.data, changesQ.isLoading, changesQ.isError, span, effQ.data, effQ.isLoading, effQ.isError, peersQ.data, rotQ.data, rotQ.isLoading, rotQ.isError, expanded, incomeQ.isLoading, symbol]);
+  }, [f, book, activeTab, incomeBook, group, filtered, posRows, inc, equityChanges, stockSort, optionSort, showAllStocks, openBuckets, changesQ.data, changesQ.isLoading, changesQ.isError, span, hasOptions, effQ.data, effQ.isLoading, effQ.isError, peersQ.data, rotQ.data, rotQ.isLoading, rotQ.isError, expanded, incomeQ.isLoading, symbol]);
 
   if (q.isLoading) return <View style={styles.root}><Loading /></View>;
   if (q.isError || !f || !book) {
@@ -339,7 +345,7 @@ export default function FundScreen() {
       {spanLabel ? <Hint>{spanLabel}</Hint> : null}
       <View style={styles.stats}>
         {stat("Holdings", formatCount(f.holdingsCount))}
-        {income ? stat("Options", formatCount(f.optionsCount)) : null}
+        {income && hasOptions ? stat("Options", formatCount(f.optionsCount)) : null}
         {stat("Total wt", `${f.totalWeight.toFixed(1)}%`)}
         {f.flow ? stat(`Net flow ${f.flow.periodDays}d`, `${f.flow.flowPct > 0 ? "+" : ""}${f.flow.flowPct.toFixed(1)}%`, f.flow.flowPct >= 0 ? c.buy : c.sell) : null}
       </View>
@@ -378,7 +384,7 @@ export default function FundScreen() {
                   <Text style={[styles.filterText, nFilters > 0 && { color: c.accent }]}>Filters{nFilters > 0 ? ` (${nFilters})` : ""}</Text>
                 </Pressable>
               </View>
-              <Segmented options={[{ value: "stock", label: "By stock" }, { value: "expiry", label: "By expiry" }, { value: "contracts", label: "Contracts" }]} value={group} onChange={setGroup} />
+              {hasOptions ? <Segmented options={[{ value: "stock", label: "By stock" }, { value: "expiry", label: "By expiry" }, { value: "contracts", label: "Contracts" }]} value={group} onChange={setGroup} /> : null}
               <Hint>{SORT_LABEL[posSort]} {(posDir === "default" ? DEFAULT_DIR[posSort] : posDir) === "asc" ? "↑" : "↓"}{filtersActive(filters) ? " · filtered" : ""}</Hint>
             </View>
           ) : null}
@@ -389,6 +395,7 @@ export default function FundScreen() {
 
   return (
     <SnapshotDate.Provider value={inc?.asOfDate ?? f.asOfDate ?? null}>
+    <FundHasOptions.Provider value={hasOptions}>
       <SectionList<Item, Section>
         ref={listRef}
         style={styles.root}
@@ -414,23 +421,24 @@ export default function FundScreen() {
         ListEmptyComponent={bookQ.isLoading ? <Loading /> : <Card><Note>No positions reported for this fund.</Note></Card>}
       />
       <FilterSheet visible={sheet} title="Filters & sort" onClose={() => setSheet(false)} onReset={() => { setFilters(NO_FILTERS); setPosSort("value"); setPosDir("default"); }} applyLabel={`Show ${filtered.length} positions`}>
-        <OptionGroup<Coverage> label="Coverage" value={filters.cov} onChange={(cov) => setFilters({ ...filters, cov })} options={(Object.keys(COVERAGE_LABEL) as Coverage[]).map((k) => ({ value: k, label: COVERAGE_LABEL[k] }))} />
-        <ToggleGroup toggles={filters.toggles} onChange={(toggles) => setFilters({ ...filters, toggles })} />
+        {hasOptions ? <OptionGroup<Coverage> label="Coverage" value={filters.cov} onChange={(cov) => setFilters({ ...filters, cov })} options={(Object.keys(COVERAGE_LABEL) as Coverage[]).map((k) => ({ value: k, label: COVERAGE_LABEL[k] }))} /> : null}
+        <ToggleGroup toggles={filters.toggles} hasOptions={hasOptions} onChange={(toggles) => setFilters({ ...filters, toggles })} />
         <OptionGroup label="Sector" value={filters.sector} onChange={(sector) => setFilters({ ...filters, sector })} options={[{ value: "", label: "All sectors" }, ...sectorsOf(posRows).map((s) => ({ value: s, label: s }))]} />
-        <OptionGroup<PosSort> label="Sort by" value={posSort} onChange={setPosSort} options={(Object.keys(SORT_LABEL) as PosSort[]).map((k) => ({ value: k, label: SORT_LABEL[k] }))} />
+        <OptionGroup<PosSort> label="Sort by" value={posSort} onChange={setPosSort} options={(Object.keys(SORT_LABEL) as PosSort[]).filter((k) => hasOptions || !OPTION_SORTS_KEYS.includes(k)).map((k) => ({ value: k, label: SORT_LABEL[k] }))} />
         <OptionGroup<"default" | "asc" | "desc"> label="Direction" value={posDir} onChange={setPosDir} options={[{ value: "default", label: "Default for this column" }, { value: "asc", label: "Ascending ↑" }, { value: "desc", label: "Descending ↓" }]} />
       </FilterSheet>
+    </FundHasOptions.Provider>
     </SnapshotDate.Provider>
   );
 }
 
-function ToggleGroup({ toggles, onChange }: { toggles: Set<Toggle>; onChange: (t: Set<Toggle>) => void }) {
+function ToggleGroup({ toggles, onChange, hasOptions }: { toggles: Set<Toggle>; onChange: (t: Set<Toggle>) => void; hasOptions: boolean }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={styles.groupLabel}>SHOW ONLY</Text>
-      {(Object.keys(TOGGLE_LABEL) as Toggle[]).map((k) => {
+      {(Object.keys(TOGGLE_LABEL) as Toggle[]).filter((k) => hasOptions || k === "changed").map((k) => {
         const on = toggles.has(k);
         return (
           <Pressable key={k} onPress={() => { const n = new Set(toggles); on ? n.delete(k) : n.add(k); onChange(n); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }} style={styles.toggle}>
@@ -484,6 +492,7 @@ const itemKey = (item: Item, i: number): string => {
 };
 
 const STOCK_SORTS: { value: SortKey; label: string }[] = [{ value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Change" }];
+const OPTION_SORTS_KEYS: PosSort[] = ["coverage", "upside", "dte"];
 const OPTION_SORTS: { value: SortKey; label: string }[] = [{ value: "expiry", label: "Expiry" }, { value: "value", label: "Value" }, { value: "weight", label: "%" }, { value: "change", label: "Change" }];
 
 const makeStyles = (c: Palette) =>
