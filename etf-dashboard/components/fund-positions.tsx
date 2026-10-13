@@ -156,7 +156,7 @@ type Toggle = 'synthetic' | 'itm' | 'expiring' | 'changed';
 
 const SORT_LABEL: Record<SortKey, string> = {
     symbol: 'Symbol', qty: 'Qty', price: 'Price', value: 'Mkt value', nav: '% NAV',
-    delta: 'Δ today', coverage: 'Covered', upside: 'Upside room', dte: 'DTE',
+    delta: 'Δ vs prior file', coverage: 'Covered', upside: 'Upside room', dte: 'DTE',
 };
 
 const SORT_VALUE: Record<SortKey, (r: Row) => number | string | null> = {
@@ -360,8 +360,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export function FundPositions({ income, changes = [] }: {
+export function FundPositions({ income, changes = [], span }: {
     income: ApiIncomeFund;
+    /** What the Δ column is measured against (deltaSpan of the fund detail). */
+    span?: string | null;
     /** The fund's daily stock changes (option rows excluded) — feeds Δ today. */
     changes?: ApiChangeRecord[];
 }) {
@@ -468,6 +470,7 @@ export function FundPositions({ income, changes = [] }: {
                 <CardTitle className="text-base font-bold flex items-center gap-2 text-white flex-wrap">
                     <Wallet className="h-5 w-5 text-equity" /> Positions
                     <span className="text-xs font-normal text-slate-500">as of {income.asOfDate}</span>
+                    {span && <span className="text-xs font-normal text-slate-500">· Δ shares {span}</span>}
                 </CardTitle>
                 {summary.coveredPct != null ? (
                     <div className="pt-3 space-y-2">

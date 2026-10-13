@@ -841,10 +841,8 @@ def _parse_iso(s: str) -> date | None:
         return None
 
 
-def _snapshot_for_lookback(days_back: int) -> list[dict]:
-    """
-    Holdings rows from the snapshot closest to `days_back` CALENDAR days
-    before the latest snapshot.
+def _lookback_date(days_back: int) -> str | None:
+    """The date of the snapshot a `days_back` calendar-day diff is measured against (None with < 2 snapshots).
 
     History files land on an irregular cadence — weekends are occasionally
     present, market holidays leave gaps — so counting files ("5 files ago")
@@ -854,13 +852,13 @@ def _snapshot_for_lookback(days_back: int) -> list[dict]:
     """
     dates = get_available_dates()  # ISO strings, newest-first
     if len(dates) < 2:
-        return []
+        return None
     latest = _parse_iso(dates[0])
     if latest is None:
         # Unparseable filename date — degrade gracefully to index-based lookup
         # (~5 trading days per 7 calendar days).
         idx = min(max(1, round(days_back * 5 / 7)), len(dates) - 1)
-        return _read_csv(os.path.join(HISTORY_DIR, f'holdings_{dates[idx]}.csv'))
+        return dates[idx]
     target = latest - timedelta(days=days_back)
     chosen = None
     for d in dates[1:]:  # skip the latest snapshot itself
@@ -870,7 +868,45 @@ def _snapshot_for_lookback(days_back: int) -> list[dict]:
             break
     if chosen is None:
         chosen = dates[-1]  # not enough history — use the oldest snapshot we have
-    return _read_csv(os.path.join(HISTORY_DIR, f'holdings_{chosen}.csv'))
+    return chosen
+
+
+def _snapshot_for_lookback(days_back: int) -> list[dict]:
+    """Holdings rows from the snapshot `_lookback_date(days_back)` picks."""
+    chosen = _lookback_date(days_back)
+    return _read_csv(os.path.join(HISTORY_DIR, f'holdings_{chosen}.csv')) if chosen else []
+
+
+def comparison_date(period: str = 'daily') -> str | None:
+    """The snapshot date the deltas of `period` (daily/weekly/monthly) are measured against, using the SAME choice the diff makes
+    (daily = the previous trading-day file, weekly/monthly = `_lookback_date`)."""
+    if period == 'weekly':
+        return _lookback_date(7)
+    if period == 'monthly':
+        return _lookback_date(30)
+    dates = get_available_dates()
+    return dates[1] if len(dates) > 1 else None
+
+
+def trading_days_between(previous: str | None, as_of: str | None) -> int | None:
+    """Trading days in (previous, as_of]: 1 for consecutive sessions, more across a holiday or a missed scrape (the
+    skipped session is still a trading day the delta spans). None when either date is unknown."""
+    a, b = _parse_iso(previous or ''), _parse_iso(as_of or '')
+    if a is None or b is None or b <= a:
+        return None
+    n, d = 0, a
+    while d < b:
+        d += timedelta(days=1)
+        if _is_trading_day(d.isoformat()):
+            n += 1
+    return n
+
+
+def comparison_info(period: str = 'daily', as_of: str | None = None) -> dict:
+    """`previousDate` (what the deltas are measured against) and `comparisonTradingDays` (how many sessions that spans).
+    A catch-up fund's own span is catchUpSince -> asOfDate, and its deltas are null (see get_catch_up_funds)."""
+    prev = comparison_date(period)
+    return {'previousDate': prev, 'comparisonTradingDays': trading_days_between(prev, as_of or get_as_of_date())}
 
 
 def _row_price(r: dict) -> float:
@@ -1657,7 +1693,7 @@ def _full_changes(period: str = 'daily') -> dict:
         as_of = get_as_of_date()
         after = snapshot_signature(_changes_signature_depth(period))
         if before == after:
-            return {'asOfDate': as_of, 'snapshot': hashlib.sha256(repr(after).encode()).hexdigest(),
+            return {'asOfDate': as_of, **comparison_info(period, as_of), 'snapshot': hashlib.sha256(repr(after).encode()).hexdigest(),
                     'changes': rows}
     raise RuntimeError('Snapshot changed while computing changes; retry.')
 
@@ -2344,6 +2380,7 @@ def _full_payload_everything(*, category: str | None = None) -> dict:
             'source': 'FastAPI + FastMCP',
         },
         'asOfDate': get_as_of_date(),
+        **comparison_info('daily'),
         'category': category,
         'stats': get_global_stats(changes_eq),
         'signals': signals,
@@ -2650,7 +2687,7 @@ def get_all_holdings(fund: str | None = None) -> dict:
     assetClass / dte per row. `fund` restricts to one fund's full book (rows identical
     to the same rows of the unfiltered call) and adds `fund` to the response."""
     as_of, rows = query_holdings(fund=fund)
-    out = {'asOfDate': as_of, 'count': len(rows), 'holdings': [dict(r) for r in rows]}
+    out = {'asOfDate': as_of, **comparison_info('daily', as_of), 'count': len(rows), 'holdings': [dict(r) for r in rows]}
     if fund:
         out['fund'] = fund.upper()
     return out
@@ -2842,6 +2879,7 @@ def get_fund_detail(fund: str) -> dict | None:
         'aum': get_fund_aum(fund),
         'aumUsd': get_fund_aum_usd(fund),
         'asOfDate': get_as_of_date(),
+        **comparison_info('daily'),
         'holdingsCount': len(equities),
         'optionsCount': len(options),
         'totalWeight': round(sum(e['weight'] for e in equities), 2),
@@ -2923,6 +2961,7 @@ def _ticker_snapshot_index(reader=None) -> dict:
         name_src = next((r for r in rows if not r.get('Option_Type')), rows[0])
         out[ticker] = {
             'ticker': ticker, 'name': name_src.get('Name', ''),
+            'asOfDate': as_of, **comparison_info('daily', as_of),
             'sector': name_src.get('Sector', '') or _SECTOR_FALLBACK.get(ticker, ''),
             'fundCount': len({f['fund'] for f in funds}), 'holdings': funds,
             'totalWeight': round(sum(f['weight'] for f in funds if not f['isOption']), 4),
@@ -3256,6 +3295,7 @@ def get_full_payload(*, category: str | None = None) -> dict:
             'source': 'FastAPI + FastMCP',
         },
         'asOfDate': get_as_of_date(),
+        **comparison_info('daily'),
         'category': category,  # null when unfiltered — echoes the applied filter
         'stats': get_global_stats(changes_eq),  # reuse already-computed equity changes
         'signals': signals,

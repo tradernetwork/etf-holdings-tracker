@@ -325,7 +325,7 @@ export default async function StocksPage({
                     { key: 'name', header: 'Name', mobilePriority: 'md' },
                     { key: 'funds', header: 'Funds', align: 'right' },
                     { key: 'totalWeight', header: 'Total wt', align: 'right' },
-                    { key: 'netChange', header: 'Δ today', align: 'right' },
+                    { key: 'netChange', header: 'Δ vs prior file', align: 'right' },
                     { key: 'flow', header: <span className="text-tm-gold-bright font-semibold">Live flow</span> },
                     { key: 'heldBy', header: 'Held by', mobilePriority: 'lg' },
                 ];

@@ -64,7 +64,7 @@ def test_dte_is_the_snapshot_value_and_assets_are_classified(book):
 
 def test_default_request_is_the_legacy_full_unpaginated_shape(book, client):
     j = client.get('/api/v1/holdings').json()
-    assert set(j) == {'asOfDate', 'total', 'count', 'holdings'}
+    assert set(j) == {'asOfDate', 'previousDate', 'comparisonTradingDays', 'total', 'count', 'holdings'}   # + additive comparison fields
     assert j['count'] == j['total'] == 11
     assert {'weightDelta', 'sharesDelta', 'marketValue', 'positionUsd', 'isOption', 'cusip'} <= set(j['holdings'][0])
 

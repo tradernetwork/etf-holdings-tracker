@@ -206,7 +206,7 @@ export const fundExtras = {
   income: (fund: string, signal?: AbortSignal) => getJson<IncomeFundResponse>(`${API_BASE}/api/v1/income/${encodeURIComponent(fund)}`, signal),
   /** The whole window (limit 1000 captures every move, even AVUV's monthly ~800). */
   changes: (fund: string, period: ChangePeriod, signal?: AbortSignal) =>
-    getJson<{ asOfDate: string; count: number; changes: Change[] }>(
+    getJson<{ asOfDate: string; previousDate?: string | null; comparisonTradingDays?: number | null; count: number; changes: Change[] }>(
       `${API_BASE}/api/v1/changes?fund=${encodeURIComponent(fund)}&period=${period}&limit=1000`, signal),
   effectiveness: (fund: string, signal?: AbortSignal) => getJson<Effectiveness>(`${API_BASE}/api/v1/fund-effectiveness/${encodeURIComponent(fund)}`, signal),
   peers: (signal?: AbortSignal) => getJson<{ funds: Effectiveness[] }>(`${API_BASE}/api/v1/fund-effectiveness`, signal),

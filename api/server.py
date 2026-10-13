@@ -351,12 +351,13 @@ def get_changes(
         return Response(output.getvalue(), media_type='text/csv', headers={
             'Content-Disposition': f'attachment; filename="changes-{period}-{result["asOfDate"]}.csv"'})
     if not paged:
-        return {'asOfDate': result['asOfDate'], 'count': len(rows[:limit]), 'changes': rows[:limit]}
+        return {'asOfDate': result['asOfDate'], 'previousDate': result['previousDate'], 'comparisonTradingDays': result['comparisonTradingDays'],
+                'count': len(rows[:limit]), 'changes': rows[:limit]}
     page, size = page or 1, size or 2000
     total = len(rows)
     selected = rows[(page - 1) * size:page * size]
-    return {'asOfDate': result['asOfDate'], 'snapshot': result['snapshot'],
-            'count': len(selected), 'changes': selected, 'total': total,
+    return {'asOfDate': result['asOfDate'], 'previousDate': result['previousDate'], 'comparisonTradingDays': result['comparisonTradingDays'],
+            'snapshot': result['snapshot'], 'count': len(selected), 'changes': selected, 'total': total,
             'page': page, 'size': size, 'pages': (total + size - 1) // size}
 
 
@@ -562,7 +563,7 @@ def get_all_holdings(
         return PlainTextResponse(buf.getvalue(), media_type="text/csv; charset=utf-8",
                                  headers={"Content-Disposition": f'attachment; filename="holdings_{as_of}.csv"'})
     total = len(rows)
-    out = {"asOfDate": as_of, "total": total}
+    out = {"asOfDate": as_of, **data.comparison_info("daily", as_of), "total": total}
     if fund:
         out["fund"] = fund.upper()
     if page is not None or size is not None:

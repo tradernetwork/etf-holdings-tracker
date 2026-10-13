@@ -1,3 +1,4 @@
+import { snapshotSpan } from "@/lib/deltaPeriod";
 import { TM_URL } from "@/lib/tm";
 import { CATEGORY_OPTIONS as CATEGORIES } from "@/lib/discovery/scope";
 import { Action } from "@/components/discovery-ui";
@@ -69,6 +70,7 @@ export default function Today() {
       <Text style={styles.sub}>
         {asOf ? `${formatShortDate(asOf)} disclosures` : "Institutional ETF moves"}
         {stats ? ` · ${stats.fundsTracked} funds tracked` : ""}
+        {snapshotSpan(signals.data ?? {}) ? ` · Δ ${snapshotSpan(signals.data ?? {})}` : ""}
       </Text>
 
       <Segmented options={CATEGORIES} value={category} onChange={setCategory} />

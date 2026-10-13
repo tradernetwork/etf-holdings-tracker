@@ -74,6 +74,8 @@ export interface Stats {
 
 export interface SignalsResponse {
   asOfDate: string;
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   category: string | null;
   stats: Stats;
   signals: { buying: Signal[]; selling: Signal[] };
@@ -162,6 +164,9 @@ export interface TickerHolding {
   stale: boolean;
 }
 export interface TickerResponse {
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   ticker: string;
   name: string;
   sector: string;
@@ -214,6 +219,9 @@ export interface HoldingRow {
   isFlex?: boolean | null;
 }
 export interface HoldingsResponse {
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   asOfDate: string;
   count: number;
   /** Echoed when the server honoured ?fund=. */
@@ -262,6 +270,9 @@ export interface FundFlow {
 }
 
 export interface FundResponse {
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   streaks?: FundStreak[];
   /** Share creation/redemption net flow over `periodDays`, when known. */
   flow?: FundFlow | null;

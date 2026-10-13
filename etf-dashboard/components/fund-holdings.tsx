@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { API_BASE } from '@/lib/api';
+import { deltaSpan } from '@/lib/delta-period';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import type { ReactNode } from 'react';
 interface Position {
@@ -9,9 +10,10 @@ interface Position {
     stale?: boolean; refreshed?: boolean | null; isOption: boolean; underlying?: string | null; assetClass?: string; optionType?: string | null;
 }
 /** Full guarded book, not the fund-detail endpoint's top-20 excerpt. */
-export async function FundHoldings({ fund, fallback }: { fund: string; fallback: ReactNode }) {
+export async function FundHoldings({ fund, fallback, span }: { fund: string; fallback: ReactNode; /** What the Δ columns are measured against (deltaSpan of the fund detail: vs <date>, catch-up or stale wording). */ span?: string | null }) {
     let positions: Position[] | null = null;
     let asOfDate: string | undefined;
+    let payloadSpan: string | null = null;
     try {
         const response = await fetch(`${API_BASE}/api/v1/holdings?fund=${encodeURIComponent(fund)}&sort=weight`, { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) });
         if (response.ok) {
@@ -19,6 +21,7 @@ export async function FundHoldings({ fund, fallback }: { fund: string; fallback:
             if (Array.isArray(payload.holdings) && payload.holdings.every((p: Position) => p.fund === fund)) {
                 positions = payload.holdings;
                 asOfDate = payload.asOfDate;
+                payloadSpan = deltaSpan({ previousDate: payload.previousDate, comparisonTradingDays: payload.comparisonTradingDays });
             }
         }
     } catch { /* Keep the labelled excerpt if the full book cannot be loaded. */ }
@@ -33,7 +36,7 @@ export async function FundHoldings({ fund, fallback }: { fund: string; fallback:
             <h2 className="font-bold">Portfolio holdings · {positions.length} positions</h2>
             <Link href={`/holdings?fund=${fund}`} className="text-xs text-equity">Filters and full book →</Link>
             <a href={`${API_BASE}/api/v1/holdings?fund=${fund}&format=csv`} className="text-xs text-equity">Export CSV</a>
-            <p className="text-xs text-slate-500 w-full">Snapshot {asOfDate ?? 'unknown'}. All positions, not a top-20 excerpt. Swipe for every column. Unknown and catch-up changes show —; estimates are labelled.</p>
+            <p className="text-xs text-slate-500 w-full">Snapshot {asOfDate ?? 'unknown'}.{(span ?? payloadSpan) ? ` Δ shares and Δ active pp ${span ?? payloadSpan}.` : ''} All positions, not a top-20 excerpt. Swipe for every column. Unknown and catch-up changes show —; estimates are labelled.</p>
         </div>
         <DataTable className="min-w-[750px] [&_td:first-child]:sticky [&_td:first-child]:left-0 [&_td:first-child]:bg-surface [&_td:first-child]:z-10 [&_th:first-child]:sticky [&_th:first-child]:left-0 [&_th:first-child]:bg-surface [&_th:first-child]:z-10" columns={columns} rows={positions.map(p => {
             const withheld = p.stale || p.refreshed === false;

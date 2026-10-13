@@ -34,7 +34,8 @@ def large_book(monkeypatch):
 
 def test_default_unchanged_and_pages_complete(client, large_book):
     legacy = client.get('/api/v1/changes').json()
-    assert set(legacy) == {'asOfDate', 'count', 'changes'}
+    # the legacy shape plus the additive comparison fields (previousDate, comparisonTradingDays)
+    assert set(legacy) == {'asOfDate', 'previousDate', 'comparisonTradingDays', 'count', 'changes'}
     assert legacy['changes'] == large_book[:50]
     pages = [client.get('/api/v1/changes', params={'page': p, 'size': 2000}).json() for p in range(1, 4)]
     assert all(p['total'] == 5501 and p['pages'] == 3 for p in pages)

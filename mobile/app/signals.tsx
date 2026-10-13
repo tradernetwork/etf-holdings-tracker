@@ -1,3 +1,4 @@
+import { snapshotSpan } from "@/lib/deltaPeriod";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -47,7 +48,7 @@ export default function TodayInFull() {
   return (
     <Screen topInset={false} refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
       <Text style={styles.title}>Today in full</Text>
-      <Hint>{d ? `${formatShortDate(d.asOfDate)} disclosures` : "Every signal, streak, divergence and sector move"}{category !== "all" ? ` · ${category === "active-equity" ? "Active Equity" : "Option-Income"} funds` : " · all funds"}</Hint>
+      <Hint>{d ? `${formatShortDate(d.asOfDate)} disclosures` : "Every signal, streak, divergence and sector move"}{category !== "all" ? ` · ${category === "active-equity" ? "Active Equity" : "Option-Income"} funds` : " · all funds"}{snapshotSpan(d ?? {}) ? ` · Δ ${snapshotSpan(d ?? {})}` : ""}</Hint>
       {stale ? <StaleBanner text={stale} /> : null}
       {catchUp.length > 0 && (
         <Note>Catching up from stale data, so their daily moves are withheld: {catchUp.map(([f, s]) => `${f}${s ? ` (since ${formatShortDate(s)})` : ""}`).join(", ")}.</Note>

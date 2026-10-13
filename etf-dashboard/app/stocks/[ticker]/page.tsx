@@ -1,3 +1,4 @@
+import { deltaSpan } from '@/lib/delta-period';
 import { api } from '@/lib/api';
 import type { TrendSignal } from '@/lib/api';
 import type { Metadata } from 'next';
@@ -241,7 +242,7 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                         { key: 'provider', header: 'Provider' },
                         { key: 'shares', header: 'Shares', align: 'right' },
                         { key: 'weight', header: 'Weight', align: 'right' },
-                        { key: 'change', header: 'Δ today', align: 'right' },
+                        { key: 'change', header: deltaSpan(detail) ? `Δ ${deltaSpan(detail)}` : 'Δ', align: 'right' },
                     ];
                     const rows: DataTableRow[] = equityHolders.map((h) => {
                         const exp = fundExposure(h.aum ?? FUND_AUM[h.fund], h.weight);

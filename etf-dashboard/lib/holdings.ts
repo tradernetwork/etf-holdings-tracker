@@ -123,7 +123,7 @@ export { PROVIDER_ORDER, EXCLUDED_FUNDS, FUND_AUM };
  * Returns all available history dates (sorted descending, newest first).
  * Scans for files matching `holdings_YYYY-MM-DD.csv` in the history dir.
  */
-function getAvailableHistoryDates(): string[] {
+export function getAvailableHistoryDates(): string[] {
     if (!fs.existsSync(HISTORY_DIR)) return [];
     return fs
         .readdirSync(HISTORY_DIR)

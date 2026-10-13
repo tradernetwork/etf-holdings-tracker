@@ -5,6 +5,9 @@ export type Direction = "all" | "buying" | "selling";
 export type MoveType = "all" | "NEW" | "EXIT" | "ADD" | "TRIM";
 export interface ChangesResponse {
   asOfDate: string;
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   count: number;
   changes: Change[];
   truncated?: boolean;

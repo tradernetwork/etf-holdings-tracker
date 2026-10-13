@@ -76,6 +76,9 @@ export interface FullDivergence {
 export interface SectorFlowEntry { sector: string; delta: number }
 
 export interface TodayFull {
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   /** Echoed by servers that honour `?limit=`; absent on older servers (they return the fixed top lists). */
   limit?: number;
   asOfDate: string;

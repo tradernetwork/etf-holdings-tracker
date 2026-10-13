@@ -117,6 +117,9 @@ export const csvScopeNote = (f: Pick<HoldingsFilters, "kind">): string | null =>
 
 export interface HoldingsPage {
   asOfDate: string;
+  /** The earlier snapshot the deltas are measured against, and how many trading days that spans (API, 2026-10-13). */
+  previousDate?: string | null;
+  comparisonTradingDays?: number | null;
   total: number;
   count: number;
   page?: number;

@@ -27,6 +27,7 @@ import {
   Segmented,
 } from "@/components/ui";
 import { useChanges } from "@/lib/discovery/api";
+import { deltaLabel } from "@/lib/deltaPeriod";
 import {
   emptyChangeFilters,
   filterChanges,
@@ -86,6 +87,7 @@ export default function Changes() {
         {scopeLabel(category, new Set(source.map((r) => r.fund)).size)} ·{" "}
         {rows.length} shown · {counts.added} added / {counts.reduced} reduced
       </Hint>
+      {deltaLabel("Δ weight and shares", q.data ?? {}) ? <Hint>{deltaLabel("Δ weight and shares", q.data ?? {})}</Hint> : null}
       <Segmented
         options={CATEGORY_OPTIONS}
         value={category}

@@ -12,6 +12,7 @@ import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, 
 import { useAppState } from "@/lib/app-state";
 import { ApiError } from "@/lib/api";
 import { inFile, latestFileDate } from "@/lib/when";
+import { deltaLabel } from "@/lib/deltaPeriod";
 import { evidenceNote, tickerEvidence } from "@/lib/derive";
 import { isSignificant } from "@/lib/significance";
 import { cleanName, formatPp, formatShareMove, formatUsd, formatUsdValue, formatWeight, freshnessLabel, resolveUsd, sectorLabel } from "@/lib/format";
@@ -59,6 +60,7 @@ export default function TickerScreen() {
   const changeByFund = new Map(t.changes.filter((ch) => !ch.isOption).map((ch) => [ch.fund, ch]));
   const shown = showAll ? holdings : holdings.slice(0, HOLDERS_COLLAPSED);
   const following = isFollowing("ticker", symbol);
+  const spanLabel = deltaLabel("Δ weight and shares", t);
   const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : `No change ${inFile(latestFileDate(t.holdings))}.`;
 
   return (
@@ -87,6 +89,7 @@ export default function TickerScreen() {
       </View>
 
       <StockHistory symbol={symbol} />
+      {spanLabel ? <Hint>{spanLabel}</Hint> : null}
       <SectionHeader title="Opposite moves" right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
       {evidence.length === 0 ? (
         <Card><Note>No fund made a significant move in {symbol} in the latest files. Older disclosures are marked below.</Note></Card>
