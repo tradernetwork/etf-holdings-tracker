@@ -56,7 +56,8 @@ made the TWA problem worse; those are fixed too, without attributing them to Art
 
 ## Evidence and checks
 
-Screenshots and readable page text: `/tmp/tt-visible-shots/`, before/after for
+Committed screenshots: [before/after gallery](audits/holdings-visibility/README.md).
+Readable page text and wide evidence: `/tmp/tt-visible-shots/`, before/after for
 website and native MSTY, ARKK, AVUV, TSLA; native wide-window evidence included.
 Native local web requests used a test-only CORS proxy to the LIVE API; no product
 CORS changes or mock financial values. Main native Positions tab, full holdings,
