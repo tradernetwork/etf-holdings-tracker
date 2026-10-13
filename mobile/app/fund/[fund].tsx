@@ -23,6 +23,7 @@ import {
 import { catchUpOf, changesForFund } from "@/lib/derive";
 import { activitySummary, formatDay } from "@/lib/activity";
 import { metricCards, effectivenessFacts, peerComparison, weightLines } from "@/lib/effectiveness";
+import { deltaLabel } from "@/lib/deltaPeriod";
 import { formatCount, formatShortDate, formatUsd, formatWeight, freshnessLabel, fundAumUsd } from "@/lib/format";
 import { splitPeriod, PERIOD_LABEL } from "@/lib/fundChanges";
 import { ROTATION_FUNDS, type ChangePeriod, type IncomePosition, type OptionActivityDay, type OptionTrade, type OtherPosition } from "@/lib/fundExtras";
@@ -75,6 +76,8 @@ export default function FundScreen() {
   const q = useFund(symbol);
   const f = q.data;
   const income = f?.category === "option-income";
+  // What the Δ columns on this screen are measured against (the API's previous snapshot; catch-up / stale funds keep their own wording).
+  const span = useMemo(() => (f ? { previousDate: f.previousDate, comparisonTradingDays: f.comparisonTradingDays, stale: f.stale, holdingsDate: f.holdingsDate, catchUp: f.catchUp, catchUpSince: f.catchUpSince } : {}), [f]);
   const { isFollowing, toggleFollow } = useAppState();
 
   const tabs: Tab[] = useMemo(() => {
@@ -154,7 +157,7 @@ export default function FundScreen() {
       }
       const act = activityLines(f);
       if (act.length > 0) data.push({ t: "activity", lines: act });
-      return { key: "options", title: "Option contracts", sort: "options", data };
+      return { key: "options", title: "Option contracts", subtitle: deltaLabel("Δ contracts", span) ?? undefined, sort: "options", data };
     };
 
     if (activeTab === "positions") {
@@ -162,7 +165,7 @@ export default function FundScreen() {
         if (group === "stock") {
           const data: Item[] = filtered.map((row) => ({ t: "pos", row }));
           if (filtered.length === 0) data.push({ t: "node", id: "nomatch", node: <Note>{posRows.length === 0 ? "No stock positions: this fund's book is option legs, T-bills and cash." : "No positions match these filters."}</Note> });
-          out.push({ key: "positions", title: "Stocks & option legs", subtitle: `${filtered.length} of ${posRows.length}`, data });
+          out.push({ key: "positions", title: "Stocks & option legs", subtitle: [`${filtered.length} of ${posRows.length}`, deltaLabel("Δ", span)].filter(Boolean).join(" · "), data });
         } else if (group === "expiry") {
           const ladder = expiryLadder(filtered);
           const data: Item[] = ladder.flatMap((g) => [
@@ -199,7 +202,7 @@ export default function FundScreen() {
         const shown = showAllStocks ? sorted : sorted.slice(0, STOCKS_COLLAPSED);
         const data: Item[] = shown.map((line) => ({ t: "stock", line }));
         if (sorted.length > STOCKS_COLLAPSED) data.push({ t: "more", id: "stocks", total: sorted.length, open: showAllStocks, noun: "stocks", onPress: () => setShowAllStocks((v) => !v) });
-        out.push({ key: "stocks", title: "Stocks", sort: "stocks", data });
+        out.push({ key: "stocks", title: "Stocks", subtitle: deltaLabel("Δ shares and weight", span) ?? undefined, sort: "stocks", data });
       }
       const cs = contractsSection();
       if (cs) out.push(cs);
@@ -212,6 +215,8 @@ export default function FundScreen() {
       if (changesQ.isLoading) return [{ key: "load", title: "", data: [{ t: "node", id: "l", node: <Loading /> }] }];
       if (changesQ.isError || !changesQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote message="Couldn't load changes." onRetry={() => changesQ.refetch()} /> }] }];
       const sp = splitPeriod(changesQ.data.changes);
+      const windowLabel = deltaLabel("Changes", { previousDate: changesQ.data.previousDate, comparisonTradingDays: changesQ.data.comparisonTradingDays, catchUp: catchUpOf(f).active, catchUpSince: catchUpOf(f).since });
+      if (windowLabel) out.push({ key: "window", title: "", data: [{ t: "node", id: "window", node: <Hint>{windowLabel}</Hint> }] });
       const add = (key: string, title: string, list: Change[]) => {
         if (list.length === 0) return;
         const open = expanded.has(key);
@@ -282,7 +287,7 @@ export default function FundScreen() {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [f, book, activeTab, incomeBook, group, filtered, posRows, inc, equityChanges, stockSort, optionSort, showAllStocks, openBuckets, changesQ.data, changesQ.isLoading, changesQ.isError, effQ.data, effQ.isLoading, effQ.isError, peersQ.data, rotQ.data, rotQ.isLoading, rotQ.isError, expanded, incomeQ.isLoading, symbol]);
+  }, [f, book, activeTab, incomeBook, group, filtered, posRows, inc, equityChanges, stockSort, optionSort, showAllStocks, openBuckets, changesQ.data, changesQ.isLoading, changesQ.isError, span, effQ.data, effQ.isLoading, effQ.isError, peersQ.data, rotQ.data, rotQ.isLoading, rotQ.isError, expanded, incomeQ.isLoading, symbol]);
 
   if (q.isLoading) return <View style={styles.root}><Loading /></View>;
   if (q.isError || !f || !book) {
@@ -295,6 +300,7 @@ export default function FundScreen() {
   }
 
   const catchUp = catchUpOf(f);
+  const spanLabel = deltaLabel("Δ shares and weight", span);
   const aum = fundAumUsd(f);
   const fresh = freshnessLabel({ stale: f.stale, date: f.holdingsDate });
   const sectionIndexFor = (k: AllocKey): number => {
@@ -330,6 +336,7 @@ export default function FundScreen() {
         </View>
       </View>
 
+      {spanLabel ? <Hint>{spanLabel}</Hint> : null}
       <View style={styles.stats}>
         {stat("Holdings", formatCount(f.holdingsCount))}
         {income ? stat("Options", formatCount(f.optionsCount)) : null}

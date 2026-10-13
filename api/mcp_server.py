@@ -97,6 +97,7 @@ def get_changes(provider: str = "", fund: str = "", direction: str = "") -> dict
 
     return {
         'asOfDate': data.get_as_of_date(),
+        **data.comparison_info('daily'),
         'count': len(changes[:50]),
         'changes': changes[:50],
     }
@@ -111,7 +112,8 @@ def get_fund_detail(fund: str) -> dict:
         fund: ETF ticker (e.g. 'ARKK', 'AVUV', 'KYLD')
 
     Returns:
-        Provider, AUM, holdings count, top 20 holdings with weights and shares.
+        Provider, AUM, holdings count, top 20 holdings with weights and shares. Per-holding deltas are measured against
+        `previousDate` (`comparisonTradingDays` sessions before `asOfDate`); a catch-up fund's deltas are null.
     """
     detail = data.get_fund_detail(fund.upper())
     return detail or {"error": f"Fund '{fund.upper()}' not found"}

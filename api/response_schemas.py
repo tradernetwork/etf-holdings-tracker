@@ -38,7 +38,12 @@ HOLDINGS_ROW = obj(
     dte=amount('Days to expiry as written in the issuer snapshot (options only; null otherwise). Not recomputed from today.'),
 )
 CHANGE = obj(positionUsd=P['positionUsd'], activeFlowUsd=P['activeFlowUsd'])
-FUND = obj(**AUM['properties'], topHoldings=array(HOLDING),
+# What the deltas in a response are measured against. A catch-up fund's own span is catchUpSince -> asOfDate (its deltas are null).
+COMPARISON = dict(
+    previousDate={'type': ['string', 'null'], 'description': 'Date of the earlier snapshot the deltas in this response are measured against (the prior trading-day file for daily deltas; the ~7 / ~30 calendar-day lookback for weekly / monthly changes). Null with fewer than two snapshots. Not the span of a catch-up fund: its deltas are null (see catchUpSince).'},
+    comparisonTradingDays={'type': ['integer', 'null'], 'description': 'Trading days between previousDate and asOfDate (1 = consecutive sessions; more across a holiday or a missed scrape).'},
+)
+FUND = obj(**COMPARISON, **AUM['properties'], topHoldings=array(HOLDING),
            optionHoldings=array(HOLDING), recentChanges=array(CHANGE))
 SIGNAL = obj(fundDetails=array(AUM))
 BRIEFING = obj(topBuys=array(SIGNAL), topSells=array(SIGNAL),
@@ -56,12 +61,13 @@ RESPONSES = {
     '/api/v1/funds': obj(funds=array(AUM)),
     '/api/v1/fund/{fund}': FUND,
     '/api/v1/stock/{ticker}': obj(holdings=array(obj(**AUM['properties'], positionUsd=P['positionUsd']))),
-    '/api/v1/ticker/{ticker}': obj(holdings=array(obj(**AUM['properties'], positionUsd=P['positionUsd'])), changes=array(CHANGE)),
+    '/api/v1/ticker/{ticker}': obj(**COMPARISON, holdings=array(obj(**AUM['properties'], positionUsd=P['positionUsd'])), changes=array(CHANGE)),
     '/api/v1/holdings': obj(
+        **COMPARISON,
         total={'type': 'integer', 'description': 'Rows matching the filters (before paging).'},
         page={'type': 'integer'}, size={'type': 'integer'}, pages={'type': 'integer'},
         holdings=array(HOLDINGS_ROW)),
-    '/api/v1/changes': obj(changes=array(CHANGE),
+    '/api/v1/changes': obj(changes=array(CHANGE), **COMPARISON,
         total={'type': 'integer', 'description': 'All rows matching filters, before paging. Present only with page/size.'},
         page={'type': 'integer', 'description': '1-based page; present only with page/size.'},
         size={'type': 'integer', 'description': 'Page size (1–2000); present only with page/size.'},
@@ -72,7 +78,7 @@ RESPONSES = {
     '/api/v1/income/{fund}': AUM,
     '/api/v1/briefing': BRIEFING,
     '/api/v1/activity': ACTIVITY,
-    '/api/v1/signals': obj(signals=obj(buying=array(SIGNAL), selling=array(SIGNAL)),
+    '/api/v1/signals': obj(**COMPARISON, signals=obj(buying=array(SIGNAL), selling=array(SIGNAL)),
                            changes=array(CHANGE), briefing=BRIEFING, activity=ACTIVITY),
 }
 

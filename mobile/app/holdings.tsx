@@ -4,6 +4,7 @@ import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, Vie
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { HoldingCard } from "@/components/holdings/HoldingCard";
 import { Card, ErrorNote, Hint, Loading, Note, Screen } from "@/components/ui";
+import { deltaLabel } from "@/lib/deltaPeriod";
 import { formatShortDate } from "@/lib/format";
 import {
   catchUpGroups, csvScopeNote, csvUrl, DEFAULT_FILTERS, KIND_OPTIONS, loadsWhole, narrowKind, paginate, PAGE_SIZES, sortAllowed, sortDisabledNote, SORT_COLUMNS, sortRows, summaryLine,
@@ -117,6 +118,7 @@ export default function HoldingsBrowser() {
               <Text style={styles.exportText}>Export CSV</Text>
             </Pressable>
           </View>
+          {deltaLabel("Δ columns", q.data ?? {}) ? <Hint>{deltaLabel("Δ columns", q.data ?? {})}</Hint> : null}
           <Hint>The CSV is the full filtered result, not just this page. Long-press to share the link.{scope ? ` ${scope}` : ""}</Hint>
           {view.rows.length === 0 ? <Card><Note>No rows match. Try clearing the search or the type filter.</Note></Card> : <View>{view.rows.map((r, i) => <HoldingCard key={`${r.fund}|${r.ticker}|${i}`} r={r} />)}</View>}
           <Pager page={view.page} pages={view.pages} onPage={(p) => set({ page: p }, false)} size={f.size} onSize={(n) => set({ size: n })} />
