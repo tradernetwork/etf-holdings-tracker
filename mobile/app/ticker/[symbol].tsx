@@ -30,7 +30,7 @@ export default function TickerScreen() {
   const symbol = String(raw ?? "").toUpperCase();
   const q = useTicker(symbol);
   const { isFollowing, toggleFollow } = useAppState();
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
 
   if (q.isLoading) return <Screen topInset={false}><Loading /></Screen>;
   if (q.isError || !q.data) {
@@ -86,7 +86,6 @@ export default function TickerScreen() {
         </View>
       </View>
 
-      <FlowBridge ticker={symbol} />
       <StockHistory symbol={symbol} />
       <SectionHeader title="Opposite moves" right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
       {evidence.length === 0 ? (
@@ -123,7 +122,7 @@ export default function TickerScreen() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Mono bold style={{ fontSize: 15 }}>{formatWeight(h.weight)}</Mono>
-                {h.positionUsd != null && Math.abs(h.positionUsd) >= 1e6 ? <Hint>est. {formatUsd(h.positionUsd)}</Hint> : null}
+                {h.positionUsd != null ? <Hint>est. {formatUsd(h.positionUsd)}</Hint> : null}
                 {ch && isSignificant(ch.fund, ch.activeWeightDelta)
                   ? <Mono style={{ fontSize: 11, color: deltaColor(ch.activeWeightDelta, c) }}>{formatPp(ch.activeWeightDelta)}</Mono>
                   : <Hint>fund allocation</Hint>}
@@ -138,6 +137,7 @@ export default function TickerScreen() {
       <TickerOptions symbol={symbol} />
 
       <Hint style={{ marginTop: spacing.md }}>Source name: {t.name}</Hint>
+      <FlowBridge ticker={symbol} />
     </Screen>
   );
 }

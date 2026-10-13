@@ -225,23 +225,9 @@ function useUrlState() {
 //   phone  Symbol · Mkt value · Covered
 //   md     + Qty, % NAV, Δ today
 //   lg     + Price, Upside room, DTE
-const COLS = [
-    'grid gap-x-3 items-center',
-    'grid-cols-[minmax(0,1fr)_auto_auto]',
-    'md:grid-cols-[minmax(0,1.5fr)_1fr_1fr_0.7fr_0.9fr_0.9fr]',
-    'lg:grid-cols-[minmax(0,1.4fr)_0.9fr_0.8fr_0.9fr_0.6fr_0.8fr_0.9fr_0.8fr_0.5fr]',
-].join(' ');
-
+const COLS = 'grid gap-x-3 items-center min-w-[900px] grid-cols-[minmax(0,1.4fr)_0.9fr_0.8fr_0.9fr_0.6fr_0.8fr_0.9fr_0.8fr_0.5fr]';
 const SHOW: Record<SortKey, string> = {
-    symbol: '',
-    qty: 'hidden md:block',
-    price: 'hidden lg:block',
-    value: '',
-    nav: 'hidden md:block',
-    delta: 'hidden md:block',
-    coverage: '',
-    upside: 'hidden lg:block',
-    dte: 'hidden lg:block',
+    symbol: '', qty: '', price: '', value: '', nav: '', delta: '', coverage: '', upside: '', dte: '',
 };
 
 const NUM = 'text-right font-mono tabular-nums';
@@ -526,7 +512,7 @@ export function FundPositions({ income, changes = [] }: {
                 </div>
             </CardHeader>
 
-            <CardContent className="pt-3 px-2 sm:px-4">
+            <CardContent className="overflow-x-auto pt-3 px-2 sm:px-4">
                 {allRows.length > 0 && (
                     <div className="space-y-2 px-2 pb-3">
                         <div className="flex flex-wrap items-center gap-2">
@@ -604,7 +590,7 @@ export function FundPositions({ income, changes = [] }: {
                 )}
 
                 {allRows.length > 0 && group === 'stock' && (
-                    <>
+                    <div className="overflow-x-auto" aria-label="Positions: swipe for all columns">
                         <div className={`${COLS} px-2 py-2 text-[10px] uppercase tracking-wider text-slate-500 border-b border-rule`}>
                             {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
                                 <div
@@ -629,7 +615,7 @@ export function FundPositions({ income, changes = [] }: {
                         {rows.length === 0 ? (
                             <p className="px-2 py-6 text-center text-xs text-slate-500">No positions match these filters.</p>
                         ) : rows.map(r => <PositionRow key={r.p.ticker} r={r} opened={opened} />)}
-                    </>
+                    </div>
                 )}
 
                 {allRows.length > 0 && group === 'expiry' && (

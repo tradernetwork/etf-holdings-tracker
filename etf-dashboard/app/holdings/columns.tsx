@@ -61,7 +61,7 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Name",
-        meta: { cellClass: "hidden lg:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Name" />,
         cell: ({ row }) => {
             return (
@@ -73,7 +73,7 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Option_Type",
-        meta: { cellClass: "hidden sm:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Type" align="center" />,
         cell: ({ row }) => {
             const type = row.getValue("Option_Type") as string | undefined
@@ -93,20 +93,20 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Share Quantity",
-        meta: { cellClass: "hidden md:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Shares" align="right" />,
         cell: ({ row }) => {
             const shares = parseFloat(row.getValue("Share Quantity") as string)
             return (
                 <div className={`text-right font-mono ${shares < 0 ? "text-sell" : "text-slate-300"}`}>
-                    {shares.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {Number.isFinite(shares) ? shares.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—"}
                 </div>
             )
         },
     },
     {
         accessorKey: "sharesDelta",
-        meta: { cellClass: "hidden lg:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Δ Shares" align="right" />,
         cell: ({ row }) => {
             const delta = row.getValue("sharesDelta") as number
@@ -124,7 +124,7 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Weight",
-        meta: { cellClass: "hidden sm:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Weight" align="right" />,
         cell: ({ row }) => {
             const weight = parseFloat(row.getValue("Weight") as string) || 0
@@ -151,17 +151,17 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Market Value",
-        meta: { cellClass: "hidden md:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Mkt Val" align="right" />,
         cell: ({ row }) => {
-            const mv = parseFloat(row.getValue("Market Value") as string) || 0
-            return <div className="text-right font-mono text-slate-300">${mv.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            const mv = parseFloat(row.getValue("Market Value") as string)
+            return <div className="text-right font-mono text-slate-300">{Number.isFinite(mv) ? `$${mv.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}</div>
         },
         sortingFn: "basic",
     },
     {
         accessorKey: "Option_Strike",
-        meta: { cellClass: "hidden xl:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Strike" align="right" />,
         cell: ({ row }) => {
             const strike = row.getValue("Option_Strike") as number | undefined
@@ -170,7 +170,7 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "Option_Expiry",
-        meta: { cellClass: "hidden xl:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="Expiry" align="center" />,
         cell: ({ row }) => {
             const expiry = row.getValue("Option_Expiry") as string | undefined
@@ -179,7 +179,7 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: "DTE",
-        meta: { cellClass: "hidden lg:table-cell" },
+        meta: { cellClass: "" },
         header: ({ column }) => <SortableHeader column={column} label="DTE" align="right" />,
         cell: ({ row }) => {
             const dte = row.getValue("DTE") as number | undefined

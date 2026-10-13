@@ -210,15 +210,6 @@ export default async function FundsPage({
                 </div>
             )}
 
-            {/* TM Bridge: holdings file after close, flow is live on TM */}
-            <TMBridge
-                compact
-                placement="funds_banner"
-                title="TraderMatrix shows the options flow behind these names during the session."
-                body="Holdings are filed after the close."
-                cta="Open live flow →"
-            />
-
             {resp === null ? (
                 <div className="bg-surface border border-rule rounded-xl p-10 text-center">
                     <AlertCircle className="h-8 w-8 text-slate-600 mx-auto mb-3" />
@@ -327,6 +318,15 @@ export default async function FundsPage({
                 );
             })()
             )}
+            {/* TM Bridge: holdings file after close, flow is live on TM */}
+            <TMBridge
+                compact
+                placement="funds_banner"
+                title="TraderMatrix shows the options flow behind these names during the session."
+                body="Holdings are filed after the close."
+                cta="Open live flow →"
+            />
+
         </div>
     );
 }

@@ -68,14 +68,14 @@ export function BottomNav() {
 
     return (
         <>
+            {showStrip && <div className="md:hidden"><FlowStrip /></div>}
             {/* Reserves the space the fixed bar below occupies, so it never
                 sits on top of page content. Lives here — once, via layout —
                 rather than as bottom padding a per-page file would have to
                 remember to add. */}
-            <div aria-hidden className="md:hidden" style={{ height: `calc(${showStrip ? '8.75rem' : '4rem'} + env(safe-area-inset-bottom))` }} />
+            <div aria-hidden className="md:hidden" style={{ height: `calc(4rem + env(safe-area-inset-bottom))` }} />
 
             <div className="md:hidden fixed inset-x-0 bottom-0 z-50">
-            {showStrip && <FlowStrip />}
             <nav
                 className="grid grid-cols-5 bg-surface/97 backdrop-blur-md border-t border-rule"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

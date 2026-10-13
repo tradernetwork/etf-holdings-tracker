@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Badge, Hint, Mono, Tappable } from "@/components/ui";
 import { deltaOf } from "@/lib/fundChanges";
-import { cleanName, formatPp, formatShares, formatWeight, sectorLabel } from "@/lib/format";
+import { cleanName, formatShareMove, formatPp, formatShares, formatWeight, sectorLabel } from "@/lib/format";
 import { deltaColor, fonts, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 import type { Change, FundStreak } from "@/lib/types";
@@ -20,6 +20,7 @@ export function ChangeRow({ ch }: { ch: Change }) {
           {ch.type === "NEW" ? <Badge label="NEW" color={c.isNew} /> : null}
           {ch.type === "REMOVED" ? <Badge label="EXIT" color={c.sell} /> : null}
         </View>
+        <Hint>{formatShareMove(ch.previousShares, ch.currentShares) ?? "Shares —"}</Hint>
         <Hint>{[cleanName(ch.name), ch.sector ? sectorLabel(ch.sector) : ""].filter(Boolean).join(" · ")}</Hint>
       </View>
       <View style={{ alignItems: "flex-end", gap: 2 }}>

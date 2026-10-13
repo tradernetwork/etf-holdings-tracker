@@ -183,13 +183,6 @@ export default async function IncomePage() {
                     {/* Today's raw options activity — the mechanics behind the
                         distribution, grouped by provider. Same table component
                         as /dashboard, filtered here to option-income funds. */}
-                    <TMBridge
-                        placement="income_gex"
-                        title="Selling premium yourself?"
-                        body="These funds pick strikes once a week. TraderMatrix shows GEX levels and live flow, so you can see where dealers are pinned before you write the call."
-                        cta="See GEX levels →"
-                    />
-
                     <div className="bg-surface border border-rule rounded-xl overflow-hidden">
                         <div className="p-4 pb-2 flex items-center gap-2">
                             <Zap className="h-4 w-4" style={{ color: ACCENT }} />
@@ -238,6 +231,13 @@ export default async function IncomePage() {
                             </section>
                         );
                     })}
+                    <TMBridge
+                        placement="income_gex"
+                        title="Selling premium yourself?"
+                        body="These funds pick strikes once a week. TraderMatrix shows GEX levels and live flow, so you can see where dealers are pinned before you write the call."
+                        cta="See GEX levels →"
+                    />
+
                 </>
             )}
         </div>

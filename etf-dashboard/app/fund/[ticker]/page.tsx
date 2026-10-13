@@ -34,6 +34,7 @@ import { WatchButton } from '@/components/watch-star';
 import { FlowChip } from '@/components/flow-chip';
 import { TMBridge } from '@/components/tm-bridge';
 import { RotationPanel } from '@/components/rotation-panel';
+import { FundHoldings } from '@/components/fund-holdings';
 import { FundPositions } from '@/components/fund-positions';
 import { catchUpLabel } from '@/lib/catch-up';
 import { OptionActivity } from '@/components/option-activity';
@@ -229,6 +230,8 @@ async function ActiveEquityBody({ detail, fund, period }: {
 
     return (
         <>
+            <FundHoldings fund={fund} fallback={<TopHoldingsTable holdings={topHoldings} />} />
+
             <PeriodToggle period={period} fund={fund} />
 
             {/* Marquee — the structural decisions in this window */}
@@ -273,28 +276,8 @@ async function ActiveEquityBody({ detail, fund, period }: {
                 </CardContent>
             </Card>
 
-            {/* fund_mirror bridge: only shown when there are real entrances */}
-            {entrances.length > 0 && (() => {
-                const top = entrances.slice(0, 3).map(r => r.ticker);
-                const periodWord = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month';
-                const titleText = top.length === 1
-                    ? `${fund} entered ${top[0]} ${periodWord}`
-                    : top.length === 2
-                        ? `${fund} added ${top[0]} and ${top[1]} ${periodWord}`
-                        : `${fund} added ${top[0]}, ${top[1]} and ${top[2]} ${periodWord}`;
-                return (
-                    <TMBridge
-                        placement="fund_mirror"
-                        title={titleText}
-                        body="Check whether the options flow agrees before you follow the trade."
-                        cta={`Check ${fund}'s buys →`}
-                    />
-                );
-            })()}
-
             {streaks.length > 0 && <StreakTracker streaks={streaks} />}
 
-            <TopHoldingsTable holdings={topHoldings} />
         </>
     );
 }
@@ -392,7 +375,7 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
 
             <RotationPanel fund={detail.fund} />
 
-            {!hasPositions && <TopHoldingsTable holdings={detail.topHoldings ?? []} />}
+            {!hasPositions && <FundHoldings fund={fund} fallback={<TopHoldingsTable holdings={detail.topHoldings ?? []} />} />}
         </>
     );
 }
@@ -614,8 +597,8 @@ function TopHoldingsTable({ holdings }: { holdings: ApiFundDetail['topHoldings']
                         { key: 'name', header: 'Name', mobilePriority: 'md' },
                         { key: 'weight', header: 'Weight', align: 'right' },
                         { key: 'weightDelta', header: 'Δ Wt', align: 'right' },
-                        { key: 'shares', header: 'Shares', align: 'right', mobilePriority: 'lg' },
-                        { key: 'sharesDelta', header: 'Δ Shares', align: 'right', mobilePriority: 'xl' },
+                        { key: 'shares', header: 'Shares', align: 'right' },
+                        { key: 'sharesDelta', header: 'Δ Shares', align: 'right' },
                     ];
                     const rows: DataTableRow[] = holdings.map((h, i) => {
                         const barWidth = holdings[0]?.weight > 0 ? (h.weight / holdings[0].weight) * 100 : 0;

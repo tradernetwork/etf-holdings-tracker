@@ -401,6 +401,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 13, 2026"
+            tag="bugfix"
+            title="The holdings are the point. The funnel can wait."
+            desc="On a phone, the fund page showed changes first and hid share counts behind desktop-only columns. It now leads with the full portfolio: shares, share changes, market values and weights, with the whole CSV one tap away. TraderMatrix links stay, but after the data. The app keeps every position too. Apparently the numbers people came for should be the easy part to find."
+          />
+          <ChangelogEntry
             date="October 12, 2026"
             tag="bugfix"
             title="The daily scrape gets a second alarm clock"
