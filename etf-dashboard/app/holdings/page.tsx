@@ -44,7 +44,7 @@ export default async function HoldingsPage({
                         <p className="text-sm text-muted-foreground mt-1">
                             {asOfDate && <span className="font-mono">{formatDate(asOfDate)} · </span>}
                             {activeCount.toLocaleString()} active positions across all tracked funds
-                            {result.previousDate && <span className="text-slate-400 ml-2">· Δ Weight and Δ Shares {deltaSpan({ previousDate: result.previousDate })}</span>}
+                            {result.previousDate && <span className="text-slate-400 ml-2">· Δ Weight and Δ Shares {deltaSpan({ previousDate: result.previousDate, comparisonTradingDays: result.comparisonTradingDays })}</span>}
                             {changedCount > 0 && (
                                 <span className="text-equity ml-2">· {changedCount} changed today</span>
                             )}

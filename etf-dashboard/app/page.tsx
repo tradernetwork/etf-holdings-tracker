@@ -403,6 +403,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="October 13, 2026"
             tag="polish"
+            title="Funds without options stop showing option columns"
+            desc="Someone looked at AVUV and asked, fairly, why a stock fund was carrying option columns around. It wasn't, quite: the equity funds were already clean. The ones doing it were the income funds that hold no options at the moment, like YMAX and the Roundhill weekly-pay funds, which still showed 'Covered', 'Upside room', 'DTE', By-expiry grouping and an 'Options 0' tile on every row. All of that now only appears when a fund actually holds an option, even a single leg, so MSTY and KYLD look exactly as before. Hiding empty columns only: if the data exists, it stays. The Holdings page also counts the gap between snapshots in trading days, the same way the API does, so a Monday file compared with Friday says 'vs Fri Oct 9' and not 'vs Sat Oct 10'."
+          />
+          <ChangelogEntry
+            date="October 13, 2026"
+            tag="polish"
             title="Every Δ now says what it is a change since"
             desc="Someone asked, reasonably, 'share delta over what period?' and the honest answer was 'we never told you.' That was on us. The API now says which earlier snapshot every delta is measured against, and the website and the phone app print it right next to the numbers: 'vs Fri Oct 9'. If a holiday or a missed scrape means the gap is more than one trading day, we say that too: 'vs Wed Oct 7 (3 trading days)'. Funds that are catching up from stale data keep their own wording ('since Sep 25, not daily moves'), and a fund with no new disclosure says so instead of showing quiet zeros. The old 'Δ today' headers are gone, because it was often not today. Nothing was removed, only labelled."
           />

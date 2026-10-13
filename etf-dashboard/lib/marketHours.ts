@@ -33,6 +33,23 @@ export const NYSE_HOLIDAYS = new Set([
  * True if `iso` ('YYYY-MM-DD') is a weekday and not an NYSE holiday.
  * Used to filter non-market-day history snapshots out of streak / lookback math.
  */
+/**
+ * Trading days in (previous, asOf]: 1 for consecutive sessions, more across a holiday or a missed scrape (the skipped
+ * session is still a trading day the delta spans). Mirrors api/data.py trading_days_between. null when either date is unknown.
+ */
+export function tradingDaysBetween(previous: string | null | undefined, asOf: string | null | undefined): number | null {
+    const ok = (s: string | null | undefined): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+    if (!ok(previous) || !ok(asOf) || asOf <= previous) return null;
+    let n = 0;
+    const d = new Date(`${previous}T00:00:00Z`);
+    const end = new Date(`${asOf}T00:00:00Z`);
+    while (d < end) {
+        d.setUTCDate(d.getUTCDate() + 1);
+        if (isTradingDay(d.toISOString().slice(0, 10))) n++;
+    }
+    return n;
+}
+
 export function isTradingDay(iso: string): boolean {
     const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!m) return true; // unparseable — let downstream handle
