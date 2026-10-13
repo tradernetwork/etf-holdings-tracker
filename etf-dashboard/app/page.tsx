@@ -402,7 +402,7 @@ export default async function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 13, 2026"
-            tag="improvement"
+            tag="polish"
             title="Every Δ now says what it is a change since"
             desc="Someone asked, reasonably, 'share delta over what period?' and the honest answer was 'we never told you.' That was on us. The API now says which earlier snapshot every delta is measured against, and the website and the phone app print it right next to the numbers: 'vs Fri Oct 9'. If a holiday or a missed scrape means the gap is more than one trading day, we say that too: 'vs Wed Oct 7 (3 trading days)'. Funds that are catching up from stale data keep their own wording ('since Sep 25, not daily moves'), and a fund with no new disclosure says so instead of showing quiet zeros. The old 'Δ today' headers are gone, because it was often not today. Nothing was removed, only labelled."
           />
