@@ -1,5 +1,5 @@
 import type { ApiChangeRecord } from './api';
-interface Page { asOfDate: string; changes: ApiChangeRecord[]; pages: number; snapshot: string }
+interface Page { asOfDate: string; previousDate?: string | null; comparisonTradingDays?: number | null; changes: ApiChangeRecord[]; pages: number; snapshot: string }
 /** Complete book, bounded to three concurrent pages; never mix daily snapshots. */
 export async function completeChanges(period: string) {
     const base = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.tickertrace.pro';
@@ -20,5 +20,5 @@ export async function completeChanges(period: string) {
             changes.push(...p.changes);
         }
     }
-    return { asOfDate: first.asOfDate, changes };
+    return { asOfDate: first.asOfDate, previousDate: first.previousDate ?? null, comparisonTradingDays: first.comparisonTradingDays ?? null, changes };
 }

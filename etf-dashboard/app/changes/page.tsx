@@ -1,3 +1,4 @@
+import { deltaSpan } from '@/lib/delta-period';
 import { completeChanges } from '@/lib/complete-changes';
 import { api } from '@/lib/api';
 import { PROVIDER_ORDER } from '@/lib/holdings';
@@ -96,6 +97,7 @@ export default async function ChangesPage({
                         </h1>
                         <p className="text-sm text-slate-400 font-mono mt-1">
                             {asOfDate !== 'unknown' ? formatAsOfDate(asOfDate) : asOfDate} · {allChanges.length} position changes across {new Set(allChanges.map(c => c.fund)).size} funds
+                            {deltaSpan(changesResp ?? {}) && <> · Δ {deltaSpan(changesResp ?? {})}</>}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">

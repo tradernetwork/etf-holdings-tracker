@@ -12,6 +12,7 @@
 // get_fund_aum(), derived from the latest holdings snapshot). The static
 // FUND_AUM table is only a last-resort fallback for a fund the API doesn't
 // know about.
+import { deltaSpan } from '@/lib/delta-period';
 import { api } from '@/lib/api';
 import type {
     ApiChangeRecord, ApiFundDetail, ApiFundStreak, ApiOptionRoll, ApiOptionSignal,
@@ -230,7 +231,7 @@ async function ActiveEquityBody({ detail, fund, period }: {
 
     return (
         <>
-            <FundHoldings fund={fund} fallback={<TopHoldingsTable holdings={topHoldings} />} />
+            <FundHoldings fund={fund} span={deltaSpan(detail)} fallback={<TopHoldingsTable holdings={topHoldings} span={deltaSpan(detail)} />} />
 
             <PeriodToggle period={period} fund={fund} />
 
@@ -312,7 +313,7 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
                 table and the stock half of Daily Activity. */}
             {hasPositions && income && (
                 <Suspense fallback={null}>
-                    <FundPositions income={income} changes={equityChanges} />
+                    <FundPositions income={income} changes={equityChanges} span={deltaSpan(detail)} />
                 </Suspense>
             )}
 
@@ -375,7 +376,7 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
 
             <RotationPanel fund={detail.fund} />
 
-            {!hasPositions && <FundHoldings fund={fund} fallback={<TopHoldingsTable holdings={detail.topHoldings ?? []} />} />}
+            {!hasPositions && <FundHoldings fund={fund} span={deltaSpan(detail)} fallback={<TopHoldingsTable holdings={detail.topHoldings ?? []} span={deltaSpan(detail)} />} />}
         </>
     );
 }
@@ -575,7 +576,7 @@ function StreakTracker({ streaks }: { streaks: ApiFundStreak[] }) {
 
 // ─── Top Holdings table ──────────────────────────────────────────────────────
 
-function TopHoldingsTable({ holdings }: { holdings: ApiFundDetail['topHoldings'] }) {
+function TopHoldingsTable({ holdings, span }: { holdings: ApiFundDetail['topHoldings']; span?: string | null }) {
     if (holdings.length === 0) return null;
     return (
         <Card className="bg-surface border-rule">
@@ -584,6 +585,7 @@ function TopHoldingsTable({ holdings }: { holdings: ApiFundDetail['topHoldings']
                     <Layers className="h-5 w-5 text-equity" /> Top Holdings
                     <span className="text-xs font-normal text-slate-500 ml-auto">top {holdings.length} by weight</span>
                 </CardTitle>
+                {span && <p className="text-[11px] text-slate-500 mt-1">Δ Wt and Δ Shares {span}</p>}
             </CardHeader>
             <CardContent className="pt-4">
                 {(() => {

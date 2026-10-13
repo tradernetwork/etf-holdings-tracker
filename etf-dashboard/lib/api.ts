@@ -299,6 +299,9 @@ export interface ApiTickerIndexEntry {
 
 export interface ApiFundDetail {
     fund: string;
+    /** The earlier snapshot the deltas are measured against, and how many trading days that spans. */
+    previousDate?: string | null;
+    comparisonTradingDays?: number | null;
     provider: string;
     category: FundCategory;
     aum: number | null;
@@ -404,6 +407,9 @@ export interface ApiTickerHolding {
 
 export interface ApiTickerDetail {
     ticker: string;
+    /** The earlier snapshot the deltas are measured against, and how many trading days that spans. */
+    previousDate?: string | null;
+    comparisonTradingDays?: number | null;
     name: string;
     sector: string;
     fundCount: number;
@@ -937,7 +943,7 @@ export const api = {
         if (params.period) qs.set("period", params.period);
         if (params.limit) qs.set("limit", String(params.limit));
         const query = qs.toString();
-        return apiFetch<{ asOfDate: string; count: number; changes: ApiChangeRecord[] }>(
+        return apiFetch<{ asOfDate: string; previousDate?: string | null; comparisonTradingDays?: number | null; count: number; changes: ApiChangeRecord[] }>(
             `/api/v1/changes${query ? `?${query}` : ""}`,
             { revalidate: 600, ...opts },
         );

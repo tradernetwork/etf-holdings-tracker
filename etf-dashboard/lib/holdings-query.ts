@@ -1,5 +1,5 @@
 import { isExcludedHolding } from '@/lib/cash-name';
-import { getLatestHoldings, getDailyDiff, getLatestHoldingsDate } from '@/lib/holdings';
+import { getAvailableHistoryDates, getLatestHoldings, getDailyDiff, getLatestHoldingsDate } from '@/lib/holdings';
 
 /**
  * Server-side query layer for /holdings. The page used to ship the entire
@@ -32,6 +32,8 @@ export interface HoldingsResult {
     activeCount: number;
     changedCount: number;
     asOfDate: string | null;
+    /** The snapshot the Δ columns are measured against (the page's own daily diff: the file before the newest). */
+    previousDate: string | null;
     /** Funds shown without a Δ because their diff would be a multi-day catch-up. */
     catchUp: { fund: string; since: string | null }[];
     query: HoldingsQuery;
@@ -153,6 +155,7 @@ export function queryHoldings(q: HoldingsQuery): HoldingsResult {
         rows: rows.slice(start, start + q.size) as HoldingsRow[],
         total: rows.length,
         funds, activeCount, changedCount, asOfDate, catchUp,
+        previousDate: getAvailableHistoryDates()[1] ?? null,
         query: { ...q, page },
     };
 }
