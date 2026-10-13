@@ -107,9 +107,9 @@ export function PositionCard({ r, opened, open, onToggle }: { r: PosRow; opened:
         </View>
       </Pressable>
       <View style={styles.stats}>
-        <Stat label="Qty" value={formatCount(p.totalShares) + (p.totalShares < 0 ? " short" : "")} />
+        <Stat label="Shares" value={formatCount(p.totalShares) + (p.totalShares < 0 ? " short" : "")} />
         <Stat label="Price" value={p.spotSuppressed ? "⚠ n/a" : price(p.price)} color={p.spotSuppressed ? c.isNew : undefined} />
-        <Stat label="Δ latest" value={r.sharesDelta == null ? "—" : formatShares(r.sharesDelta)} color={r.sharesDelta == null ? undefined : r.sharesDelta > 0 ? c.buy : c.sell} />
+        <Stat label="Δ shares" value={r.sharesDelta == null ? "—" : formatShares(r.sharesDelta)} color={r.sharesDelta == null ? undefined : r.sharesDelta > 0 ? c.buy : c.sell} />
         <View style={styles.stat}><Hint>Covered</Hint><CoverageBar pct={p.coveragePct} />{p.nakedShares > 0 ? <Text style={{ color: c.sell, fontFamily: fonts.body, fontSize: 10 }}>{formatCount(p.nakedShares)} sh naked</Text> : null}</View>
         <View style={styles.stat}><Hint>Upside</Hint><UpsideText pct={r.upside} /></View>
         <Stat label="DTE" value={dteStat(r.dte, snapshot)} />

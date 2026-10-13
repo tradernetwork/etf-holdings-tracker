@@ -1,3 +1,4 @@
+import { completeChanges } from '@/lib/complete-changes';
 import { api } from '@/lib/api';
 import { PROVIDER_ORDER } from '@/lib/holdings';
 import { ArrowLeft, Share2 } from 'lucide-react';
@@ -44,7 +45,7 @@ export default async function ChangesPage({
     // call degrades to null, and the page says so when the main list is missing.
     const safe = <T,>(p: Promise<T>) => p.catch((e) => { console.error('changes page fetch failed:', e); return null; });
     const [changesResp, activity, institutional, trend] = await Promise.all([
-        safe(api.changes({ period, limit: 5000 })),
+        safe(completeChanges(period)),
         safe(api.activity(period)),
         safe(api.institutional(period, 25)),
         safe(api.institutionalTrend(12)),
@@ -55,7 +56,7 @@ export default async function ChangesPage({
     const allChanges: {
         fund: string; ticker: string; name: string;
         type: string; weightDelta: number; activeWeightDelta?: number; isOption: boolean;
-        sector?: string; underlying?: string;
+        sector?: string; underlying?: string; previousShares?: number | null; currentShares?: number | null;
     }[] = [];
 
     const equity = changesResp?.changes ?? [];
@@ -71,6 +72,7 @@ export default async function ChangesPage({
             isOption: c.isOption,
             sector: c.sector || undefined,
             underlying: c.optionDetails?.underlying,
+            previousShares: c.previousShares, currentShares: c.currentShares,
         });
     }
 

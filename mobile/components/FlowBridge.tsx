@@ -6,8 +6,8 @@ import { fonts, MIN_TAP, radii, spacing } from "@/lib/theme";
 import { useStyles } from "@/lib/theme-context";
 import type { Palette } from "@/lib/theme";
 
-/** Locked flow panel. TickerTrace never shows options flow: the bars are filler
- *  and the button says where the real thing lives. */
+/** Only TraderMatrix live options tape is teased here, using decorative bars.
+ *  Our holdings, quantities and institutional allocation changes stay visible. */
 export function FlowBridge({ ticker }: { ticker: string }) {
   const styles = useStyles(makeStyles);
   return (

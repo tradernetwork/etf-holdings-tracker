@@ -6,7 +6,7 @@ import { TMLink } from '@/components/tm-link';
 export type FlowCheckRow = { ticker: string; name: string; etf: string; etfSub: string };
 
 /** "Did the options tape agree?" Today's top ETF buys next to a flow cell that
- *  is ALWAYS blurred and locked. TickerTrace never shows flow data: the cell
+ *  is ALWAYS blurred and locked. Only live options tape is teased here; our ETF holdings stay visible. The cell
  *  is meaningless filler and the link says where the real thing lives. */
 export function FlowCheckCard({ rows, headerPlacement = 'flowcheck_header' }: { rows: FlowCheckRow[]; headerPlacement?: string }) {
     if (!rows.length) return null;
@@ -27,12 +27,12 @@ export function FlowCheckCard({ rows, headerPlacement = 'flowcheck_header' }: { 
                 </TMLink>
             </div>
             {rows.map(r => (
-                <div key={r.ticker} className="grid grid-cols-[1fr_auto] md:grid-cols-[minmax(140px,1.2fr)_minmax(120px,1fr)_minmax(160px,1.4fr)_auto] items-center gap-3 border-b border-rule px-4 py-2.5 last:border-b-0">
+                <div key={r.ticker} className="grid grid-cols-[1fr_1fr] md:grid-cols-[minmax(140px,1.2fr)_minmax(120px,1fr)_minmax(160px,1.4fr)_auto] items-center gap-3 border-b border-rule px-4 py-2.5 last:border-b-0">
                     <div className="min-w-0">
                         <Link href={`/stocks/${r.ticker}`} className="relative font-mono text-sm font-bold text-equity after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']">{r.ticker}</Link>
                         <p className="truncate text-[11px] text-slate-500">{r.name}</p>
                     </div>
-                    <div className="hidden md:block font-mono text-[11px] leading-4">
+                    <div className="block font-mono text-[11px] leading-4">
                         <span className="text-slate-500">ETF</span> <span className="font-semibold text-buy">{r.etf}</span><br />
                         <span className="text-slate-600">{r.etfSub}</span>
                     </div>

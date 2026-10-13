@@ -230,64 +230,6 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                 </div>
             </div>
 
-            {/* ── Live options flow panel (stock_flow_panel) ── */}
-            <div
-                className="rounded-xl border border-tm-gold/35 overflow-hidden"
-                style={{ background: 'linear-gradient(90deg,#111827,#14161c 60%,#18160f)' }}
-            >
-                {/* Panel header */}
-                <div className="px-4 py-3 border-b border-rule flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <TMMark size={22} />
-                        <div className="min-w-0">
-                            <h2 className="text-sm font-black leading-tight">
-                                {ticker} options flow today{' '}
-                                <span className="text-tm-gold-bright">· live on TraderMatrix</span>
-                            </h2>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                                The fund data above is end-of-day. This is what traders are doing with {ticker} right now.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Blurred, always. TickerTrace never shows flow: these tiles are meaningless
-                    filler (aria-hidden) that tease what TraderMatrix has. */}
-                <div className="relative">
-                    <div aria-hidden="true" className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-rule select-none">
-                        {[0, 1, 2, 3].map(i => (
-                            <div key={i} className="px-4 py-3 flex flex-col gap-1.5 blur-[4px]">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold px-2 py-px rounded-full border border-tm-gold/40 text-tm-gold-bright whitespace-nowrap">XXXXX</span>
-                                    <span className="text-[11px] text-slate-500 font-mono">xx:xx ET</span>
-                                </div>
-                                <div className="font-mono text-[13px] text-slate-200">Xx/Xx XxxC · $x.xM</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-tm-gold/40 bg-canvas/80 px-3 py-1.5 text-xs font-bold text-tm-gold-bright">
-                            <Lock className="h-3.5 w-3.5" /> See {ticker} flow on TraderMatrix
-                        </span>
-                    </div>
-                </div>
-
-                {/* Panel footer */}
-                <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-slate-400 flex-1 min-w-0">
-                        Unusual prints, strikes, size and TraderLady&apos;s read are all on TraderMatrix.
-                    </p>
-                    <TMLink
-                        placement="stock_flow_panel"
-                        ticker={ticker}
-                        className="shrink-0 inline-flex items-center px-4 py-2.5 rounded-xl font-extrabold text-[13px] text-canvas transition-colors hover:opacity-90"
-                        style={{ background: '#e0b03a' }}
-                    >
-                        Unlock {ticker} flow →
-                    </TMLink>
-                </div>
-            </div>
-
             {/* Holders */}
             <div className="bg-surface border border-rule rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-3 border-b border-rule">
@@ -296,8 +238,8 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                 {(() => {
                     const holderColumns: DataTableColumn[] = [
                         { key: 'fund', header: 'Fund' },
-                        { key: 'provider', header: 'Provider', mobilePriority: 'sm' },
-                        { key: 'shares', header: 'Shares', align: 'right', mobilePriority: 'md' },
+                        { key: 'provider', header: 'Provider' },
+                        { key: 'shares', header: 'Shares', align: 'right' },
                         { key: 'weight', header: 'Weight', align: 'right' },
                         { key: 'change', header: 'Δ today', align: 'right' },
                     ];
@@ -310,7 +252,7 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                             cells: {
                                 fund: <Link href={`/fund/${h.fund}`} className="font-mono font-bold text-equity hover:underline">{h.fund}</Link>,
                                 provider: <span className="text-slate-400">{h.provider}</span>,
-                                shares: <span className="font-mono text-slate-500">{h.shares > 0 ? Math.round(h.shares).toLocaleString() : '—'}</span>,
+                                shares: <span className="font-mono text-slate-500">{h.shares == null ? '—' : Math.round(h.shares).toLocaleString()}</span>,
                                 weight: (
                                     <>
                                         <div className="font-mono text-slate-300">{h.weight.toFixed(3)}%</div>
@@ -355,12 +297,12 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                     {(() => {
                         const optionColumns: DataTableColumn[] = [
                             { key: 'fund', header: 'Fund' },
-                            { key: 'provider', header: 'Provider', mobilePriority: 'sm' },
+                            { key: 'provider', header: 'Provider' },
                             { key: 'type', header: 'Type' },
                             { key: 'contracts', header: 'Contracts', align: 'right' },
                             { key: 'strike', header: 'Strike', align: 'right' },
                             { key: 'expiry', header: 'Expiry', align: 'right' },
-                            { key: 'weight', header: 'Wt in fund', align: 'right', mobilePriority: 'md' },
+                            { key: 'weight', header: 'Wt in fund', align: 'right' },
                         ];
                         const rows: DataTableRow[] = optionHolders.map((h, i) => {
                             const optType = h.optionDetails?.type?.toLowerCase() ?? '';
@@ -428,6 +370,64 @@ export default async function StockPage({ params }: { params: Promise<{ ticker: 
                     })()}
                 </div>
             )}
+
+            {/* ── Live options flow panel (stock_flow_panel) ── */}
+            <div
+                className="rounded-xl border border-tm-gold/35 overflow-hidden"
+                style={{ background: 'linear-gradient(90deg,#111827,#14161c 60%,#18160f)' }}
+            >
+                {/* Panel header */}
+                <div className="px-4 py-3 border-b border-rule flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <TMMark size={22} />
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-black leading-tight">
+                                {ticker} options flow today{' '}
+                                <span className="text-tm-gold-bright">· live on TraderMatrix</span>
+                            </h2>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                The fund data above is end-of-day. This is what traders are doing with {ticker} right now.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Blurred, always. TickerTrace never shows flow: these tiles are meaningless
+                    filler (aria-hidden) that tease what TraderMatrix has. */}
+                <div className="relative">
+                    <div aria-hidden="true" className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-rule select-none">
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className="px-4 py-3 flex flex-col gap-1.5 blur-[4px]">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold px-2 py-px rounded-full border border-tm-gold/40 text-tm-gold-bright whitespace-nowrap">XXXXX</span>
+                                    <span className="text-[11px] text-slate-500 font-mono">xx:xx ET</span>
+                                </div>
+                                <div className="font-mono text-[13px] text-slate-200">Xx/Xx XxxC · $x.xM</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-tm-gold/40 bg-canvas/80 px-3 py-1.5 text-xs font-bold text-tm-gold-bright">
+                            <Lock className="h-3.5 w-3.5" /> See {ticker} flow on TraderMatrix
+                        </span>
+                    </div>
+                </div>
+
+                {/* Panel footer */}
+                <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-slate-400 flex-1 min-w-0">
+                        Unusual prints, strikes, size and TraderLady&apos;s read are all on TraderMatrix.
+                    </p>
+                    <TMLink
+                        placement="stock_flow_panel"
+                        ticker={ticker}
+                        className="shrink-0 inline-flex items-center px-4 py-2.5 rounded-xl font-extrabold text-[13px] text-canvas transition-colors hover:opacity-90"
+                        style={{ background: '#e0b03a' }}
+                    >
+                        Unlock {ticker} flow →
+                    </TMLink>
+                </div>
+            </div>
 
             {/* Alert upsell (stock_alert) */}
             <div className="flex flex-wrap items-center gap-3.5 rounded-xl border border-tm-gold/30 bg-tm-gold/5 p-4">

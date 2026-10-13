@@ -34,6 +34,8 @@ interface Change {
     isOption: boolean;
     sector?: string;
     underlying?: string;
+    previousShares?: number | null;
+    currentShares?: number | null;
 }
 
 /** Per-ticker aggregate — all fund-level equity changes rolled up. */
@@ -263,6 +265,12 @@ export function ChangesClient({ changes, providers }: {
                     </div>
                 );
             },
+        },
+        {
+            id: 'shares',
+            header: 'Shares / contracts: previous → current',
+            enableSorting: false,
+            cell: ({ row }) => <span className="font-mono whitespace-nowrap text-xs">{row.original.previousShares == null ? '—' : row.original.previousShares.toLocaleString()} → {row.original.currentShares == null ? '—' : row.original.currentShares.toLocaleString()}</span>,
         },
         {
             id: 'flow',

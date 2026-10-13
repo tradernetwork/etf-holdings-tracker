@@ -114,8 +114,8 @@ export function StockRow({ line }: { line: StockLine }) {
     <Pressable onPress={() => router.push(`/ticker/${encodeURIComponent(line.ticker)}`)} accessibilityRole="button" style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.rowTitle}>{line.ticker}</Text>
-        <Hint>{line.shares > 0 ? `${formatCount(line.shares)} shares` : cleanName(line.name)}</Hint>
-        {line.shares > 0 ? <Hint style={{ opacity: 0.8 }}>{line.name}</Hint> : null}
+        <Hint>{`${line.shares < 0 ? "−" : ""}${formatCount(line.shares)} shares`}</Hint>
+        {line.shares !== 0 ? <Hint style={{ opacity: 0.8 }}>{line.name}</Hint> : null}
       </View>
       <View style={{ alignItems: "flex-end", gap: 2 }}>
         <Mono bold style={{ fontSize: 14 }}>{valueText(line.value)}</Mono>

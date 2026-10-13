@@ -101,14 +101,14 @@ function SleeveBar({ sleeves }: { sleeves: ApiIncomeFund['sleeves'] }) {
 const bookColumns: DataTableColumn[] = [
     { key: 'underlying', header: 'Name' },
     { key: 'navPct', header: '% NAV', align: 'right' },
-    { key: 'shares', header: 'Shares', align: 'right', mobilePriority: 'sm' },
+    { key: 'shares', header: 'Shares', align: 'right' },
     { key: 'spot', header: 'Spot', align: 'right' },
     { key: 'strike', header: 'Strike', align: 'right' },
     { key: 'dte', header: 'DTE', align: 'right' },
     { key: 'room', header: 'Room', align: 'right' },
-    { key: 'covered', header: 'Cov', align: 'right', mobilePriority: 'md' },
-    { key: 'longLegs', header: 'Long legs', align: 'right', mobilePriority: 'lg' },
-    { key: 'flow', header: <span className="text-tm-gold-bright font-bold">Flow</span>, align: 'right', mobilePriority: 'sm' },
+    { key: 'covered', header: 'Cov', align: 'right' },
+    { key: 'longLegs', header: 'Long legs', align: 'right' },
+    { key: 'flow', header: <span className="text-tm-gold-bright font-bold">Flow</span>, align: 'right' },
 ];
 
 function bookRows(book: ApiIncomeBookRow[]): DataTableRow[] {

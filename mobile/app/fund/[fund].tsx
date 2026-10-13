@@ -96,7 +96,7 @@ export default function FundScreen() {
   // ---- positions state ----
   const [stockSort, setStockSort] = useState<SortKey>("value");
   const [optionSort, setOptionSort] = useState<SortKey>("expiry");
-  const [showAllStocks, setShowAllStocks] = useState(false);
+  const [showAllStocks, setShowAllStocks] = useState(true);
   const [openBuckets, setOpenBuckets] = useState<Set<string>>(new Set());
   // Positions are expanded by default when there are only a few (MSTY has one stock and 16 legs: the legs ARE the book).
   const [toggledPos, setToggledPos] = useState<Set<string>>(new Set());

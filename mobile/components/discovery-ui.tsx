@@ -362,7 +362,7 @@ export function ChangeCard({
       bottom={
         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
           <Text
-            numberOfLines={1}
+            numberOfLines={2}
             style={{
               flex: 1,
               fontSize: 11,
@@ -370,7 +370,7 @@ export function ChangeCard({
               color: c.textSecondary,
             }}
           >
-            {row.fund} · {provider}
+            {row.fund} · {provider}{"\n"}{formatShareMove(row.previousShares, row.currentShares) ?? "Shares —"}
           </Text>
           <Text
             style={{

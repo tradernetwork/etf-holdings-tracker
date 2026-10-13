@@ -200,18 +200,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
           {stats.exitsToday != null && (
             <KPICard title="Exits Today" value={stats.exitsToday.toString()} icon={<TrendingDown className="h-4 w-4 text-rose-400" />} tooltip="Positions fully closed today — tickers where a tracked fund went from holding shares to zero. Pair with 'New Today' to gauge how much the institutional book is turning over." />
           )}
-          <TMLink
-            placement="kpi_flow_confirmed"
-            className="bg-tm-gold/[.07] border border-tm-gold/35 rounded-lg px-4 py-2 min-w-[150px] hover:border-tm-gold/70 transition-colors block"
-          >
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs text-tm-gold-bright font-medium uppercase tracking-wider">Live flow</span>
-              <TMMark size={16} />
-            </div>
-            <div className="text-xl font-bold font-mono text-tm-gold-bright tracking-tight">
-              See it →
-            </div>
-          </TMLink>
+
         </div>
       </div>
 
@@ -229,19 +218,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         <TickerSearchForm />
       </div>
 
+      <div className="flex flex-wrap gap-3">
+        <Link href="/holdings" className="text-equity font-semibold text-sm">Portfolio holdings · shares, values and weights →</Link>
+        <Link href="/funds" className="text-equity text-sm">Choose a fund&apos;s positions →</Link>
+      </div>
+
       {/* Ticker Detail (if searched) */}
       {searchQuery && <TickerDetailCard detail={tickerDetail} query={searchQuery} />}
-
-      {/* Flow check card */}
-      {dailySignals && dailySignals.buying.length > 0 && (() => {
-        const checkRows: FlowCheckRow[] = dailySignals.buying.slice(0, 6).map(s => ({
-          ticker: s.ticker,
-          name: s.name,
-          etf: `+${s.totalWeightDelta.toFixed(2)}%`,
-          etfSub: s.fundDetails.map(f => f.fund).slice(0, 2).join(', ') + (s.fundDetails.length > 2 ? ` +${s.fundDetails.length - 2}` : ''),
-        }));
-        return <FlowCheckCard rows={checkRows} />;
-      })()}
 
       {/* Leaderboard home — what institutions as a whole are doing, plus the
           tracked-funds overview. The familiar "top buys/sells" landing view. */}
@@ -474,6 +457,31 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
           </Card>
         </CollapsibleContent>
       </Collapsible>
+      {/* Flow check card */}
+      {dailySignals && dailySignals.buying.length > 0 && (() => {
+        const checkRows: FlowCheckRow[] = dailySignals.buying.slice(0, 6).map(s => ({
+          ticker: s.ticker,
+          name: s.name,
+          etf: `+${s.totalWeightDelta.toFixed(2)}%`,
+          etfSub: s.fundDetails.map(f => f.fund).slice(0, 2).join(', ') + (s.fundDetails.length > 2 ? ` +${s.fundDetails.length - 2}` : ''),
+        }));
+        return <FlowCheckCard rows={checkRows} />;
+      })()}
+
+      <div className="flex justify-end">
+          <TMLink
+            placement="kpi_flow_confirmed"
+            className="bg-tm-gold/[.07] border border-tm-gold/35 rounded-lg px-4 py-2 min-w-[150px] hover:border-tm-gold/70 transition-colors block"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-xs text-tm-gold-bright font-medium uppercase tracking-wider">Live flow</span>
+              <TMMark size={16} />
+            </div>
+            <div className="text-xl font-bold font-mono text-tm-gold-bright tracking-tight">
+              See it →
+            </div>
+          </TMLink>
+      </div>
       {/* Endorsed footer */}
       <footer className="border-t border-rule pt-5 pb-2 flex flex-col items-center gap-2 text-center">
         <Image src="/brand/tm-lockup.png" alt="TraderMatrix" width={120} height={22} className="opacity-85 h-auto" />
@@ -1163,7 +1171,7 @@ const equityColumns: DataTableColumn[] = [
   { key: 'ticker', header: 'Ticker' },
   { key: 'name', header: 'Name', mobilePriority: 'md' },
   { key: 'signal', header: 'Signal', align: 'center' },
-  { key: 'shares', header: 'Shares', align: 'right', mobilePriority: 'lg' },
+  { key: 'shares', header: 'Shares', align: 'right' },
   { key: 'weightDelta', header: 'Weight Δ', align: 'right' },
 ];
 
