@@ -1,8 +1,10 @@
 name: "Mobile release (Android, build and submit to Play)"
 
 # Push a tag `mobile-v*` (e.g. `git tag mobile-v1.0.1 && git push origin mobile-v1.0.1`) to build the production
-# Android bundle on EAS and have EAS submit it to the Play INTERNAL testing track when the build finishes
-# (promoting internal -> production is a click in Play Console, or the eas-ops "release-android-production" action).
+# Android bundle on EAS and have EAS submit it to the Play PRODUCTION track when the build finishes (user decision,
+# 2026-10-13). Google review still applies to every store build, and a native release cannot be rolled back to a lower
+# versionCode: halt the rollout in Play Console and ship a higher one (docs/PLAY_RELEASE.md). For internal testing only, use the
+# eas-ops "submit-android-internal" action on a finished build instead.
 # Pattern from tradernetwork/vero's build.yml. Or run it by hand with a profile.
 #
 # Needs the EXPO_TOKEN repo secret (robot token for the `tradermatrix` Expo account, the same one as Vero). Credentials:
@@ -77,7 +79,7 @@ jobs:
 
       # --no-wait --auto-submit: EAS builds on its own servers and submits to Play when the build finishes, so this
       # job ends in about a minute. Progress and the result are on expo.dev; submit settings live in mobile/eas.json.
-      - name: Queue Android build with auto-submit
+      - name: Queue Android build with auto-submit (Play production)
         if: env.PROFILE == 'production'
         run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
 
