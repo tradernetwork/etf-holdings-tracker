@@ -1,46 +1,74 @@
 # Play Store listing, assets and Data safety answers (native app)
 
-Prepared 2026-10-11 for listing `pro.tickertrace.app`, which currently serves the Chrome TWA. Nothing here has been entered in Play Console. Copy is in Sam's voice: plain, a little dry, honest about what the data is.
-
-> **Listing vs. what ships.** Notifications are built but their backend and client flags are OFF (see `docs/NOTIFICATIONS_GO_LIVE.md`). The first store release therefore must **not** advertise push. Use the main copy below; swap in the "when notifications are live" lines only after they are.
+Retail copy updated October 14, 2026 for `pro.tickertrace.app`. Optional daily notifications are live. The privacy and Data safety notes below remain relevant.
 
 ## 1. Text
 
-**App name** (30 max): `TickerTrace: ETF Fund Moves` (27)
+**App name** (27/30 characters):
 
-**Short description** (80 max, 77): 
-> What the big ETF funds bought and sold, from their daily disclosures. No ads.
+```text
+TickerTrace: ETF Fund Moves
+```
 
-**Full description** (4000 max, about 2,300):
+**Short description** (75/80 characters):
 
-> TickerTrace shows what big institutional ETFs actually did with their holdings, straight from the daily disclosures the funds publish. No hype, no account, no ads.
->
-> Every trading day we compare each fund's holdings with the day before, strip out price drift and stock splits, and show the real changes: who bought, who sold, how much, and whether unrelated fund families moved the same way.
->
-> WHAT YOU GET
-> • Today: the day's biggest moves across 98 tracked funds from 13 providers (ARK, Avantis, YieldMax, Roundhill, Amplify and more), in percentage points of the fund's book.
-> • Following: star the funds and stocks you care about and see their significant moves in one place.
-> • Stocks: who holds a stock, who is adding, who is trimming, plus a 30-session history.
-> • Funds: full portfolios with option positions, cash and Treasuries, the way a brokerage shows them.
-> • Options: contract-level activity, newly listed options from CBOE, and the Monday/Wednesday/Friday expiration calendar.
-> • Effectiveness: how well each option-income ETF executes its stated strategy, scored side by side.
-> • Consensus: stocks that several unrelated funds opened within days of each other.
-> • A dark look, a light look, or follow your phone.
->
-> HONEST ABOUT THE DATA
-> Funds publish holdings once a day, so this is a disclosure feed, not a live trade feed. When a fund's data is late or old we say so instead of guessing, and we never present a multi-week catch-up as one day of trading. Dollar sizes marked "est." are estimates (a position's weight times the fund's size).
->
-> NO ACCOUNT, NO ADS, NO TRACKING
-> Your follows live on your phone. There are no ads, no ad SDKs and no analytics libraries in the app. TickerTrace is free. One link in the app goes to TraderMatrix, a trading tool from our network, and it is labelled as a referral link.
->
-> TickerTrace reports what funds disclose. It is information, not investment advice, and not a recommendation to buy or sell anything.
+```text
+See what big funds bought and sold. Full holdings, shares and daily alerts.
+```
 
-**When notifications are live, add** (after "Following"): `• Daily digest (optional): one notification a day if the funds and stocks you follow made significant moves. Off until you turn it on.` and change the privacy line to mention the optional notification registry (section 4).
+**Full description** (2262/4000 characters):
 
-**Category:** Finance. **Tags/keywords:** ETF, funds, holdings, fund disclosures, options, ARK, YieldMax, Avantis, portfolio tracker. **Contact email:** admin@tradermatrix.pro. **Website:** https://tickertrace.pro. **Privacy policy URL:** https://tickertrace.pro/privacy (updated in this PR, see section 4). **Content rating:** answer the IARC questionnaire truthfully: no violence, no user-generated content shared with others, no purchases, no ads; finance information only. **Target audience:** 18+ (not for children).
+```text
+See what the big funds bought and sold yesterday — the stuff you'd otherwise dig out of spreadsheets. We did the spreadsheet part. You're welcome.
 
-**Release notes (first release, 500 max):**
-> TickerTrace is now a native app. Today's biggest fund moves, your follows, stocks, full fund portfolios with options, CBOE listings and the expiration calendar, and an effectiveness scoreboard for option-income ETFs. No ads, no account.
+TickerTrace compares the holdings that ETFs publish each day. Look up a fund or a stock and see what changed, how many shares it holds, and how much of its portfolio is in each position.
+
+LOOK INSIDE THE FUNDS
+• Browse full portfolios, including stocks, options, cash and Treasury holdings.
+• See share counts, share changes, portfolio weights and estimated dollar amounts.
+• Compare what a fund added, cut, bought for the first time or sold completely. Switch between daily, weekly and monthly changes.
+
+FOLLOW WHAT YOU CARE ABOUT
+• Star funds and stocks for your own Following list. No account needed.
+• Turn on an optional daily notification digest for important changes among your follows.
+• Look up a stock to see which tracked funds own it, their positions and its recent history.
+
+GO A LITTLE DEEPER
+• Find stocks that several fund families started buying around the same time.
+• Explore options positions, new options listings and upcoming expiration dates.
+• Compare funds designed to pay income, their payouts and how their holdings match their strategy.
+• Use a light theme, a dark theme or your phone's setting.
+
+A FEW THINGS TO KNOW
+This is daily holdings data, not live trades. Funds can report late. We show the data date and flag old information. A fund catching up after a gap doesn't suddenly count as one huge day of buying or selling.
+
+Price changes alone can make a position look bigger or smaller. Our change calculations account for that. Dollar amounts labelled as estimates are estimates, not trade receipts.
+
+FREE, WITH NO ADS
+No ads, no ad SDKs and no analytics libraries in the app. We count anonymous daily totals of fund and stock views and aggregate follower counts to see what's useful. Those counts contain no IP address, device ID or personal identifier. Optional notifications use a separate device registration to deliver your digest. Details: tickertrace.pro/privacy.
+
+You'll also find links to TraderMatrix, a separate trading tool from our network.
+
+TickerTrace reports what funds publish. It is information, not investment advice or a recommendation to buy or sell anything.
+```
+
+**Release notes** (241/500 characters):
+
+```text
+Full fund portfolios, share counts and changes, stocks and options in one place. Follow the funds and stocks you care about, and turn on an optional daily notification digest. We also made this description sound less like a finance textbook.
+```
+
+**Feature-graphic tagline options** (text options, not uploaded artwork):
+
+- Big fund moves. Less spreadsheet digging. (41 characters)
+- Your stocks. Their holdings. One place. (39 characters)
+- See the shares behind the headlines. (36 characters)
+
+Counts include spaces, punctuation and line breaks inside each copy block. Release notes are a draft for the next release; listing-only publishing does not change release tracks.
+
+Manual publishing: Play Console → app → Grow users → Store presence → Main store listing → English (United States). Paste App name, Short description and Full description into their matching fields, then Save and send for review when prompted. Release notes go with the next release, not in the store-description field.
+
+Category: Finance. Contact: admin@tradermatrix.pro. Website: https://tickertrace.pro. Privacy: https://tickertrace.pro/privacy.
 
 ## 2. Graphics (all required assets exist in this PR)
 
