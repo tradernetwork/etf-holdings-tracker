@@ -51,14 +51,14 @@ npx eas-cli build:version:get -p android -e production # confirm: 57; the next b
 | `credentialsSource` | default (remote) | uses the hosted upload key from section 1 |
 | `environment` | `production` | use the EAS production environment's variables |
 | `env.EXPO_PUBLIC_API_URL` | `https://api.tickertrace.pro` | pinned so a build never depends on EAS variables being filled in |
-| `env.EXPO_PUBLIC_NOTIFICATIONS_BACKEND` | `"0"` | notifications client flag explicitly OFF (code checks `=== "1"`) |
+| `env.EXPO_PUBLIC_NOTIFICATIONS_BACKEND` | `"1"` | notifications client flag ON since the go-live of 2026-10-13 (code checks `=== "1"`); the same variable is set to `1` in the EAS production environment so OTAs do not flip it off |
 | `autoIncrement` | `true` | with `appVersionSource: remote` |
 | `submit.production.android` | `track: production`, `releaseStatus: completed` | **decision 2026-10-13:** store builds go straight to Play **production** (the old TWA was live; "why would we have broken stuff out there"). Google review applies to each one. `submit.internal` is the opt-in internal-track profile |
 
 Also set the same variables in the EAS production **environment**, because `eas update --environment production` (required on SDK 57) ignores `eas.json` env and `.env`:
 ```bash
 npx eas-cli env:set production --name EXPO_PUBLIC_API_URL --value https://api.tickertrace.pro --visibility plaintext --non-interactive
-npx eas-cli env:set production --name EXPO_PUBLIC_NOTIFICATIONS_BACKEND --value 0 --visibility plaintext --non-interactive
+npx eas-cli env:set production --name EXPO_PUBLIC_NOTIFICATIONS_BACKEND --value 1 --visibility plaintext --non-interactive
 ```
 (`EXPO_PUBLIC_*` are inlined into the public bundle; never put a secret in one.) `eas submit` additionally needs a **Google Play service-account JSON** configured in EAS; we have none, so the first upload is **manual in Play Console**; do not add automatic submission until the track flow below has been done once by hand.
 

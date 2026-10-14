@@ -28,12 +28,13 @@
       // (hosted credentials): upload it once with scripts/play/upload-keystore-to-eas.mjs.
       "android": { "buildType": "app-bundle" },
       // EXPO_PUBLIC_* come from the EAS "production" environment (see docs/PLAY_RELEASE.md). They are
-      // also pinned here so a build never depends on that environment being filled in, and the
-      // notifications client flag is explicitly OFF until the backend is live.
+      // also pinned here so a build never depends on that environment being filled in. The notifications client
+      // flag is ON (go-live 2026-10-13); it must also exist in the EAS production environment, because
+      // `eas update --environment production` ignores eas.json env (docs/NOTIFICATIONS_GO_LIVE.md).
       "environment": "production",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.tickertrace.pro",
-        "EXPO_PUBLIC_NOTIFICATIONS_BACKEND": "0"
+        "EXPO_PUBLIC_NOTIFICATIONS_BACKEND": "1"
       }
     }
   },

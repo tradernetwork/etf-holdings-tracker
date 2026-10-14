@@ -402,6 +402,12 @@ export default async function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 13, 2026"
+            tag="feature"
+            title="The app can finally tap you on the shoulder (when we flip the switch)"
+            desc="The Android app has had a Following tab for a while, and a promise that it would tell you when a fund you follow does something real. The promise needed Firebase bundled into the app, which it didn't have, so notifications could never have arrived. That's fixed in the next store build: it includes the Firebase config and turns the notifications client on. We're deliberately not flipping the server on yet. First a new build has to land on one phone, and we send exactly one test notification to ourselves before anyone else gets anything. When it does go live you'll get a short digest of the moves that matter (0.10 percentage points or more of a fund's book, plus new and closed positions) for the funds and tickers you follow, at most once a trading day, and nothing on days nothing happened."
+          />
+          <ChangelogEntry
+            date="October 13, 2026"
             tag="polish"
             title="Funds without options stop showing option columns"
             desc="Someone looked at AVUV and asked, fairly, why a stock fund was carrying option columns around. It wasn't, quite: the equity funds were already clean. The ones doing it were the income funds that hold no options at the moment, like YMAX and the Roundhill weekly-pay funds, which still showed 'Covered', 'Upside room', 'DTE', By-expiry grouping and an 'Options 0' tile on every row. All of that now only appears when a fund actually holds an option, even a single leg, so MSTY and KYLD look exactly as before. Hiding empty columns only: if the data exists, it stays. The Holdings page also counts the gap between snapshots in trading days, the same way the API does, so a Monday file compared with Friday says 'vs Fri Oct 9' and not 'vs Sat Oct 10'."

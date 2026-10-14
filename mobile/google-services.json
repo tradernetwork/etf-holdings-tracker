@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "148847674689",
+    "project_id": "ticker-trace",
+    "storage_bucket": "ticker-trace.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:148847674689:android:a1ba04e03961fe71850dc0",
+        "android_client_info": {
+          "package_name": "pro.tickertrace.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "148847674689-27h9m96et2l2lra2fhhk2j7htsc0n3ov.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRFxf404WQmhlILELePvvVz1XnGoa9PGU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "148847674689-27h9m96et2l2lra2fhhk2j7htsc0n3ov.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
