@@ -38,7 +38,7 @@ directly rather than round-tripping over HTTP to the public REST API.
 
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
-from . import data
+from . import data, usage
 from . import income
 from . import structures
 
@@ -104,6 +104,7 @@ def get_changes(provider: str = "", fund: str = "", direction: str = "") -> dict
 
 
 @mcp.tool(annotations=_read_only("Fund Holdings Detail"))
+@usage.counted('fund', 'fund')
 def get_fund_detail(fund: str) -> dict:
     """
     Get full detail for a specific ETF fund.
@@ -120,6 +121,7 @@ def get_fund_detail(fund: str) -> dict:
 
 
 @mcp.tool(annotations=_read_only("Ticker Cross-Fund Detail"))
+@usage.counted('ticker', 'ticker')
 def get_ticker_detail(ticker: str) -> dict:
     """
     Get cross-fund detail for a specific stock ticker.
@@ -294,6 +296,7 @@ def get_holdings_changes(
 
 
 @mcp.tool(annotations=_read_only("Stock Activity"))
+@usage.counted('ticker', 'ticker')
 def get_stock_activity(ticker: str) -> dict:
     """
     Get complete institutional activity for a single stock: current fund
@@ -424,6 +427,7 @@ def get_global_stats() -> dict:
 
 
 @mcp.tool(annotations=_read_only("Option Structures"))
+@usage.counted('ticker', 'underlying')
 def get_option_structures(underlying: str) -> dict:
     """
     Get every tracked fund's option legs on one underlying, grouped into

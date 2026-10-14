@@ -60,7 +60,7 @@ export async function request<T>(
     const canRetry = attempt < MAX_RETRIES;
     let res: Response;
     try {
-      res = await fetch(url, { signal, headers: { Accept: "application/json" } });
+      res = await fetch(url, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
     } catch (e) {
       if (signal?.aborted) throw e;
       if (!canRetry) throw new NetworkError(e instanceof Error ? e.message : "network error");
@@ -89,7 +89,7 @@ async function fetchFundBook(fund: string, signal?: AbortSignal): Promise<Holdin
   const url = `${API_BASE}/api/v1/holdings?fund=${encodeURIComponent(fund)}`;
   let res: Response;
   try {
-    res = await fetchWithRetry(fetch, url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+    res = await fetchWithRetry(fetch, url, { signal: ctrl.signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
   } catch (e) {
     throw new NetworkError(e instanceof Error ? e.message : "network error");
   }

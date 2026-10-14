@@ -11,7 +11,7 @@ async function get<T>(path: string, query: Record<string, string | number | unde
     .join("&");
   let res: Response;
   try {
-    res = await fetchWithRetry(fetch, `${API_BASE}${path}${qs ? `?${qs}` : ""}`, { signal, headers: { Accept: "application/json" } });
+    res = await fetchWithRetry(fetch, `${API_BASE}${path}${qs ? `?${qs}` : ""}`, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
   } catch (e) {
     if (signal?.aborted) throw e;
     throw new NetworkError(e instanceof Error ? e.message : "network error");

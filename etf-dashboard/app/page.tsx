@@ -403,6 +403,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="October 13, 2026"
             tag="feature"
+            title="Count the popular tickers, not the people"
+            desc="The API now keeps anonymous daily totals for fund and ticker detail requests, plus grouped follower counts. No analytics SDK, IPs, install IDs or individual viewing history in the counter store. Website analytics stay separate. We wanted to know which names people care about, not build a dossier."
+          />
+          <ChangelogEntry
+            date="October 13, 2026"
+            tag="feature"
             title="The app can finally tap you on the shoulder (when we flip the switch)"
             desc="The Android app has had a Following tab for a while, and a promise that it would tell you when a fund you follow does something real. The promise needed Firebase bundled into the app, which it didn't have, so notifications could never have arrived. That's fixed in the next store build: it includes the Firebase config and turns the notifications client on. We're deliberately not flipping the server on yet. First a new build has to land on one phone, and we send exactly one test notification to ourselves before anyone else gets anything. When it does go live you'll get a short digest of the moves that matter (0.10 percentage points or more of a fund's book, plus new and closed positions) for the funds and tickers you follow, at most once a trading day, and nothing on days nothing happened."
           />

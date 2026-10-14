@@ -91,3 +91,49 @@ The live policy said the Android app "is the same site in a wrapper", and descri
 - New section **The Android app**: no ads/analytics/tracking libraries; follows, theme, notification setting stored on the phone; the update service receives app version, platform, a random per-install identifier and the IP address.
 - New section **Notifications (optional)**: off until enabled; registers a random device ID, the Expo push token, a hashed access secret and the follow list; used only for the digest; no name/email/phone/ad ID/location/portfolio; delivered via Expo's push service and Google FCM; unsent digests dropped after 24 h, digest records deleted after 30 days, registrations after 180 days without use (a delivered digest counts as use); delete via Settings ("Clear my follows" or turn notifications off; needs the phone online); one-way token-hash enrollment counter removed shortly after the UTC-day boundary; no deletion by name/email because we hold neither; no backups of our own (provider snapshots may persist deleted rows until they rotate). Every claim is mapped to code in the PR #170 thread.
 The policy text is already accurate for Release A (it describes notifications as optional and off); it should go live **before or with** the first store release, and in any case before the notifications flag is turned on.
+
+## October 13 update: first-party aggregate popularity
+
+No analytics/tracking SDK is added. FastAPI keeps UTC daily request totals by
+fund/ticker and source (`app`, `mcp`, `api`), never IP/UA/device/install IDs or
+individual request records. Website API reads are tagged and excluded. Successful
+fund/ticker/stock/options requests count separately; these are not unique users
+or guaranteed screen-open counts. Follower reporting reads only SQL grouped totals,
+never per-device rows or a join to viewing data. Anonymous totals are pruned to
+90 UTC days on background writes. Counters are best-effort and may undercount a
+crash, lock contention or overload. Existing infrastructure/access logs and Expo
+update/push identifiers are separate from these counters, as the policy describes.
+
+### Exact Play Console edits (owner action before the updated app rollout)
+
+Play Console → **Policy and programs → App content → Data safety → Manage**:
+
+1. Keep **Does your app collect or share any required user data types? → Yes**.
+2. Under **App activity**, select **App interactions**. This replaces the earlier
+   blanket “app activity not collected” answer for Release A.
+3. For **App interactions**: **Collected → Yes; Shared → No; Processed
+   ephemerally → No; Required → Yes; Purpose → Analytics**. It is automatic for
+   detail requests, with no opt-out, and aggregate totals persist beyond requests.
+4. For the existing **App activity → Other actions** (notification follow list),
+   keep **Collected → Yes; Shared → No; Optional → Yes; Processed ephemerally →
+   No**. Keep **App functionality** and additionally select **Analytics** because
+   anonymous grouped follower totals measure popularity. Follows remain optional
+   through the notifications opt-in; no per-device analytics is produced.
+5. Keep the existing **Device or other IDs** answers for Expo updates and push:
+   their purposes remain **App functionality**, not Analytics. Do not apply
+   the usage-counter “no identifier” claim to Expo's separate identifiers.
+6. Keep **Encrypted in transit → Yes**, existing deletion/notification controls,
+   and the privacy URL **https://tickertrace.pro/privacy**. Review, save and submit.
+
+The counters are **not linked to a user/device**. Do not invent an Apple-style
+“linked to you” checkbox if this Play form does not offer one; if a linking
+question is shown, answer **No for these aggregate interaction counts**. The
+existing push/device registration still contains a device identifier for delivery.
+
+This is a conservative declaration: requests reach our server before aggregation,
+so we are not relying on Google's exemption for data anonymized *before* leaving
+the device. The exact category/purpose mapping above is our implementation-based
+interpretation of [Google's official definitions](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
+Google defines automatic collection without a universal opt-out as required and
+analytics as measuring feature use; service-provider transfers and anonymous
+aggregation do not justify saying the existing update/push data is absent.

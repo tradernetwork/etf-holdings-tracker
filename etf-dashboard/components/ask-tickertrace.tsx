@@ -131,7 +131,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
         default: return { error: `Unknown tool: ${name}` };
     }
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { headers: { 'X-TickerTrace-Client': 'web' } });
         if (!res.ok) return { error: `API ${res.status} on ${name}` };
         return await res.json();
     } catch (e) {

@@ -19,7 +19,7 @@ export interface GlobalStats {
 export async function fetchStats(signal?: AbortSignal): Promise<GlobalStats> {
   let res: Response;
   try {
-    res = await fetchWithRetry(fetch, `${API_BASE}/api/v1/stats`, { signal, headers: { Accept: "application/json" } });
+    res = await fetchWithRetry(fetch, `${API_BASE}/api/v1/stats`, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
   } catch (e) {
     if (signal?.aborted) throw e;
     throw new NetworkError(e instanceof Error ? e.message : "network error");

@@ -6,7 +6,7 @@ export async function completeChanges(period: string) {
     async function load(page: number, snapshot?: string): Promise<Page> {
         const q = new URLSearchParams({ period, page: String(page), size: '2000' });
         if (snapshot) q.set('snapshot', snapshot);
-        const r = await fetch(`${base}/api/v1/changes?${q}`, { cache: 'no-store' });
+        const r = await fetch(`${base}/api/v1/changes?${q}`, { cache: 'no-store', headers: { 'X-TickerTrace-Client': 'web' } });
         if (!r.ok) throw new Error('Complete changes unavailable; reload the snapshot');
         return r.json();
     }

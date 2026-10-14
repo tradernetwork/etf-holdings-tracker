@@ -193,7 +193,7 @@ export type ChangePeriod = "daily" | "weekly" | "monthly";
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   let res: Response;
   try {
-    res = await fetchWithRetry(fetch, url, { signal, headers: { Accept: "application/json" } });
+    res = await fetchWithRetry(fetch, url, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
   } catch (e) {
     if (signal?.aborted) throw e;
     throw new NetworkError(e instanceof Error ? e.message : "network error");

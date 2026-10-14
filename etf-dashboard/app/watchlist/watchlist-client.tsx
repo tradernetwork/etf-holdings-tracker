@@ -25,7 +25,7 @@ interface CardData {
 async function fetchTickerCard(symbol: string): Promise<CardData | null> {
     try {
         const res = await fetch(`${API_BASE}/api/v1/ticker/${encodeURIComponent(symbol)}`, {
-            cache: 'no-store',
+            cache: 'no-store', headers: { 'X-TickerTrace-Client': 'web' },
         });
         if (!res.ok) return null;
         const data = await res.json();
@@ -52,7 +52,7 @@ async function fetchTickerCard(symbol: string): Promise<CardData | null> {
 async function fetchFundCard(symbol: string): Promise<CardData | null> {
     try {
         const res = await fetch(`${API_BASE}/api/v1/fund/${encodeURIComponent(symbol)}`, {
-            cache: 'no-store',
+            cache: 'no-store', headers: { 'X-TickerTrace-Client': 'web' },
         });
         if (!res.ok) return null;
         const data = await res.json();

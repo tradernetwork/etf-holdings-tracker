@@ -61,7 +61,7 @@ export interface IncomeDirectory {
 export async function fetchIncomeDirectory(signal?: AbortSignal): Promise<IncomeDirectory> {
   let res: Response;
   try {
-    res = await fetchWithRetry(fetch, `${API_BASE}/api/v1/income`, { signal, headers: { Accept: "application/json" } });
+    res = await fetchWithRetry(fetch, `${API_BASE}/api/v1/income`, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
   } catch (e) {
     if (signal?.aborted) throw e;
     throw new NetworkError(e instanceof Error ? e.message : "network error");

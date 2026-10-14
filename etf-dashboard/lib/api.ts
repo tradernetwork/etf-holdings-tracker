@@ -772,7 +772,7 @@ async function rawFetch<T>(path: string, revalidate: number, retries: number): P
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
-            const res = await fetch(url, fetchInit);
+            const res = await fetch(url, { ...fetchInit, headers: { ...fetchInit.headers, "X-TickerTrace-Client": "web" } });
             if (res.ok) return (await res.json()) as T;
             const body = await res.text().catch(() => res.statusText);
             const err = new ApiError(res.status, path, `API ${res.status} on ${path}: ${body}`);
