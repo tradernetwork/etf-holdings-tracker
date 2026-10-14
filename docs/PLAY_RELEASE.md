@@ -215,3 +215,6 @@ The local build ships **arm64-v8a, armeabi-v7a and x86_64**. **Do not drop x86_6
 versionCode 109 was built ARM-only by mistake (the first fix for the lint OOM below cut ABIs); 110 supersedes it with all three.
 
 The runner's `OutOfMemoryError: Metaspace` came from the Android **lint daemon** (`lintVitalAnalyzeRelease`), not from the C++ compile. It is fixed without touching ABIs: a user-level `gradle.properties` with real heap/metaspace and no daemon, plus an init script (`~/.gradle/init.d/no-lint-vital.gradle`) that disables every module's `lintVital*` task for the build. We do not gate on Android lint (our CI is tsc, jest, pytest and the builds themselves). If three ABIs ever run the runner out of memory again, add swap (`sudo fallocate -l 8G /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile`) before cutting an ABI.
+
+### Store screenshots
+Fresh screenshots of the native app (8 Chromebook at 1920x1080 and 8 phone at 1080x1920, Paper theme, live data, no alpha) are in `docs/play-assets/{chromebook,phone}/` with a README listing what each shows and how they were captured; a hosted copy with thumbnails and zips is at https://api.tickertrace.pro/previews/play-assets/. The older `store-assets/android/v2/` set predates the native fund screens.
