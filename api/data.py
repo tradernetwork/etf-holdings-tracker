@@ -355,9 +355,9 @@ FUND_PROVIDERS = {
     'CHPY': 'YieldMax', 'YMAX': 'YieldMax', 'AMDY': 'YieldMax', 'AMZY': 'YieldMax', 'GOOY': 'YieldMax', 'GDXY': 'YieldMax',
     'TSLY': 'YieldMax', 'HOOY': 'YieldMax', 'PLTY': 'YieldMax',
     'AIYY': 'YieldMax', 'BABO': 'YieldMax', 'BIGY': 'YieldMax', 'CRSH': 'YieldMax', 'CVNY': 'YieldMax', 'DIPS': 'YieldMax',
-    'FBY': 'YieldMax', 'FIAT': 'YieldMax', 'GMEY': 'YieldMax', 'GPTY': 'YieldMax', 'LFGY': 'YieldMax', 'MARO': 'YieldMax',
+    'FBY': 'YieldMax', 'FIAT': 'YieldMax', 'GPTY': 'YieldMax', 'LFGY': 'YieldMax', 'MARO': 'YieldMax',
     'MRNY': 'YieldMax', 'MSFO': 'YieldMax', 'NFLY': 'YieldMax', 'OARK': 'YieldMax', 'PYPY': 'YieldMax', 'RDTY': 'YieldMax',
-    'RNTY': 'YieldMax', 'SDTY': 'YieldMax', 'SMCY': 'YieldMax', 'SNOY': 'YieldMax', 'SOXY': 'YieldMax', 'TSMY': 'YieldMax',
+    'SDTY': 'YieldMax', 'SMCY': 'YieldMax', 'SNOY': 'YieldMax', 'SOXY': 'YieldMax', 'TSMY': 'YieldMax',
     'WNTR': 'YieldMax', 'XOMO': 'YieldMax', 'YQQQ': 'YieldMax',
     'NVII': 'REX Shares', 'TSII': 'REX Shares',
     # Corgi Funds — thematic + founder-led (launched May 2026)

@@ -171,7 +171,7 @@ option-income fund work.
 
 ## Covered Funds
 
-125 funds across 13 providers (October 2026). The authoritative list is `FUNDS` in
+123 funds across 13 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes.
 
@@ -201,7 +201,7 @@ the README table whenever `FUNDS` changes.
   equity, energy infrastructure, crypto-adjacent equity)
 - **Kurv**: KYLD, KQQQ (options-based income)
 - **YieldMax**: ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX,
-  AMDY, AMZY, GOOY, GDXY, plus 27 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GMEY, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, RNTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) (options income). CHPY is a real stock-picking
+  AMDY, AMZY, GOOY, GDXY, plus 25 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) (options income). CHPY is a real stock-picking
   semiconductor book that also writes calls; YMAX holds other YieldMax funds,
   so its deltas are an allocation call across the complex.
 - **REX Shares**: ULTI, NVII, TSII (options income). MSII, COII, HOII, and PLTI
