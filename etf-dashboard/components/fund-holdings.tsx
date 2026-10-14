@@ -15,7 +15,7 @@ export async function FundHoldings({ fund, fallback, span }: { fund: string; fal
     let asOfDate: string | undefined;
     let payloadSpan: string | null = null;
     try {
-        const response = await fetch(`${API_BASE}/api/v1/holdings?fund=${encodeURIComponent(fund)}&sort=weight`, { next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) });
+        const response = await fetch(`${API_BASE}/api/v1/holdings?fund=${encodeURIComponent(fund)}&sort=weight`, { headers: { 'X-TickerTrace-Client': 'web' }, next: { revalidate: 600 }, signal: AbortSignal.timeout(15000) });
         if (response.ok) {
             const payload = await response.json();
             if (Array.isArray(payload.holdings) && payload.holdings.every((p: Position) => p.fund === fund)) {

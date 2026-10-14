@@ -38,7 +38,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from . import data
+from . import data, usage
 from . import income
 from . import structures
 from . import auth
@@ -135,6 +135,7 @@ mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     auth.init_db()
+    usage.counter.start()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
     # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
     prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
@@ -151,6 +152,7 @@ async def lifespan(_app: FastAPI):
             if not stopped:
                 log.warning("prewarm_thread_still_running_after_stop")
         # graceful shutdown — close any pooled connections
+        await asyncio.to_thread(usage.counter.stop)
         auth.close_all_connections()
     log.info("shutdown_complete")
 
@@ -206,7 +208,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization", "X-TickerTrace-Client"],
     expose_headers=["X-Fund-Filter"],
     allow_credentials=False,
 )
@@ -215,10 +217,32 @@ app.add_middleware(RequestIdMiddleware)
 
 @app.middleware("http")
 async def snapshot_aum_context(request: Request, call_next):
-    # ContextVars propagate to FastAPI's sync handler thread, without sharing
-    # mutable AUM state between simultaneous requests.
+    # One existing middleware hop; aggregate tracking adds no I/O or waiting.
     with data.aum_snapshot_scope():
-        return await call_next(request)
+        response = await call_next(request)
+    try:
+        if request.method == 'GET' and response.status_code == 200:
+            key = usage.request_key(request.url.path, request.headers.get('X-TickerTrace-Client', ''), request.headers.get('User-Agent', ''))
+            if key:
+                usage.counter.add(*key)
+    except Exception:
+        pass  # Popularity stats can never turn a successful data request into 500.
+    return response
+
+
+@app.get('/api/v1/admin/usage', include_in_schema=False)
+def admin_usage(request: Request):
+    import hmac
+    expected = os.getenv('ADMIN_TOKEN', '')
+    supplied = request.headers.get('Authorization', '')
+    if not expected or not hmac.compare_digest(supplied.encode(), ('Bearer ' + expected).encode()):
+        raise HTTPException(status_code=404, detail='Not found')
+    try:
+        days = int(request.query_params.get('days', '7'))
+        if not 1 <= days <= 90: raise ValueError()
+    except ValueError:
+        raise HTTPException(status_code=422, detail='days must be 1–90')
+    return usage.report(days=days)
 
 
 # ─── Validation patterns ─────────────────────────────────────────
