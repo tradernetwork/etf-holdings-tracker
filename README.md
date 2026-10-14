@@ -11,7 +11,7 @@
 
 Actively-managed ETFs publish their full holdings daily. TickerTrace scrapes, normalizes, and diffs them every morning so you can see who's accumulating, who's reducing, and where conviction is moving — before the opening bell.
 
-**123 ETFs tracked across 13 providers** (as of October 2026):
+**137 ETFs tracked across 14 providers** (as of October 2026):
 
 | Provider | # | Funds |
 |----------|---|-------|
@@ -19,12 +19,13 @@ Actively-managed ETFs publish their full holdings daily. TickerTrace scrapes, no
 | ARK Invest | 6 | ARKK, ARKQ, ARKW, ARKG, ARKF, ARKX |
 | Amplify | 18 | BLOK, DIVO, QDVO, IDVO, YYY, HACK, IBUY, IPAY, ITEQ, AIEQ, AWAY, BATT, CNBS, COWS, DRVR, ETHO, GAMR, SILJ |
 | Corgi Funds | 16 | EUV, CMAG, CQTM, XA, EYES, KYC, GNMX, AV, DOCK, WATS, GLAM, NYNY, STYL, WNDR, FDRS, FDRX |
-| Roundhill | 12 | MSTW, NVDW, COIW, TSLW, HOOW, PLTW, QDTE, XDTE, RDTE, YBTC, DRAM, CHAT |
+| Roundhill | 16 | MSTW, NVDW, COIW, TSLW, HOOW, PLTW, AMDW, TOPW, XPAY, WEEK, QDTE, XDTE, RDTE, YBTC, DRAM, CHAT |
 | Capital Group | 5 | CGDV, CGGR, CGGO, CGUS, CGXU |
 | First Trust | 7 | FTLS, WCME, WCMG, WCMI, CRPT, MMSC, EMLP |
 | Kurv | 2 | KYLD, KQQQ |
-| YieldMax | 39 | ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX, AMDY, AMZY, GOOY, GDXY, AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ |
-| REX Shares | 3 | ULTI, NVII, TSII |
+| YieldMax | 40 | ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX, AMDY, AMZY, GOOY, GDXY, AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ, YMAG |
+| REX Shares | 6 | ULTI, NVII, TSII, FEPI, AIPI, CEPI |
+| Neos | 6 | SPYI, QQQI, IWMI, BTCI, CSHI, IAUI |
 | Tidal / NicholasX | 1 | BLOX |
 | Tidal / NestYield | 3 | EGGQ, EGGY, EGGS |
 | Sprott | 1 | GBUG |
@@ -300,7 +301,7 @@ Common gotchas:
 
 - `api/` — FastAPI + FastMCP servers, shared `data.py` layer
 - `etf-dashboard/` — Next.js 14 app (App Router, TS, Tailwind, shadcn/ui)
-- `scrape_avantis.py` — daily scraper (despite the name, scrapes all 123 funds across 13 providers)
+- `scrape_avantis.py` — daily scraper (despite the name, scrapes all 137 funds across 14 providers)
 - `cusip_lookup.py` — CUSIP → ticker resolver with persistent cache
 - `tests/` — pytest suite covering the data layer + 38 junk-ticker filter cases
 - `screenshots/` — README assets

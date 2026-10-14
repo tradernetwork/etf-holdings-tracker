@@ -24,3 +24,32 @@ def test_new_yieldmax_fund_is_registered_everywhere(fund):
 def test_no_duplicate_scraper_tickers():
     tickers = [f["ticker"] for f in scrape_avantis.FUNDS]
     assert len(tickers) == len(set(tickers))
+
+
+def test_clean_numeric_text_handles_neos_formatting():
+    import pandas as pd
+    df = pd.DataFrame({"Price": ["$341.27", "$0.00"], "NetAssets": ['$12,632,124,288.00'] * 2,
+                       "SharesOutstanding": ["233,520,000"] * 2, "Ticker": ["A", "B"]})
+    out = scrape_avantis.clean_numeric_text(df)
+    assert out["Price"].tolist() == [341.27, 0.0]
+    assert out["NetAssets"].iloc[0] == 12632124288.0
+    assert out["SharesOutstanding"].iloc[0] == 233520000
+    assert out["Ticker"].tolist() == ["A", "B"]
+
+
+def test_clean_numeric_text_leaves_numeric_columns_alone():
+    import pandas as pd
+    df = pd.DataFrame({"Price": [1.5, 2.5]})
+    assert scrape_avantis.clean_numeric_text(df)["Price"].tolist() == [1.5, 2.5]
+
+
+@pytest.mark.parametrize("fund,provider", [
+    ("YMAG", "YieldMax"), ("AMDW", "Roundhill"), ("TOPW", "Roundhill"), ("XPAY", "Roundhill"),
+    ("WEEK", "Roundhill"), ("FEPI", "REX Shares"), ("AIPI", "REX Shares"), ("CEPI", "REX Shares"),
+    ("SPYI", "Neos"), ("QQQI", "Neos"), ("IWMI", "Neos"), ("BTCI", "Neos"), ("CSHI", "Neos"), ("IAUI", "Neos"),
+])
+def test_second_wave_funds_are_registered(fund, provider):
+    assert sum(f["ticker"] == fund for f in scrape_avantis.FUNDS) == 1
+    assert FUND_PROVIDERS[fund] == provider
+    assert get_fund_category(fund) == "option-income"
+    assert re.search(rf"\b{fund}: '{provider}'", PROVIDERS_TS.read_text(encoding="utf-8"))

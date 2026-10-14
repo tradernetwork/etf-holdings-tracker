@@ -141,6 +141,10 @@ FUNDS = [
     {'ticker': 'TSLW', 'type': 'roundhill'},
     {'ticker': 'HOOW', 'type': 'roundhill'},
     {'ticker': 'PLTW', 'type': 'roundhill'},
+    {'ticker': 'AMDW', 'type': 'roundhill'},
+    {'ticker': 'TOPW', 'type': 'roundhill'},
+    {'ticker': 'XPAY', 'type': 'roundhill'},
+    {'ticker': 'WEEK', 'type': 'roundhill'},
     # Roundhill daily/weekly options ETFs
     {'ticker': 'QDTE', 'type': 'roundhill'},
     {'ticker': 'XDTE', 'type': 'roundhill'},
@@ -160,6 +164,14 @@ FUNDS = [
     {'ticker': 'TSLY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/TSLY/TidalFG_Holdings_TSLY.csv'},
     {'ticker': 'HOOY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/HOOY/TidalFG_Holdings_HOOY.csv'},
     {'ticker': 'PLTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/PLTY/TidalFG_Holdings_PLTY.csv'},
+    {'ticker': 'YMAG', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/YMAG/TidalFG_Holdings_YMAG.csv'},
+    # Neos income ETFs: Tidal-style columns but numbers arrive as text ("$1,234", "0.07%").
+    {'ticker': 'SPYI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=SPYI'},
+    {'ticker': 'QQQI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=QQQI'},
+    {'ticker': 'IWMI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=IWMI'},
+    {'ticker': 'BTCI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=BTCI'},
+    {'ticker': 'CSHI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=CSHI'},
+    {'ticker': 'IAUI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=IAUI'},
     # YieldMax additions (2026-10-14): same Tidal CSV feed as above. ABNY, DISO and JPMO
     # were probed but their files are months stale (likely liquidated), so skipped.
     {'ticker': 'AIYY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/AIYY/TidalFG_Holdings_AIYY.csv'},
@@ -193,6 +205,10 @@ FUNDS = [
     # liquidation and remain live.
     {'ticker': 'NVII', 'type': 'csv', 'url': 'https://www.rexshares.com/nvii/', 'method': 'post', 'data': {'CSV': 'Download CSV', 'symbol': 'NVII'}},
     {'ticker': 'TSII', 'type': 'csv', 'url': 'https://www.rexshares.com/tsii/', 'method': 'post', 'data': {'CSV': 'Download CSV', 'symbol': 'TSII'}},
+    # REX income funds added 2026-10-14 (same POST download as ULTI/NVII/TSII)
+    {'ticker': 'FEPI', 'type': 'csv', 'url': 'https://www.rexshares.com/fepi/', 'method': 'post', 'data': {'CSV': 'Download CSV', 'symbol': 'FEPI'}},
+    {'ticker': 'AIPI', 'type': 'csv', 'url': 'https://www.rexshares.com/aipi/', 'method': 'post', 'data': {'CSV': 'Download CSV', 'symbol': 'AIPI'}},
+    {'ticker': 'CEPI', 'type': 'csv', 'url': 'https://www.rexshares.com/cepi/', 'method': 'post', 'data': {'CSV': 'Download CSV', 'symbol': 'CEPI'}},
 
     # Capital Group — actively managed, multi-manager active-equity ETFs.
     # Daily holdings via a public XLSX download endpoint; see get_holdings_capitalgroup.
@@ -555,6 +571,18 @@ def looks_like_holdings_csv(lines: list[str]) -> bool:
     return head.count(',') >= 2 and any(kw in head for kw in header_keywords)
 
 
+def clean_numeric_text(df):
+    """Turn "$1,234.50" style text in the money/share columns into numbers.
+
+    Neos publishes Price, NetAssets, SharesOutstanding and CreationUnits as
+    formatted strings; the API reads them with float() and would see 0.
+    """
+    for col in ('Price', 'NetAssets', 'SharesOutstanding', 'CreationUnits'):
+        if col in df.columns and df[col].dtype == object:
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce')
+    return df
+
+
 def get_holdings_csv(fund_config):
     url = fund_config['url']
     fund_ticker = fund_config['ticker']
@@ -601,7 +629,7 @@ def get_holdings_csv(fund_config):
             # However, most seem to have headers but might have empty first lines.
             df = pd.read_csv(io.StringIO("\n".join(lines)))
             
-        return df
+        return clean_numeric_text(df)
     except Exception as e:
         log(f"Error processing CSV for {fund_ticker}: {e}")
         return None

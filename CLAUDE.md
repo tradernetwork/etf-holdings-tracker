@@ -171,7 +171,7 @@ option-income fund work.
 
 ## Covered Funds
 
-123 funds across 13 providers (October 2026). The authoritative list is `FUNDS` in
+137 funds across 14 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes.
 
@@ -204,7 +204,10 @@ the README table whenever `FUNDS` changes.
   AMDY, AMZY, GOOY, GDXY, plus 25 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) (options income). CHPY is a real stock-picking
   semiconductor book that also writes calls; YMAX holds other YieldMax funds,
   so its deltas are an allocation call across the complex.
-- **REX Shares**: ULTI, NVII, TSII (options income). MSII, COII, HOII, and PLTI
+- **Neos**: SPYI, QQQI, IWMI, BTCI, CSHI, IAUI (options income; added 2026-10-14). The
+  Tidal-style CSV ships Price/NetAssets as text (`$1,234`), cleaned by
+  `clean_numeric_text` in `scrape_avantis.py`. Use the `www.` host (bare domain 403s).
+- **REX Shares**: ULTI, NVII, TSII, FEPI, AIPI, CEPI (options income). MSII, COII, HOII, and PLTI
   were liquidated 2026-06-16 and removed from tracking.
 - **NicholasX**: BLOX (blockchain/crypto equity)
 - **NestYield**: EGGQ, EGGY, EGGS (active equity + options overlay)
