@@ -51,22 +51,32 @@ runs:
       with:
         cache-read-only: false
 
-    # The first run died with `java.lang.OutOfMemoryError: Metaspace` in the lint daemon and Gradle then hung until the job timeout.
-    # User-level gradle.properties beats the generated project's, so give the daemon real memory, build only the ARM ABIs (x86/x86_64
-    # are emulator-only and double the C++ compile time) and never keep a daemon around.
-    - name: Gradle memory and ABIs
+    # The first run died with `java.lang.OutOfMemoryError: Metaspace` in the Android lint daemon and Gradle then hung. The memory is
+    # fixed two ways, WITHOUT dropping an ABI: (1) real heap/metaspace in a user-level gradle.properties (it beats the generated
+    # project's), and (2) an init script that disables the `lintVital*` tasks of every module for this build. Lint is a static check
+    # we do not gate on (our CI is tsc + jest + pytest); skipping it also saves minutes. The ABIs are arm64-v8a, armeabi-v7a and
+    # **x86_64**: x86_64 is NOT emulator-only, most Intel/AMD Chromebooks are x86_64 and Play filters installs by native ABI, so
+    # dropping it makes the app unavailable on them (ChromeOS readiness). 32-bit x86 is dead and stays out.
+    - name: Gradle memory, lint off, ABIs
       if: inputs.mode == 'local'
       shell: bash
       working-directory: mobile
       run: |
-        mkdir -p "$HOME/.gradle"
+        mkdir -p "$HOME/.gradle/init.d"
         cat >> "$HOME/.gradle/gradle.properties" <<'PROPS'
         org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
         org.gradle.daemon=false
         org.gradle.workers.max=4
         kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g
-        reactNativeArchitectures=arm64-v8a,armeabi-v7a
+        reactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
         PROPS
+        cat > "$HOME/.gradle/init.d/no-lint-vital.gradle" <<'INIT'
+        allprojects {
+          tasks.configureEach { t ->
+            if (t.name.startsWith('lintVital')) { t.enabled = false }
+          }
+        }
+        INIT
         cat "$HOME/.gradle/gradle.properties"
         free -g | sed -n 2p
 
@@ -85,6 +95,12 @@ runs:
         timeout -k 60 4800 eas build --platform android --profile "${{ inputs.profile }}" --local --non-interactive --output "$RUNNER_TEMP/build.aab" 2>&1 | tee "$RUNNER_TEMP/build.log"
         ls -la "$RUNNER_TEMP/build.aab"
         vc=$(grep -oE 'Incremented versionCode from [0-9]+ to [0-9]+' "$RUNNER_TEMP/build.log" | tail -1 | grep -oE '[0-9]+$' || true)
+        # The AAB must carry all three ABIs, or Play hides the app on those devices (x86_64 = Chromebooks).
+        abis=$(unzip -l "$RUNNER_TEMP/build.aab" | grep -oE 'lib/[a-z0-9_-]+/' | sort -u | tr '\n' ' ')
+        echo "AAB native ABIs: $abis"
+        for a in arm64-v8a armeabi-v7a x86_64; do
+          echo "$abis" | grep -q "lib/$a/" || { echo "::error::The AAB has no lib/$a"; exit 1; }
+        done
         echo "version_code=${vc:-0}" >> "$GITHUB_OUTPUT"
         echo "Built versionCode ${vc:-unknown}"
 
