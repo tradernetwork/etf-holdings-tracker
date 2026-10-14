@@ -29,7 +29,17 @@ export const FUND_PROVIDERS: Record<string, string> = {
     MSTY: 'YieldMax', NVDY: 'YieldMax', CONY: 'YieldMax',
     CHPY: 'YieldMax', YMAX: 'YieldMax', AMDY: 'YieldMax', AMZY: 'YieldMax', GOOY: 'YieldMax', GDXY: 'YieldMax',
     TSLY: 'YieldMax', HOOY: 'YieldMax', PLTY: 'YieldMax',
+    AIYY: 'YieldMax', BABO: 'YieldMax', BIGY: 'YieldMax', CRSH: 'YieldMax', CVNY: 'YieldMax', DIPS: 'YieldMax',
+    FBY: 'YieldMax', FIAT: 'YieldMax', GPTY: 'YieldMax', LFGY: 'YieldMax', MARO: 'YieldMax',
+    MRNY: 'YieldMax', MSFO: 'YieldMax', NFLY: 'YieldMax', OARK: 'YieldMax', PYPY: 'YieldMax', RDTY: 'YieldMax',
+    SDTY: 'YieldMax', SMCY: 'YieldMax', SNOY: 'YieldMax', SOXY: 'YieldMax', TSMY: 'YieldMax',
+    WNTR: 'YieldMax', XOMO: 'YieldMax', YQQQ: 'YieldMax',
     NVII: 'REX Shares', TSII: 'REX Shares',
+    YMAG: 'YieldMax',
+    AMDW: 'Roundhill', TOPW: 'Roundhill', XPAY: 'Roundhill', WEEK: 'Roundhill',
+    FEPI: 'REX Shares', AIPI: 'REX Shares', CEPI: 'REX Shares',
+    // Neos Funds — covered-call / put-write income ETFs
+    SPYI: 'Neos', QQQI: 'Neos', IWMI: 'Neos', BTCI: 'Neos', CSHI: 'Neos', IAUI: 'Neos',
     // Corgi Funds — thematic + founder-led (launched May 2026)
     EUV: 'Corgi Funds', CMAG: 'Corgi Funds', CQTM: 'Corgi Funds',
     XA: 'Corgi Funds', EYES: 'Corgi Funds', KYC: 'Corgi Funds',
@@ -55,7 +65,7 @@ export const FUND_PROVIDERS: Record<string, string> = {
 
 export const PROVIDER_ORDER = [
     'Avantis', 'ARK Invest', 'Capital Group', 'Corgi Funds', 'Sprott', 'First Trust', 'Amplify', 'Kurv',
-    'YieldMax', 'REX Shares', 'Roundhill', 'Tidal / NicholasX', 'Tidal / NestYield',
+    'YieldMax', 'REX Shares', 'Roundhill', 'Neos', 'Tidal / NicholasX', 'Tidal / NestYield',
 ];
 
 // Funds removed from scraping — filter any residual data from CSVs.
@@ -136,7 +146,7 @@ export function getETFColor(fund: string): string {
 export type FundCategory = 'active-equity' | 'option-income';
 
 const OPTION_INCOME_PROVIDERS = new Set<string>([
-    'Kurv', 'YieldMax', 'REX Shares', 'Roundhill',
+    'Kurv', 'YieldMax', 'REX Shares', 'Roundhill', 'Neos',
     'Tidal / NestYield', 'Tidal / NicholasX',
 ]);
 
