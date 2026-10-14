@@ -410,7 +410,7 @@ export default async function LandingPage() {
             date="October 14, 2026"
             tag="feature"
             title="39 more funds, including Neos, are on the board"
-            desc="We went looking for good funds we were missing and found a lot. The big one is Neos, with SPYI ($12.6B) and QQQI ($15.4B) plus four more income ETFs. We also added three REX funds (FEPI, AIPI, CEPI), YMAG, four Roundhill funds, and 25 YieldMax funds including the multi-stock books GPTY, LFGY, BIGY and SOXY. That takes us from 98 funds to 137. We skipped anything with under $10M in assets or a holdings file that stopped updating, and Roundhill's LYTE because a third of it is China A-shares we can't display yet. Every fund went through the real scraper first and its weights summed to 100%.""
+            desc="We went looking for good funds we were missing and found a lot. The big one is Neos, with SPYI ($12.6B) and QQQI ($15.4B) plus four more income ETFs. We also added three REX funds (FEPI, AIPI, CEPI), YMAG, four Roundhill funds, and 25 YieldMax funds including the multi-stock books GPTY, LFGY, BIGY and SOXY. That takes us from 98 funds to 137. We skipped anything with under $10M in assets or a holdings file that stopped updating, and Roundhill's LYTE because a third of it is China A-shares we can't display yet. Every fund went through the real scraper first and its weights summed to 100%."
           />
           <ChangelogEntry
             date="October 13, 2026"
