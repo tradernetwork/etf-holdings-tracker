@@ -401,6 +401,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 14, 2026"
+            tag="feature"
+            title="27 more YieldMax funds are on the board"
+            desc="We went through YieldMax's holdings feed and added every fund that still publishes fresh data: BABO, DIPS, FIAT, MRNY, NFLY, SMCY, SNOY, TSMY and 19 others, including the multi-stock books GPTY, LFGY, BIGY, SOXY and RNTY. That takes us from 98 funds to 125. We skipped ABNY, DISO and JPMO because their files stopped updating months ago. Each fund went through the real scraper first and its weights summed to 100%, so none of them arrive broken."
+          />
+          <ChangelogEntry
             date="October 12, 2026"
             tag="bugfix"
             title="The daily scrape gets a second alarm clock"
