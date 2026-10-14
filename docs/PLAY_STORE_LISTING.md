@@ -4,10 +4,10 @@ Retail copy updated October 14, 2026 for `pro.tickertrace.app`. Optional daily n
 
 ## 1. Text
 
-**App name** (27/30 characters):
+**App name** (25/30 characters):
 
 ```text
-TickerTrace: ETF Fund Moves
+TickerTrace: ETF Holdings
 ```
 
 **Short description** (75/80 characters):
