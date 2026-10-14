@@ -589,7 +589,7 @@ def clean_numeric_text(df):
     formatted strings; the API reads them with float() and would see 0.
     """
     for col in ('Price', 'NetAssets', 'SharesOutstanding', 'CreationUnits'):
-        if col in df.columns and df[col].dtype == object:
+        if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
             df[col] = pd.to_numeric(df[col].astype(str).str.replace(r'[$,]', '', regex=True), errors='coerce')
     return df
 
