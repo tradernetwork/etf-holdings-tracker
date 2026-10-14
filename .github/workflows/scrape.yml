@@ -134,24 +134,10 @@ jobs:
             exit 0
           fi
           git commit -m "chore: auto-update holdings [${TODAY}]"
-          # Resilient push. The backtest makes this job run ~90 min, so main
-          # routinely advances (merged PRs) between checkout and here — a plain
-          # push then dies with a non-fast-forward "fetch first" rejection and
-          # the whole day's fresh holdings never land (production freezes on
-          # yesterday's data). Rebase onto whatever landed and retry. The commit
-          # only touches data files (normalized_holdings.csv, public/data/,
-          # analyses/*_rotation.md) which no app-code PR edits, so the rebase is
-          # always conflict-free.
-          for attempt in 1 2 3 4 5; do
-            if git push origin HEAD:main; then
-              echo "Pushed on attempt ${attempt}."
-              exit 0
-            fi
-            echo "Push attempt ${attempt} rejected — rebasing on origin/main and retrying..."
-            git pull --rebase origin main
-          done
-          echo "::error::Failed to push holdings after 5 attempts."
-          exit 1
+          # Resilient push (see scripts/push_holdings.sh): main routinely advances
+          # during the ~90 min job; the helper stashes scraper by-products, rebases
+          # taking our freshly scraped data on conflict, and retries with backoff.
+          bash scripts/push_holdings.sh main 5 5
 
       # Push the freshly-committed CSVs onto the live API box.
       #
