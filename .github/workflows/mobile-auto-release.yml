@@ -34,13 +34,13 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write   # the shipped-fingerprint tag (a GITHUB_TOKEN push does not trigger workflows)
   actions: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 120
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       GH_TOKEN: ${{ github.token }}
@@ -109,7 +109,10 @@ jobs:
           echo "app version: $app_version"
           eas fingerprint:generate --platform android --environment production --json --non-interactive > /tmp/fingerprint.json
           eas build:list --platform android --build-profile production --limit 10 --json --non-interactive > /tmp/builds.json
-          node scripts/release/decide.mjs --enabled true --app-version "$app_version" --local /tmp/fingerprint.json --builds /tmp/builds.json | tee /tmp/decision.txt
+          # Binaries built on the runner are not in EAS's build list: each is recorded as a git tag mobile-fp/<version>/<fingerprint>/<versionCode>.
+          git fetch --force --tags origin 'refs/tags/mobile-fp/*:refs/tags/mobile-fp/*' || true
+          git for-each-ref refs/tags/mobile-fp --format='%(refname:strip=2)|%(creatordate:iso-strict)' > /tmp/fp-tags.txt
+          node scripts/release/decide.mjs --enabled true --app-version "$app_version" --local /tmp/fingerprint.json --builds /tmp/builds.json --tags /tmp/fp-tags.txt | tee /tmp/decision.txt
         # a "blocked" decision exits 1 here and the run goes red: nothing is released when it cannot tell
 
       - name: Report
@@ -130,6 +133,9 @@ jobs:
         if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
         run: node scripts/play/check-submit-key.mjs
 
-      - name: Queue production build with auto-submit (Play production)
+      # local (default): build on this runner and submit; cloud: EAS cloud build + --auto-submit (repo variable MOBILE_BUILD_MODE).
+      - uses: ./.github/actions/native-build
         if: steps.switch.outputs.enabled == 'true' && steps.decide.outputs.action == 'build' && env.DRY_RUN != 'true'
-        run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
+        with:
+          mode: ${{ vars.MOBILE_BUILD_MODE || 'local' }}
+          profile: production

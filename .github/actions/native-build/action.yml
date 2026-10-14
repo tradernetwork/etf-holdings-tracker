@@ -1,0 +1,96 @@
+name: Native Android build and Play submit
+description: >
+  Builds the production Android bundle and submits it to Play. mode=local builds on this runner with `eas build --local`
+  (does not use the shared EAS Free-plan build quota; uses the remote EAS credentials and remote versionCode), then
+  `eas submit --path`, then records the binary's native fingerprint as a git tag so auto-release knows what is shipped.
+  mode=cloud queues an EAS cloud build with --auto-submit (needs a paid plan or quota left).
+# Caller must have: checkout, setup-node 22, expo-github-action (eas-cli, EXPO_TOKEN), `npm ci` in mobile/, and for the
+# fingerprint tag `permissions: contents: write`. Run steps here use mobile/ explicitly (composite steps do not inherit the
+# caller's `defaults.run.working-directory`).
+inputs:
+  mode:
+    description: local | cloud
+    default: local
+  profile:
+    description: EAS build profile; only production is submitted to Play
+    default: production
+runs:
+  using: composite
+  steps:
+    - name: Queue EAS cloud build with auto-submit (Play production)
+      if: inputs.mode == 'cloud' && inputs.profile == 'production'
+      shell: bash
+      working-directory: mobile
+      run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
+
+    - name: Queue EAS cloud build (no submit)
+      if: inputs.mode == 'cloud' && inputs.profile != 'production'
+      shell: bash
+      working-directory: mobile
+      run: eas build --profile "${{ inputs.profile }}" --platform android --non-interactive --no-wait
+
+    # A release APK build wants ~10 GB; a fresh runner has little free. Remove toolchains this job never uses.
+    - name: Free disk space
+      if: inputs.mode == 'local'
+      shell: bash
+      working-directory: mobile
+      run: |
+        df -h / | tail -1
+        sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift /usr/local/lib/node_modules/.cache || true
+        sudo apt-get clean || true
+        df -h / | tail -1
+
+    - uses: actions/setup-java@v4
+      if: inputs.mode == 'local'
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    - uses: gradle/actions/setup-gradle@v4
+      if: inputs.mode == 'local'
+      with:
+        cache-read-only: false
+
+    # Remote credentials (our upload keystore on EAS) and remote versionCode (appVersionSource: remote, autoIncrement) apply
+    # to local builds too. The AAB is built from the committed tree and left on the runner only.
+    - name: Build the AAB on the runner (eas build --local)
+      id: build
+      if: inputs.mode == 'local'
+      shell: bash
+      working-directory: mobile
+      env:
+        CI: "1"
+        EAS_NO_VCS: ""
+      run: |
+        set -o pipefail
+        eas build --platform android --profile "${{ inputs.profile }}" --local --non-interactive --output "$RUNNER_TEMP/build.aab" 2>&1 | tee "$RUNNER_TEMP/build.log"
+        ls -la "$RUNNER_TEMP/build.aab"
+        vc=$(grep -oE 'Incremented versionCode from [0-9]+ to [0-9]+' "$RUNNER_TEMP/build.log" | tail -1 | grep -oE '[0-9]+$' || true)
+        echo "version_code=${vc:-0}" >> "$GITHUB_OUTPUT"
+        echo "Built versionCode ${vc:-unknown}"
+
+    # Expo's submit worker sometimes fails to start ("Failed to create worker instance"): retry the same AAB.
+    - name: Submit the AAB to Play production
+      if: inputs.mode == 'local' && inputs.profile == 'production'
+      shell: bash
+      working-directory: mobile
+      run: |
+        for i in 1 2 3; do
+          if eas submit --platform android --profile production --path "$RUNNER_TEMP/build.aab" --non-interactive; then ok=1; break; fi
+          echo "::warning::eas submit attempt $i failed; retrying in 90s"; sleep 90
+        done
+        [ "${ok:-0}" = 1 ] || { echo "::error::eas submit failed 3 times (the AAB was built but not submitted)."; exit 1; }
+
+    # Only after a successful submission: the tag is what tells the next auto-release decision this native state shipped.
+    - name: Record the shipped fingerprint (git tag)
+      if: inputs.mode == 'local' && inputs.profile == 'production'
+      shell: bash
+      working-directory: mobile
+      run: |
+        app=$(grep -m1 -oE 'version: "[^"]+"' app.config.ts | sed -E 's/version: "([^"]+)"/\1/')
+        eas fingerprint:generate --platform android --environment production --json --non-interactive > "$RUNNER_TEMP/fp.json"
+        hash=$(node -e "const t=require('fs').readFileSync('$RUNNER_TEMP/fp.json','utf8');console.log(JSON.parse(t.slice(t.indexOf('{'))).hash)")
+        tag="mobile-fp/$app/$hash/${{ steps.build.outputs.version_code }}"
+        git tag -f "$tag" "$GITHUB_SHA"
+        git push origin "refs/tags/$tag"
+        echo "recorded $tag"

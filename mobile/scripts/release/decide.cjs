@@ -23,6 +23,22 @@ function pickBaseline(builds) {
   };
 }
 
+/**
+ * Binaries built on the GitHub runner (`eas build --local`) never appear in `eas build:list`, so each one is recorded as a git
+ * tag `mobile-fp/<appVersion>/<fingerprint>/<versionCode>` (created only after the Play submission succeeded). Lines are
+ * `<tag name without refs/tags/>|<ISO creator date>`. They count as finished builds when picking the baseline.
+ */
+function tagsToBuilds(text) {
+  const out = [];
+  for (const line of String(text || '').split('\n')) {
+    const [name, createdAt] = line.trim().split('|');
+    const m = /^mobile-fp\/([^/]+)\/([0-9a-f]{40})(?:\/(\d+))?$/.exec(name || '');
+    if (!m) continue;
+    out.push({ id: `tag:${name}`, status: 'FINISHED', createdAt: createdAt || '', appVersion: m[1], fingerprint: { hash: m[2] }, versionCode: m[3] ? Number(m[3]) : null });
+  }
+  return out;
+}
+
 /** `eas fingerprint:generate --json` output: {hash, sources} (tolerates a wrapper object). */
 function localHash(json) {
   const j = typeof json === 'string' ? JSON.parse(json) : json;
@@ -58,4 +74,4 @@ function decide({ enabled, appVersion, localFingerprint, baseline }) {
   return { action: 'ota', reason: `Native fingerprint unchanged (${localFingerprint.slice(0, 8)}) at app version ${appVersion}: a JS-only change, safe as an OTA.` };
 }
 
-module.exports = { decide, pickBaseline, localHash, LIVE };
+module.exports = { decide, pickBaseline, localHash, tagsToBuilds, LIVE };
