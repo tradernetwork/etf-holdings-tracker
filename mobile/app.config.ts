@@ -35,10 +35,11 @@ const config: ExpoConfig = {
     blockedPermissions: ["com.google.android.gms.permission.AD_ID"],
     // Push needs Firebase Cloud Messaging inside the APK: expo-notifications cannot mint an Expo push
     // token on Android without google-services.json ("Did you configure `googleServicesFile`?").
-    // Supplied as an EAS file variable (GOOGLE_SERVICES_JSON, or a local path when building locally) so
-    // the file stays out of git; unset today, so the native config is unchanged.
+    // The file is committed (project ticker-trace, package pro.tickertrace.app): it holds only client-side
+    // identifiers and ships inside every APK. The FCM V1 service-account PRIVATE key is a different file and
+    // lives only on EAS. A GOOGLE_SERVICES_JSON file variable still overrides the path if one is ever set.
     // See docs/NOTIFICATIONS_GO_LIVE.md.
-    ...(process.env.GOOGLE_SERVICES_JSON ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON } : {}),
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
   },
   // Web is for previews only (react-native-web). Single-page output; set
   // EXPO_BASE_URL (e.g. /previews/app) when hosting under a sub-path.

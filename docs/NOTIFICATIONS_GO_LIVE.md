@@ -1,5 +1,13 @@
 # Notifications go-live runbook (single-device test)
 
+> **Status, 2026-10-13: blockers 1 and 2 are DONE; the server is the last switch.**
+> - **Firebase in the binary:** `mobile/google-services.json` (project `ticker-trace`, package `pro.tickertrace.app`) is committed and `app.config.ts` sets `android.googleServicesFile: "./google-services.json"`. The file holds only client-side identifiers (it ships in every APK); the FCM service-account private key is a different file and lives only on EAS.
+> - **FCM V1 key on EAS:** attached to `pro.tickertrace.app` (`googleServiceAccountKeyForFcmV1`, client `firebase-adminsdk-fbsvc@ticker-trace.iam.gserviceaccount.com`).
+> - **Client flag ON in production:** `eas.json` `build.production.env.EXPO_PUBLIC_NOTIFICATIONS_BACKEND` is `"1"`, and the EAS **production environment** has the same variable (`eas env:list production`), because `eas update --environment production` ignores `eas.json` env: without it every OTA (including the push-to-main auto-release) would inline `undefined` and switch the client back off.
+> - **No preview channel any more:** store builds go straight to Play production, so sections 2 and 3 below (preview OTA, preview APK, `GOOGLE_SERVICES_JSON` file variable) are historical. The v4 binary is simply the next production build; the file change alters the native fingerprint, so the auto-release builds and submits it instead of publishing an OTA.
+> - **Harmless while the server is off:** the client's `NotifySync` treats a 503 as silent, never shows an error, and the sync calls are fire-and-forget (`void sync.…` in `app-state.tsx`); a failed token or registration only logs in `__DEV__`.
+> - **Still to do (in order):** install the new build, turn the server on (`NOTIFICATIONS_ENABLED=1`, section 4), do the single-device test (section 5). No push has been sent to anyone.
+
 Prepared 2026-10-11. **Nothing in this document has been run against production, and nothing here enables notifications.** Server (#151) and client (#149) are merged and OFF: `NOTIFICATIONS_ENABLED` is absent from the box's `api/.env`, and `EXPO_PUBLIC_NOTIFICATIONS_BACKEND` is unset in every build and update.
 
 ## 0. Read this first: three things stand between us and a real push
