@@ -1,6 +1,6 @@
 // The auto-release rule: fingerprint unchanged -> OTA; native change or a version with no binary -> build, never an OTA.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { decide, pickBaseline, localHash } = require("../scripts/release/decide.cjs");
+const { decide, pickBaseline, localHash, tagsToBuilds } = require("../scripts/release/decide.cjs");
 
 const HASH_A = "b0d7cadbe85dc539b1dee5213e5613887c70f9a7";
 const HASH_B = "1111111111111111111111111111111111111111";
@@ -61,5 +61,27 @@ describe("local fingerprint", () => {
     expect(localHash(JSON.stringify({ hash: HASH_A, sources: [] }))).toBe(HASH_A);
     expect(localHash({ fingerprint: { hash: HASH_B } })).toBe(HASH_B);
     expect(localHash({})).toBeNull();
+  });
+});
+
+describe("binaries built on the runner (fingerprint tags)", () => {
+  const H = "4593c6bd" + "0".repeat(32);
+  it("parses mobile-fp tags and ignores anything else", () => {
+    const got = tagsToBuilds(`mobile-fp/1.0.1/${H}/107|2026-10-14T01:00:00+00:00\nmobile-v1.0.1|2026-10-14T00:00:00+00:00\nmobile-fp/1.0.1/nothex/9|x\n`);
+    expect(got).toHaveLength(1);
+    expect(got[0]).toMatchObject({ appVersion: "1.0.1", versionCode: 107, status: "FINISHED", fingerprint: { hash: H } });
+  });
+  it("a newer tag beats an older EAS build, so the next decision is an OTA", () => {
+    const eas = [{ id: "b105", status: "FINISHED", createdAt: "2026-10-13T17:54:00Z", appVersion: "1.0.1", fingerprint: { hash: HASH_A } }];
+    const tags = tagsToBuilds(`mobile-fp/1.0.1/${H}/107|2026-10-14T01:00:00+00:00`);
+    const baseline = pickBaseline([...eas, ...tags]);
+    expect(baseline).toMatchObject({ hash: H, appVersion: "1.0.1" });
+    expect(decide({ enabled: true, appVersion: "1.0.1", localFingerprint: H, baseline }).action).toBe("ota");
+    // before the tag exists the same source is a native change
+    expect(decide({ enabled: true, appVersion: "1.0.1", localFingerprint: H, baseline: pickBaseline(eas) }).action).toBe("build");
+  });
+  it("tags alone are a baseline when EAS has no builds", () => {
+    expect(pickBaseline(tagsToBuilds(`mobile-fp/1.0.1/${H}/107|2026-10-14T01:00:00+00:00`))).toMatchObject({ hash: H });
+    expect(pickBaseline(tagsToBuilds(""))).toBeNull();
   });
 });

@@ -21,7 +21,9 @@ concurrency:
 jobs:
   eas:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
+    permissions:
+      contents: write   # the shipped-fingerprint tag
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     defaults:
@@ -68,10 +70,10 @@ jobs:
           echo "build id: $id"
           eas submit --platform android --profile "$SUBMIT_PROFILE" --id "$id" --non-interactive
 
-      # Builds this exact ref and submits that build by id (the production submit profile = Play production track).
-      - name: Build and release to Play production
+      # Builds this exact ref and submits it to Play production: local on this runner by default (the EAS Free plan's Android
+      # build quota is shared with Vero), or an EAS cloud build when MOBILE_BUILD_MODE=cloud.
+      - uses: ./.github/actions/native-build
         if: inputs.op == 'release-android-production'
-        run: |
-          id=$(eas build --platform android --profile production --non-interactive --json | jq -r '.[0].id')
-          echo "build id: $id"
-          eas submit --platform android --profile production --id "$id" --non-interactive
+        with:
+          mode: ${{ vars.MOBILE_BUILD_MODE || 'local' }}
+          profile: production

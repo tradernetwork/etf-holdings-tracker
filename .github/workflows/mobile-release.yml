@@ -27,8 +27,13 @@ on:
         type: choice
         options: [production, preview, development]
         default: production
+      build_mode:
+        description: "local = build on the GitHub runner (default, no EAS build quota); cloud = EAS cloud build (needs quota or a paid plan)"
+        type: choice
+        options: [local, cloud]
+        default: local
 
-# EAS builds one at a time on this plan; never queue two release runs at once.
+# One release at a time; never queue two release runs at once.
 concurrency:
   group: mobile-release
   cancel-in-progress: false
@@ -36,7 +41,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
+    permissions:
+      contents: write   # the shipped-fingerprint tag
     env:
       PROFILE: ${{ inputs.profile || 'production' }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -77,12 +84,9 @@ jobs:
         if: env.PROFILE == 'production'
         run: node scripts/play/check-submit-key.mjs
 
-      # --no-wait --auto-submit: EAS builds on its own servers and submits to Play when the build finishes, so this
-      # job ends in about a minute. Progress and the result are on expo.dev; submit settings live in mobile/eas.json.
-      - name: Queue Android build with auto-submit (Play production)
-        if: env.PROFILE == 'production'
-        run: eas build --profile production --platform android --non-interactive --no-wait --auto-submit
-
-      - name: Queue Android build (no submit)
-        if: env.PROFILE != 'production'
-        run: eas build --profile "$PROFILE" --platform android --non-interactive --no-wait
+      # local (default): build the AAB on this runner with `eas build --local` and submit it; cloud: queue an EAS cloud build with
+      # --auto-submit. The default is local because the EAS Free plan's Android build quota is shared with Vero (tradermatrix).
+      - uses: ./.github/actions/native-build
+        with:
+          mode: ${{ inputs.build_mode || vars.MOBILE_BUILD_MODE || 'local' }}
+          profile: ${{ env.PROFILE }}
