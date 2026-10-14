@@ -231,6 +231,17 @@ FUNDS = [
     {'ticker': 'CRPT', 'type': 'firsttrust'},  # SkyBridge Crypto Industry & Digital Economy
     {'ticker': 'MMSC', 'type': 'firsttrust'},  # Multi Manager Small Cap
     {'ticker': 'EMLP', 'type': 'firsttrust'},  # North American Energy Infrastructure
+
+    # Global X — index covered-call / risk-managed income ETFs (dated full-holdings CSV);
+    # see get_holdings_globalx. Added 2026-10-14. RYLG, QCLR, XCLR skipped (under $10M).
+    {'ticker': 'QYLD', 'type': 'globalx'},
+    {'ticker': 'XYLD', 'type': 'globalx'},
+    {'ticker': 'RYLD', 'type': 'globalx'},
+    {'ticker': 'QRMI', 'type': 'globalx'},
+    {'ticker': 'XRMI', 'type': 'globalx'},
+    {'ticker': 'QYLG', 'type': 'globalx'},
+    {'ticker': 'XYLG', 'type': 'globalx'},
+    {'ticker': 'DJIA', 'type': 'globalx'},
 ]
 
 AVANTIS_BASE_URL_TEMPLATE = "https://www.avantisinvestors.com/avantis-investments/total-holdings/{id}/?type=etf"
@@ -1391,6 +1402,40 @@ def add_quality_columns(df, refreshed: bool):
     return df
 
 
+def get_holdings_globalx(fund_config):
+    """Global X publishes one dated full-holdings CSV per fund:
+    assets.globalxetfs.com/funds/holdings/{ticker}_full-holdings_{YYYYMMDD}.csv
+
+    Two title lines (fund name, "Fund Holdings Data as of M/D/YYYY") precede the
+    header and a legal disclaimer trails the table. Written option legs have a
+    blank ticker and a "NDX US 10/16/26 C29475" name, which parse_option_ticker
+    already understands. The file lags by a day, so walk back up to a week.
+    """
+    fund_ticker = fund_config['ticker']
+    for days_back in range(7):
+        dt = datetime.date.today() - datetime.timedelta(days=days_back)
+        url = f"https://assets.globalxetfs.com/funds/holdings/{fund_ticker.lower()}_full-holdings_{dt.strftime('%Y%m%d')}.csv"
+        try:
+            response = _http_get(url, headers={'User-Agent': USER_AGENT})
+        except Exception as e:
+            log(f"Global X fetch error for {fund_ticker} ({dt}): {e}")
+            continue
+        if response.status_code != 200:
+            continue
+        lines = [l for l in response.content.decode('utf-8-sig').splitlines() if l.strip()]
+        if len(lines) < 4 or not lines[2].startswith('% of Net Assets'):
+            log(f"Global X {fund_ticker}: unexpected layout, trying earlier date")
+            continue
+        as_of = re.search(r'as of (\d{1,2}/\d{1,2}/\d{4})', lines[1])
+        df = pd.read_csv(io.StringIO(chr(10).join(lines[2:])), on_bad_lines='skip')
+        df = df[df['Shares Held'].notna()]  # drops the trailing disclaimer
+        df = df.rename(columns={'% of Net Assets': 'Weight', 'Market Price ($)': 'Price', 'Market Value ($)': 'Market Value'})
+        df['Date'] = as_of.group(1) if as_of else dt.strftime('%m/%d/%Y')
+        return df
+    log(f"FAILED to fetch Global X holdings for {fund_ticker} after 7 attempts")
+    return None
+
+
 def fetch_fund(fund):
     """Dispatch one fund to its provider fetcher. Returns a DataFrame or None."""
     kind = fund['type']
@@ -1410,6 +1455,8 @@ def fetch_fund(fund):
         return get_holdings_capitalgroup(fund)
     if kind == 'firsttrust':
         return get_holdings_firsttrust(fund)
+    if kind == 'globalx':
+        return get_holdings_globalx(fund)
     return get_holdings_csv(fund)
 
 

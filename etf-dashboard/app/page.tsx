@@ -403,6 +403,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="October 14, 2026"
             tag="feature"
+            title="Global X covered-call funds join the board"
+            desc="QYLD, XYLD, RYLD and five more Global X income ETFs are now tracked, about $15B between them. Their files are dated by hand and lag a day, so the scraper walks back until it finds the latest one. The written index calls (NDX, SPX, RUT) show up as short positions like any other fund's options. We're at 145 funds now. We skipped RYLG, QCLR and XCLR because each holds under $10M."
+          />
+          <ChangelogEntry
+            date="October 14, 2026"
+            tag="feature"
             title="39 more funds, including Neos, are on the board"
             desc="We went looking for good funds we were missing and found a lot. The big one is Neos, with SPYI ($12.6B) and QQQI ($15.4B) plus four more income ETFs. We also added three REX funds (FEPI, AIPI, CEPI), YMAG, four Roundhill funds, and 25 YieldMax funds including the multi-stock books GPTY, LFGY, BIGY and SOXY. That takes us from 98 funds to 137. We skipped anything with under $10M in assets or a holdings file that stopped updating, and Roundhill's LYTE because a third of it is China A-shares we can't display yet. Every fund went through the real scraper first and its weights summed to 100%.""
           />

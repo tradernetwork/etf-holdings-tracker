@@ -365,6 +365,8 @@ FUND_PROVIDERS = {
     'FEPI': 'REX Shares', 'AIPI': 'REX Shares', 'CEPI': 'REX Shares',
     # Neos Funds — covered-call / put-write income ETFs
     'SPYI': 'Neos', 'QQQI': 'Neos', 'IWMI': 'Neos', 'BTCI': 'Neos', 'CSHI': 'Neos', 'IAUI': 'Neos',
+    # Global X — index covered-call / risk-managed income ETFs
+    'QYLD': 'Global X', 'XYLD': 'Global X', 'RYLD': 'Global X', 'QRMI': 'Global X', 'XRMI': 'Global X', 'QYLG': 'Global X', 'XYLG': 'Global X', 'DJIA': 'Global X',
     # Corgi Funds — thematic + founder-led (launched May 2026)
     'EUV': 'Corgi Funds', 'CMAG': 'Corgi Funds', 'CQTM': 'Corgi Funds',
     'XA': 'Corgi Funds', 'EYES': 'Corgi Funds', 'KYC': 'Corgi Funds',
@@ -563,7 +565,7 @@ def _sum_known(values: list[int | None]) -> int | None:
 #                    (Kurv, YieldMax, REX Shares, Roundhill, NestYield,
 #                    NicholasX.)
 _OPTION_INCOME_PROVIDERS = frozenset({
-    'Kurv', 'YieldMax', 'REX Shares', 'Roundhill', 'Neos',
+    'Kurv', 'YieldMax', 'REX Shares', 'Roundhill', 'Neos', 'Global X',
     'Tidal / NestYield', 'Tidal / NicholasX',
 })
 

@@ -20,7 +20,7 @@ import type {
 /** Website PROVIDER_ORDER (etf-dashboard/lib/providers.ts): providers outside it follow, in first-seen order. */
 export const PROVIDER_ORDER = [
   "Avantis", "ARK Invest", "Capital Group", "Corgi Funds", "Sprott", "First Trust", "Amplify", "Kurv",
-  "YieldMax", "REX Shares", "Roundhill", "Neos", "Tidal / NicholasX", "Tidal / NestYield",
+  "YieldMax", "REX Shares", "Roundhill", "Neos", "Global X", "Tidal / NicholasX", "Tidal / NestYield",
 ];
 
 export interface DecodedOption {

@@ -171,7 +171,7 @@ option-income fund work.
 
 ## Covered Funds
 
-137 funds across 14 providers (October 2026). The authoritative list is `FUNDS` in
+145 funds across 15 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes.
 
@@ -207,6 +207,11 @@ the README table whenever `FUNDS` changes.
 - **Neos**: SPYI, QQQI, IWMI, BTCI, CSHI, IAUI (options income; added 2026-10-14). The
   Tidal-style CSV ships Price/NetAssets as text (`$1,234`), cleaned by
   `clean_numeric_text` in `scrape_avantis.py`. Use the `www.` host (bare domain 403s).
+- **Global X**: QYLD, XYLD, RYLD, QRMI, XRMI, QYLG, XYLG, DJIA (index covered-call
+  income; added 2026-10-14). One dated CSV per fund
+  (`assets.globalxetfs.com/funds/holdings/{ticker}_full-holdings_{YYYYMMDD}.csv`),
+  parsed by `get_holdings_globalx`, which walks back a day at a time. Option legs have a
+  blank ticker; the name carries the contract. RYLG, QCLR and XCLR skipped (under $10M).
 - **REX Shares**: ULTI, NVII, TSII, FEPI, AIPI, CEPI (options income). MSII, COII, HOII, and PLTI
   were liquidated 2026-06-16 and removed from tracking.
 - **NicholasX**: BLOX (blockchain/crypto equity)
