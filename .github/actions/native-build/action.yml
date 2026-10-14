@@ -51,6 +51,25 @@ runs:
       with:
         cache-read-only: false
 
+    # The first run died with `java.lang.OutOfMemoryError: Metaspace` in the lint daemon and Gradle then hung until the job timeout.
+    # User-level gradle.properties beats the generated project's, so give the daemon real memory, build only the ARM ABIs (x86/x86_64
+    # are emulator-only and double the C++ compile time) and never keep a daemon around.
+    - name: Gradle memory and ABIs
+      if: inputs.mode == 'local'
+      shell: bash
+      working-directory: mobile
+      run: |
+        mkdir -p "$HOME/.gradle"
+        cat >> "$HOME/.gradle/gradle.properties" <<'PROPS'
+        org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+        org.gradle.daemon=false
+        org.gradle.workers.max=4
+        kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g
+        reactNativeArchitectures=arm64-v8a,armeabi-v7a
+        PROPS
+        cat "$HOME/.gradle/gradle.properties"
+        free -g | sed -n 2p
+
     # Remote credentials (our upload keystore on EAS) and remote versionCode (appVersionSource: remote, autoIncrement) apply
     # to local builds too. The AAB is built from the committed tree and left on the runner only.
     - name: Build the AAB on the runner (eas build --local)
@@ -63,7 +82,7 @@ runs:
         EAS_NO_VCS: ""
       run: |
         set -o pipefail
-        eas build --platform android --profile "${{ inputs.profile }}" --local --non-interactive --output "$RUNNER_TEMP/build.aab" 2>&1 | tee "$RUNNER_TEMP/build.log"
+        timeout -k 60 4800 eas build --platform android --profile "${{ inputs.profile }}" --local --non-interactive --output "$RUNNER_TEMP/build.aab" 2>&1 | tee "$RUNNER_TEMP/build.log"
         ls -la "$RUNNER_TEMP/build.aab"
         vc=$(grep -oE 'Incremented versionCode from [0-9]+ to [0-9]+' "$RUNNER_TEMP/build.log" | tail -1 | grep -oE '[0-9]+$' || true)
         echo "version_code=${vc:-0}" >> "$GITHUB_OUTPUT"
