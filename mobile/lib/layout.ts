@@ -4,8 +4,8 @@ import { useWindowDimensions, type ViewStyle } from "react-native";
 export const WIDE_BREAKPOINT = 900;
 /** Readable column for text/card screens. */
 export const CONTENT_MAX = 840;
-/** Fund books and tables can use more of the window. */
-export const TABLE_MAX = 1100;
+/** Fund books and tables can use more of the window than text, but their rows are sparse (name left, numbers right): past about 960 dp they just stretch. */
+export const TABLE_MAX = 960;
 
 export type ContentKind = "content" | "table";
 
