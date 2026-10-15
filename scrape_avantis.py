@@ -64,6 +64,7 @@ FUNDS = [
     {'ticker': 'AVIV', 'type': 'avantis', 'id': '807'},
     {'ticker': 'KYLD', 'type': 'csv', 'url': 'https://web.services.kurvinvest.com/etfdata/KYLD/holdings.csv'},
     {'ticker': 'KQQQ', 'type': 'csv', 'url': 'https://web.services.kurvinvest.com/etfdata/KQQQ/holdings.csv'},
+    {'ticker': 'TSLP', 'type': 'csv', 'url': 'https://web.services.kurvinvest.com/etfdata/TSLP/holdings.csv'},
     {'ticker': 'BLOX', 'type': 'csv', 'url': 'https://nicholasx.com/wp-content/uploads/data/TidalFG_Holdings_BLOX.csv'},
     # NestYield froze these fixed `uploads/data/` URLs on 2026-08-14 (they still
     # answer 200 with that day's file) and now publishes dated, versioned media
@@ -166,6 +167,7 @@ FUNDS = [
     {'ticker': 'PLTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/PLTY/TidalFG_Holdings_PLTY.csv'},
     {'ticker': 'YMAG', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/YMAG/TidalFG_Holdings_YMAG.csv'},
     {'ticker': 'MSST', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/MSST/TidalFG_Holdings_MSST.csv'},
+    {'ticker': 'NVIT', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/NVIT/TidalFG_Holdings_NVIT.csv'},
     # Neos income ETFs: Tidal-style columns but numbers arrive as text ("$1,234", "0.07%").
     {'ticker': 'SPYI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=SPYI'},
     {'ticker': 'QQQI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=QQQI'},

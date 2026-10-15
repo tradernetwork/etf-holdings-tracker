@@ -7,7 +7,7 @@ import pytest
 import scrape_avantis
 from api.data import FUND_PROVIDERS, get_fund_category
 
-NEW = "AIYY BABO BIGY CRSH CVNY DIPS FBY FIAT GPTY LFGY MARO MRNY MSFO NFLY OARK PYPY RDTY SDTY SMCY SNOY SOXY TSMY WNTR XOMO YQQQ MSST".split()
+NEW = "AIYY BABO BIGY CRSH CVNY DIPS FBY FIAT GPTY LFGY MARO MRNY MSFO NFLY OARK PYPY RDTY SDTY SMCY SNOY SOXY TSMY WNTR XOMO YQQQ MSST NVIT".split()
 PROVIDERS_TS = Path(__file__).resolve().parent.parent / "etf-dashboard" / "lib" / "providers.ts"
 
 
@@ -53,3 +53,12 @@ def test_second_wave_funds_are_registered(fund, provider):
     assert FUND_PROVIDERS[fund] == provider
     assert get_fund_category(fund) == "option-income"
     assert re.search(rf"\b{fund}: '{provider}'", PROVIDERS_TS.read_text(encoding="utf-8"))
+
+
+def test_tslp_kurv_is_registered_everywhere():
+    cfg = [f for f in scrape_avantis.FUNDS if f["ticker"] == "TSLP"]
+    assert len(cfg) == 1
+    assert cfg[0]["url"].endswith("/TSLP/holdings.csv")
+    assert FUND_PROVIDERS["TSLP"] == "Kurv"
+    assert get_fund_category("TSLP") == "option-income"
+    assert re.search(r"\bTSLP: 'Kurv'", PROVIDERS_TS.read_text(encoding="utf-8"))
