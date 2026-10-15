@@ -1,0 +1,1898 @@
+[
+  {
+    "fund": "KYLD",
+    "url": "https://web.services.kurvinvest.com/etfdata/KYLD/holdings.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 52212215.61999999
+  },
+  {
+    "fund": "KQQQ",
+    "url": "https://web.services.kurvinvest.com/etfdata/KQQQ/holdings.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 133964981.05000001
+  },
+  {
+    "fund": "BLOX",
+    "url": "https://nicholasx.com/wp-content/uploads/data/TidalFG_Holdings_BLOX.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 270504000.0
+  },
+  {
+    "fund": "ULTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/ULTY/TidalFG_Holdings_ULTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 665885445.74
+  },
+  {
+    "fund": "SLTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/SLTY/TidalFG_Holdings_SLTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 28235377.5
+  },
+  {
+    "fund": "CHPY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/CHPY/TidalFG_Holdings_CHPY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1274840775.0
+  },
+  {
+    "fund": "YMAX",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YMAX/TidalFG_Holdings_YMAX.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 357003650.0
+  },
+  {
+    "fund": "AMDY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/AMDY/TidalFG_Holdings_AMDY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 479911966.88
+  },
+  {
+    "fund": "AMZY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/AMZY/TidalFG_Holdings_AMZY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 211920625.0
+  },
+  {
+    "fund": "GOOY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/GOOY/TidalFG_Holdings_GOOY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 222874540.0
+  },
+  {
+    "fund": "GDXY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/GDXY/TidalFG_Holdings_GDXY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 291775100.0
+  },
+  {
+    "fund": "ULTI",
+    "url": "https://www.rexshares.com/ulti/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 15500337.190000001
+  },
+  {
+    "fund": "MSTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MSTY/TidalFG_Holdings_MSTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1060391918.24
+  },
+  {
+    "fund": "NVDY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/NVDY/TidalFG_Holdings_NVDY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1361026232.5
+  },
+  {
+    "fund": "CONY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/CONY/TidalFG_Holdings_CONY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 361174252.19
+  },
+  {
+    "fund": "TSLY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/TSLY/TidalFG_Holdings_TSLY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 659604058.13
+  },
+  {
+    "fund": "HOOY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/HOOY/TidalFG_Holdings_HOOY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 146736525.0
+  },
+  {
+    "fund": "PLTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/PLTY/TidalFG_Holdings_PLTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 370210440.0
+  },
+  {
+    "fund": "YMAG",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YMAG/TidalFG_Holdings_YMAG.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 291580200.0
+  },
+  {
+    "fund": "SPYI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=SPYI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 12530846664.0
+  },
+  {
+    "fund": "QQQI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=QQQI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 15219300257.0
+  },
+  {
+    "fund": "IWMI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=IWMI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1277035796.0
+  },
+  {
+    "fund": "BTCI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=BTCI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1408703910.0
+  },
+  {
+    "fund": "CSHI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=CSHI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 2018682699.0
+  },
+  {
+    "fund": "IAUI",
+    "url": "https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=IAUI",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 654266520.0
+  },
+  {
+    "fund": "AIYY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/AIYY/TidalFG_Holdings_AIYY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 47110873.04
+  },
+  {
+    "fund": "BABO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/BABO/TidalFG_Holdings_BABO.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 13351125.0
+  },
+  {
+    "fund": "BIGY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/BIGY/TidalFG_Holdings_BIGY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 32594062.5
+  },
+  {
+    "fund": "CRSH",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/CRSH/TidalFG_Holdings_CRSH.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 13338127.0
+  },
+  {
+    "fund": "CVNY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/CVNY/TidalFG_Holdings_CVNY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 18022162.5
+  },
+  {
+    "fund": "DIPS",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/DIPS/TidalFG_Holdings_DIPS.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 11281281.3
+  },
+  {
+    "fund": "FBY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/FBY/TidalFG_Holdings_FBY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 117917500.0
+  },
+  {
+    "fund": "FIAT",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/FIAT/TidalFG_Holdings_FIAT.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 31085983.89
+  },
+  {
+    "fund": "GPTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/GPTY/TidalFG_Holdings_GPTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 133735800.0
+  },
+  {
+    "fund": "LFGY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/LFGY/TidalFG_Holdings_LFGY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 88850475.0
+  },
+  {
+    "fund": "MARO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MARO/TidalFG_Holdings_MARO.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 43275137.5
+  },
+  {
+    "fund": "MRNY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MRNY/TidalFG_Holdings_MRNY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 249782321.04
+  },
+  {
+    "fund": "MSFO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MSFO/TidalFG_Holdings_MSFO.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 85738025.0
+  },
+  {
+    "fund": "NFLY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/NFLY/TidalFG_Holdings_NFLY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 33050197.5
+  },
+  {
+    "fund": "OARK",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/OARK/TidalFG_Holdings_OARK.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 29044574.02
+  },
+  {
+    "fund": "PYPY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/PYPY/TidalFG_Holdings_PYPY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 11951352.4
+  },
+  {
+    "fund": "RDTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/RDTY/TidalFG_Holdings_RDTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 15925895.0
+  },
+  {
+    "fund": "SDTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/SDTY/TidalFG_Holdings_SDTY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 28333340.0
+  },
+  {
+    "fund": "SMCY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/SMCY/TidalFG_Holdings_SMCY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 122104875.0
+  },
+  {
+    "fund": "SNOY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/SNOY/TidalFG_Holdings_SNOY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 65840242.5
+  },
+  {
+    "fund": "SOXY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/SOXY/TidalFG_Holdings_SOXY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 63537840.0
+  },
+  {
+    "fund": "TSMY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/TSMY/TidalFG_Holdings_TSMY.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 100346700.0
+  },
+  {
+    "fund": "WNTR",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/WNTR/TidalFG_Holdings_WNTR.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 55661512.5
+  },
+  {
+    "fund": "XOMO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/XOMO/TidalFG_Holdings_XOMO.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 39499977.5
+  },
+  {
+    "fund": "YQQQ",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YQQQ/TidalFG_Holdings_YQQQ.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 25667047.5
+  },
+  {
+    "fund": "NVII",
+    "url": "https://www.rexshares.com/nvii/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 117391022.59
+  },
+  {
+    "fund": "TSII",
+    "url": "https://www.rexshares.com/tsii/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 30757450.310000002
+  },
+  {
+    "fund": "FEPI",
+    "url": "https://www.rexshares.com/fepi/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 735180514.56
+  },
+  {
+    "fund": "AIPI",
+    "url": "https://www.rexshares.com/aipi/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 491474847.23999995
+  },
+  {
+    "fund": "CEPI",
+    "url": "https://www.rexshares.com/cepi/",
+    "tracked": true,
+    "error": null,
+    "dates": [],
+    "aum": 123134002.68
+  },
+  {
+    "fund": "MUY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MUY/TidalFG_Holdings_MUY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 3850927.5
+  },
+  {
+    "fund": "KMEM",
+    "url": "https://web.services.kurvinvest.com/etfdata/KMEM/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 24503481.820000004
+  },
+  {
+    "fund": "KEO",
+    "url": "https://web.services.kurvinvest.com/etfdata/KEO/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 2019966.6700000002
+  },
+  {
+    "fund": "AAPY",
+    "url": "https://web.services.kurvinvest.com/etfdata/AAPY/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 7967181.73
+  },
+  {
+    "fund": "AMZP",
+    "url": "https://web.services.kurvinvest.com/etfdata/AMZP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 17343739.98
+  },
+  {
+    "fund": "GOOP",
+    "url": "https://web.services.kurvinvest.com/etfdata/GOOP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 26000428.490000006
+  },
+  {
+    "fund": "MSFY",
+    "url": "https://web.services.kurvinvest.com/etfdata/MSFY/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 12066988.62
+  },
+  {
+    "fund": "NFLP",
+    "url": "https://web.services.kurvinvest.com/etfdata/NFLP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 5065279.600000001
+  },
+  {
+    "fund": "NVDP",
+    "url": "https://web.services.kurvinvest.com/etfdata/NVDP/holdings.csv",
+    "tracked": false,
+    "error": "unavailable"
+  },
+  {
+    "fund": "TSLP",
+    "url": "https://web.services.kurvinvest.com/etfdata/TSLP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 16955384.97
+  },
+  {
+    "fund": "AAPW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 42960579.0
+  },
+  {
+    "fund": "AMDW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 161313375.0
+  },
+  {
+    "fund": "AMZW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 34200045.0
+  },
+  {
+    "fund": "ARMW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 33915420.0
+  },
+  {
+    "fund": "AVGW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 47660536.0
+  },
+  {
+    "fund": "BABW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1373827.0
+  },
+  {
+    "fund": "BETZ",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 40875250.0
+  },
+  {
+    "fund": "BRKW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 14801628.0
+  },
+  {
+    "fund": "CABZ",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 2941888.0
+  },
+  {
+    "fund": "CCML",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 11408276.0
+  },
+  {
+    "fund": "CHAT",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1769476800.0
+  },
+  {
+    "fund": "COIW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 43368108.0
+  },
+  {
+    "fund": "COSW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 11082764.0
+  },
+  {
+    "fund": "DRAM",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 20279301593.0
+  },
+  {
+    "fund": "GDXW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 77975518.0
+  },
+  {
+    "fund": "GLDW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 18044099.0
+  },
+  {
+    "fund": "GOOW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 83303787.0
+  },
+  {
+    "fund": "HOOW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 128104624.0
+  },
+  {
+    "fund": "HUMN",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 85364240.0
+  },
+  {
+    "fund": "LOHA",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 43618512.0
+  },
+  {
+    "fund": "LYTE",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 197975960.0
+  },
+  {
+    "fund": "MAGC",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 12748618.0
+  },
+  {
+    "fund": "MAGS",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 5781306105.0
+  },
+  {
+    "fund": "MAGX",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 68936396.0
+  },
+  {
+    "fund": "MAGY",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 97491296.0
+  },
+  {
+    "fund": "MARS",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 41377867.0
+  },
+  {
+    "fund": "MEME",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 12774660.0
+  },
+  {
+    "fund": "METV",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 222102472.5
+  },
+  {
+    "fund": "METW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 28059456.0
+  },
+  {
+    "fund": "MSFW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 30427470.0
+  },
+  {
+    "fund": "MSTW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 81036112.0
+  },
+  {
+    "fund": "NCLD",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 73165456.0
+  },
+  {
+    "fund": "NERD",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 14163875.0
+  },
+  {
+    "fund": "NFLW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 8145699.0
+  },
+  {
+    "fund": "NVDW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 111975432.0
+  },
+  {
+    "fund": "OZEM",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 53795038.0
+  },
+  {
+    "fund": "PLTW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 140079329.0
+  },
+  {
+    "fund": "QDTE",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 925704729.36
+  },
+  {
+    "fund": "RDTE",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 154945625.43
+  },
+  {
+    "fund": "TOPW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 137580864.0
+  },
+  {
+    "fund": "TPAY",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 2137016.0
+  },
+  {
+    "fund": "TSLW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 73715787.0
+  },
+  {
+    "fund": "TSYW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 2702959.0
+  },
+  {
+    "fund": "UBEW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 3711856.0
+  },
+  {
+    "fund": "UNHW",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 5063025.0
+  },
+  {
+    "fund": "UX",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 4328064.0
+  },
+  {
+    "fund": "WEED",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 6897149.5
+  },
+  {
+    "fund": "WEEK",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 185020350.0
+  },
+  {
+    "fund": "XBOX",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 369846105.0
+  },
+  {
+    "fund": "XDIV",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 99394640.0
+  },
+  {
+    "fund": "XDTE",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 325524908.5
+  },
+  {
+    "fund": "XPAY",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 184987440.0
+  },
+  {
+    "fund": "XX",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 1472280.0
+  },
+  {
+    "fund": "YBTC",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 140362050.0
+  },
+  {
+    "fund": "YETH",
+    "url": "https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 58649680.0
+  },
+  {
+    "fund": "APLY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/APLY/TidalFG_Holdings_APLY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 121051975.0
+  },
+  {
+    "fund": "BRKC",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/BRKC/TidalFG_Holdings_BRKC.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 8060040.0
+  },
+  {
+    "fund": "CRCO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/CRCO/TidalFG_Holdings_CRCO.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 47308800.0
+  },
+  {
+    "fund": "DDDD",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/DDDD/TidalFG_Holdings_DDDD.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 7363282.5
+  },
+  {
+    "fund": "DRAY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/DRAY/TidalFG_Holdings_DRAY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 2499007.5
+  },
+  {
+    "fund": "GMEY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/GMEY/TidalFG_Holdings_GMEY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 3206550.0
+  },
+  {
+    "fund": "HIYY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/HIYY/TidalFG_Holdings_HIYY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 11177145.0
+  },
+  {
+    "fund": "INYY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/INYY/TidalFG_Holdings_INYY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 27151327.5
+  },
+  {
+    "fund": "JPO",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/JPO/TidalFG_Holdings_JPO.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 29863727.5
+  },
+  {
+    "fund": "MINY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MINY/TidalFG_Holdings_MINY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 9165557.5
+  },
+  {
+    "fund": "MSST",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/MSST/TidalFG_Holdings_MSST.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 5111120.0
+  },
+  {
+    "fund": "NVIT",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/NVIT/TidalFG_Holdings_NVIT.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 13758800.0
+  },
+  {
+    "fund": "QDTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/QDTY/TidalFG_Holdings_QDTY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 28416225.0
+  },
+  {
+    "fund": "RBLY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/RBLY/TidalFG_Holdings_RBLY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 6277837.5
+  },
+  {
+    "fund": "RDYY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/RDYY/TidalFG_Holdings_RDYY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 19449450.0
+  },
+  {
+    "fund": "RNTY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/RNTY/TidalFG_Holdings_RNTY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 5766500.0
+  },
+  {
+    "fund": "XYZY",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/XYZY/TidalFG_Holdings_XYZY.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 19268732.12
+  },
+  {
+    "fund": "YBIT",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YBIT/TidalFG_Holdings_YBIT.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 59511208.58
+  },
+  {
+    "fund": "YRAM",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YRAM/TidalFG_Holdings_YRAM.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 8048705.0
+  },
+  {
+    "fund": "YSKH",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YSKH/TidalFG_Holdings_YSKH.csv",
+    "tracked": false,
+    "error": "unavailable"
+  },
+  {
+    "fund": "YSPC",
+    "url": "https://yieldmaxetfs.com/wp-content/uploads/funds/YSPC/TidalFG_Holdings_YSPC.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "10/15/2026"
+    ],
+    "aum": 38282640.0
+  },
+  {
+    "fund": "KCOP",
+    "url": "https://web.services.kurvinvest.com/etfdata/KCOP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 35624610.11
+  },
+  {
+    "fund": "KGLD",
+    "url": "https://web.services.kurvinvest.com/etfdata/KGLD/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 161826946.55
+  },
+  {
+    "fund": "KSLV",
+    "url": "https://web.services.kurvinvest.com/etfdata/KSLV/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 111501437.05999999
+  },
+  {
+    "fund": "LCTO",
+    "url": "https://web.services.kurvinvest.com/etfdata/LCTO/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 495690.83999999997
+  },
+  {
+    "fund": "LQID",
+    "url": "https://web.services.kurvinvest.com/etfdata/LQID/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 13672328.61
+  },
+  {
+    "fund": "XSHP",
+    "url": "https://web.services.kurvinvest.com/etfdata/XSHP/holdings.csv",
+    "tracked": false,
+    "error": null,
+    "dates": [],
+    "aum": 9554085.33
+  },
+  {
+    "fund": "DIVO",
+    "url": "https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/databases/(default)/documents/funds/DIVO/holdings",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "2026-10-15"
+    ],
+    "aum": null
+  },
+  {
+    "fund": "QDVO",
+    "url": "https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/databases/(default)/documents/funds/QDVO/holdings",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "2026-10-15"
+    ],
+    "aum": null
+  },
+  {
+    "fund": "IDVO",
+    "url": "https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/databases/(default)/documents/funds/IDVO/holdings",
+    "tracked": true,
+    "error": null,
+    "dates": [
+      "2026-10-15"
+    ],
+    "aum": null
+  },
+  {
+    "fund": "AGGH",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 490895783.2096725
+  },
+  {
+    "fund": "BUCK",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 520455148.8313389
+  },
+  {
+    "fund": "CAS",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 11588855.56796856
+  },
+  {
+    "fund": "CCOM",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 105847356.9741229
+  },
+  {
+    "fund": "CDX",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 320556009.3803537
+  },
+  {
+    "fund": "CRDT",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 26186845.40571174
+  },
+  {
+    "fund": "CTA",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 1366482149.085826
+  },
+  {
+    "fund": "CTAP",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 173444162.7470123
+  },
+  {
+    "fund": "DINE",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 3074607.13041027
+  },
+  {
+    "fund": "FOXY",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 216980449.1
+  },
+  {
+    "fund": "GAEM",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 40601014.86615577
+  },
+  {
+    "fund": "GMAC",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 59969408.64730431
+  },
+  {
+    "fund": "HARD",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 58408202.06704758
+  },
+  {
+    "fund": "HEQT",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 316167559.6558279
+  },
+  {
+    "fund": "HIGH",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 57273015.48886265
+  },
+  {
+    "fund": "IOPP",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 6930195.70062
+  },
+  {
+    "fund": "KNRG",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 150354945.5791534
+  },
+  {
+    "fund": "LITL",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 5815117.63005372
+  },
+  {
+    "fund": "LQ",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 2398900.86976881
+  },
+  {
+    "fund": "MAXI",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 35381735.57916569
+  },
+  {
+    "fund": "MTBA",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 921621850.6176409
+  },
+  {
+    "fund": "NMB",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 45786392.96197204
+  },
+  {
+    "fund": "NXTI",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 15400669.93828518
+  },
+  {
+    "fund": "PCR",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 2197209.40003458
+  },
+  {
+    "fund": "PFIX",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 275368350.5479532
+  },
+  {
+    "fund": "PINK",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 314674041.1185699
+  },
+  {
+    "fund": "QIS",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 52087397.34377712
+  },
+  {
+    "fund": "RFIX",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 40255437.05632891
+  },
+  {
+    "fund": "SBAR",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 437582330.2644084
+  },
+  {
+    "fund": "SBIL",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 4144732156.590323
+  },
+  {
+    "fund": "SDMF",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 51556506.06553857
+  },
+  {
+    "fund": "SPBC",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 42867081.46880122
+  },
+  {
+    "fund": "SPD",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 102105250.5770955
+  },
+  {
+    "fund": "SPUC",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 263296167.6353244
+  },
+  {
+    "fund": "SPYC",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 81873912.63548175
+  },
+  {
+    "fund": "SURI",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 74458285.46633376
+  },
+  {
+    "fund": "SVOL",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 523277346.999033
+  },
+  {
+    "fund": "TESL",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 14822416.25028136
+  },
+  {
+    "fund": "TUA",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 442818705.7629864
+  },
+  {
+    "fund": "TYA",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 42329700.70139199
+  },
+  {
+    "fund": "XV",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 103883234.1806978
+  },
+  {
+    "fund": "XXV",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 55131730.39897481
+  },
+  {
+    "fund": "YGLD",
+    "url": "https://www.simplify.us/sites/default/files/excel_holdings/2026_10_14_Simplify_Portfolio_EOD_Tracker.xlsx",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-14"
+    ],
+    "aum": 32552833.05245769
+  },
+  {
+    "fund": "MUYY",
+    "url": "https://graniteshares.com/media/qozijekh/muyy_holdings_file_20261014.xls",
+    "tracked": false,
+    "error": null,
+    "dates": [
+      "2026-10-15"
+    ],
+    "aum": 10774810.003594
+  },
+  {
+    "fund": "MUIB",
+    "url": "https://www.direxion.com/product/mu-defined-income-boost-etf-muib",
+    "tracked": false,
+    "error": "HTTP403; contract CSV and current AUM not verified",
+    "dates": [],
+    "aum": null
+  }
+]
