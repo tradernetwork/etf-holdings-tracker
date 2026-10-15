@@ -22,6 +22,7 @@ import asyncio
 import logging
 from pathlib import Path
 import os
+import threading
 import re
 import time
 import uuid
@@ -127,6 +128,13 @@ limiter = Limiter(
 )
 
 
+def _safe_prewarm_effectiveness() -> None:
+    try:
+        _all_effectiveness()
+    except Exception as e:  # never block or kill startup over a warm-up
+        log.warning("effectiveness_prewarm_error", error=str(e))
+
+
 # ─── Lifespan: one-time startup work ─────────────────────────────
 # Remote MCP endpoint (streamable HTTP) at /mcp. Stateless because uvicorn runs
 # 2 workers and MCP sessions would otherwise live in one worker's memory.
@@ -138,6 +146,8 @@ async def lifespan(_app: FastAPI):
     auth.init_db()
     usage.counter.start()
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
+    if os.environ.get("TT_PREWARM", "1") != "0":
+        threading.Thread(target=lambda: _safe_prewarm_effectiveness(), name="effectiveness-prewarm", daemon=True).start()
     # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
     prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
     if prewarmer:
@@ -469,6 +479,25 @@ def get_fund(request: Request, fund: str):
     return detail
 
 
+# analyze_all_funds() takes ~30s (reads every option fund's full history), far
+# past what a phone will wait. Holdings change once a day, so memoise per
+# as-of date and share one computation between concurrent requests.
+_EFF_LOCK = threading.Lock()
+_EFF_CACHE: dict = {"key": None, "value": None}
+
+
+def _all_effectiveness() -> list[dict]:
+    key = data.get_as_of_date()
+    if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
+        return _EFF_CACHE["value"]
+    with _EFF_LOCK:
+        if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
+            return _EFF_CACHE["value"]
+        value = analyze_all_funds()
+        _EFF_CACHE["key"], _EFF_CACHE["value"] = key, value
+        return value
+
+
 @app.get("/api/v1/fund-effectiveness", tags=["public"])
 @limiter.limit("30/minute")
 def get_all_fund_effectiveness(request: Request):
@@ -476,7 +505,7 @@ def get_all_fund_effectiveness(request: Request):
     Compare all option-income funds side-by-side. Returns effectiveness
     analysis for every fund with options data, sorted by composite score.
     """
-    results = analyze_all_funds()
+    results = _all_effectiveness()
     return {"funds": results, "count": len(results)}
 
 
