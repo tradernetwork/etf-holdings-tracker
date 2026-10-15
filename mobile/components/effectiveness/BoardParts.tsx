@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { pluralize } from "@/lib/format";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { toneColor } from "@/components/fund/effectiveness-view";
 import { Badge, Card, Hint, Mono, Tappable } from "@/components/ui";
@@ -71,7 +72,7 @@ export function LeaderRow({ f, rank, metric, onPress }: { f: Effectiveness; rank
             );
           })}
         </View>
-        <Hint>{f.optionsCount} positions · {f.historyDepth} days of history · {f.asOfDate}{f.dataStale ? " · stale" : ""}</Hint>
+        <Hint>{pluralize(f.optionsCount, "position")} · {pluralize(f.historyDepth, "day")} of history · {f.asOfDate}{f.dataStale ? " · stale" : ""}</Hint>
       </Card>
     </Tappable>
   );

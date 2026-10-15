@@ -3,18 +3,11 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Action, ListPage, Title } from "@/components/discovery-ui";
 import { TrendCard } from "@/components/institutional-trend";
-import {
-  Hint,
-  Note,
-  Segmented,
-  SectionHeader,
-  ErrorNote,
-  Loading,
-} from "@/components/ui";
+import { Hint, Note, Segmented, SectionHeader, QueryStatus } from "@/components/ui";
 import { useTrend } from "@/lib/discovery/api";
 import { trendGroups, trendLabels } from "@/lib/discovery/derive";
 import type { Horizon } from "@/lib/discovery/types";
-import { formatShortDate } from "@/lib/format";
+import { formatShortDate, plural, pluralize } from "@/lib/format";
 export default function Trend() {
   const [horizon, setHorizon] = useState<Horizon>("all"),
     q = useTrend();
@@ -23,6 +16,7 @@ export default function Trend() {
   );
   return (
     <ListPage
+      loaded={!!q.data}
       data={rows}
       keyFor={(r) => r.ticker}
       refreshing={q.isRefetching}
@@ -33,10 +27,13 @@ export default function Trend() {
           <Action onPress={() => router.push("/institutional")}>
             Combined institutional book →
           </Action>
-          <Hint>
-            {formatShortDate(q.data?.asOfDate)} · {q.data?.fundCount ?? "—"}{" "}
-            stock-picking funds · {rows.length} ranked names
-          </Hint>
+          {q.data && (
+            <Hint>
+              {formatShortDate(q.data.asOfDate)} ·{" "}
+              {pluralize(q.data.fundCount, "stock-picking fund")} ·{" "}
+              {rows.length} ranked {plural(rows.length, "name")}
+            </Hint>
+          )}
           <Segmented
             value={horizon}
             onChange={setHorizon}
@@ -62,13 +59,7 @@ export default function Trend() {
               every held stock.
             </Note>
           )}
-          {q.isLoading && <Loading />}
-          {q.isError && (
-            <ErrorNote
-              message="Couldn't load institutional trends."
-              onRetry={() => q.refetch()}
-            />
-          )}
+          <QueryStatus q={q} />
         </>
       }
       renderItem={({ item, index }) => (

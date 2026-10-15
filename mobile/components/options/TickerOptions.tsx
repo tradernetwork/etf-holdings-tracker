@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { FundOptionBookCard } from "@/components/options/StructureViews";
 import { ViewAll } from "@/components/options/parts";
-import { Card, Hint, Loading, Note, SectionHeader } from "@/components/ui";
+import { Card, ErrorNote, Hint, Loading, Note, SectionHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useOptionStructures } from "@/lib/options/queries";
 
@@ -17,7 +17,7 @@ export function TickerOptions({ symbol }: { symbol: string }) {
   const q = useOptionStructures(symbol);
   if (q.isLoading) return <Loading />;
   if (q.error instanceof ApiError && q.error.status === 404) return null;
-  if (q.isError || !q.data) return <Card><Note>Couldn't load option structures for {symbol}.</Note></Card>;
+  if (!q.data) return <ErrorNote onRetry={() => q.refetch()} />;
   const d = q.data;
   if (d.funds.length === 0) return null;
   const shown = d.funds.slice(0, FUNDS_SHOWN);

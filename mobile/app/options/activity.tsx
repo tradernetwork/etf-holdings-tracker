@@ -5,7 +5,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { ActivityRow } from "@/components/options/ActivityRow";
 import { ShowMore } from "@/components/options/parts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen, Segmented } from "@/components/ui";
+import { Card, Hint, Loading, Note, QueryStatus, Screen, Segmented } from "@/components/ui";
+import { plural, pluralize } from "@/lib/format";
 import { useFunds } from "@/lib/queries";
 import {
   activeFilterCount, categoryParam, DEFAULT_ACTIVITY_FILTERS, filterActivity, groupByProvider, PERIOD_LABEL, signalLabel, sortActivity,
@@ -80,12 +81,11 @@ export default function OptionActivityScreen() {
         </Pressable>
       </View>
 
-      {(activity.isLoading || (activity.data && funds.isLoading)) && <Loading />}
-      {activity.isError && <ErrorNote message="Couldn't load option activity." onRetry={() => activity.refetch()} />}
+      {activity.data && funds.isLoading ? <Loading /> : <QueryStatus q={activity} />}
       {activity.data && !funds.isLoading && (
         <>
           <Hint>
-            {visible.length} of {all.length} contracts · {counts.opened} opened · {counts.rolled} rolled · {counts.expired} expired · {counts.puts} puts · {counts.calls} calls
+            {visible.length} of {all.length} {plural(all.length, "contract")} · {counts.opened} opened · {counts.rolled} rolled · {counts.expired} expired · {counts.puts} puts · {counts.calls} calls
           </Hint>
           <Hint>Strategy and view are the site's reading of the fund's usual structure (puts as cash-secured, calls as covered), not a statement about each contract. Weight Δ is the contract's raw weight change.</Hint>
           {groups.length === 0 && <Card><Note>{all.length === 0 ? "No option contracts changed in this window." : "No contracts match. Clear the search or filters."}</Note></Card>}
@@ -105,7 +105,7 @@ export default function OptionActivityScreen() {
         </>
       )}
 
-      <FilterSheet visible={sheet} title="Filters" onClose={() => setSheet(false)} onReset={() => setFilters((f) => ({ ...DEFAULT_ACTIVITY_FILTERS, q: f.q }))} applyLabel={`Show ${visible.length} contracts`}>
+      <FilterSheet visible={sheet} title="Filters" onClose={() => setSheet(false)} onReset={() => setFilters((f) => ({ ...DEFAULT_ACTIVITY_FILTERS, q: f.q }))} applyLabel={`Show ${pluralize(visible.length, "contract")}`}>
         <OptionGroup label="Funds" options={[{ value: "all", label: "All funds" }, { value: "active-equity", label: "Active equity" }, { value: "option-income", label: "Option income" }]} value={filters.category} onChange={set("category")} />
         <OptionGroup label="Type" options={[{ value: "all", label: "Calls and puts" }, { value: "Call", label: "Calls" }, { value: "Put", label: "Puts" }]} value={filters.optionType} onChange={set("optionType")} />
         <OptionGroup label="Signal" options={[{ value: "all", label: "All" }, { value: "OPENED", label: "Opened" }, { value: "ROLLED", label: "Rolled / changed" }, { value: "EXPIRED", label: "Expired / closed" }]} value={filters.signal} onChange={set("signal")} />

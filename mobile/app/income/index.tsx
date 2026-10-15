@@ -2,10 +2,11 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FundCard } from "@/components/income/DirectoryParts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen, Tappable } from "@/components/ui";
+import { Card, Hint, Note, Screen, Tappable, QueryStatus } from "@/components/ui";
 import { formatAsOfLong, groupByArchetype, SORT_OPTIONS, type DirectorySort } from "@/lib/incomeDirectory";
 import { useIncomeDirectory } from "@/lib/incomeDirectoryQueries";
-import { dayWord } from "@/lib/when";
+import { pluralize } from "@/lib/format";
+import { fileRef } from "@/lib/when";
 import { formatPutCall, useStats } from "@/lib/stats";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -26,26 +27,25 @@ export default function IncomeDirectory() {
     <Screen topInset={false} refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
       <Text style={styles.title}>Premium Sellers</Text>
       <Text style={styles.lede}>
-        Funds that sell options for income. Their stock book churns by design — it's collateral for the overlay, not conviction — so none of the conviction scoring on the stock-picker side applies here. The option book is the story.
+        Funds that sell options for income. Their stock book churns by design: it's collateral for the overlay, not conviction, so none of the conviction scoring on the stock-picker side applies here. The option book is the story.
       </Text>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" }}>
-        {q.data ? <Hint>{formatAsOfLong(q.data.asOfDate)} · {q.data.fundCount} funds · {q.data.archetypes.length} distinct structures</Hint> : <View />}
+        {q.data ? <Hint>{formatAsOfLong(q.data.asOfDate)} · {pluralize(q.data.fundCount, "fund")} · {pluralize(q.data.archetypes.length, "distinct structure")}</Hint> : <View />}
         {pc ? <View style={styles.pc} accessibilityLabel={`Put call ratio ${pc}`}><Text style={styles.pcLabel}>P/C Ratio</Text><Text style={styles.pcValue}>{pc}</Text></View> : null}
       </View>
 
       <Tappable onPress={() => router.push("/options/activity?category=option-income")}>
-        <Card><Text style={styles.link}>Option activity · income funds →</Text><Hint>Contracts the income funds opened, closed and rolled in the {dayWord(q.data?.asOfDate)} file, by provider.</Hint></Card>
+        <Card><Text style={styles.link}>Option activity · income funds →</Text><Hint>Contracts the income funds opened, closed and rolled in {fileRef(q.data?.asOfDate)}, by provider.</Hint></Card>
       </Tappable>
 
-      {q.isLoading && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load the income directory." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
 
       {q.data && (
         <>
           <Card style={{ gap: spacing.xs }}>
-            <Text style={styles.cardTitle}>"Income ETF" is not one thing</Text>
+            <Text style={styles.cardTitle}>“Income ETF” is not one thing</Text>
             <Text style={styles.body}>
-              These funds get lumped together because they all pay a big distribution, but structurally they have almost nothing in common. One owns 27 stocks and writes calls on them. Another owns no shares at all — just Treasuries and an options structure. A third writes contracts that expire before the day ends, so they never show up in a holdings file. Grouped by what they actually are:
+              These funds get lumped together because they all pay a big distribution, but structurally they have almost nothing in common. One owns 27 stocks and writes calls on them. Another owns no shares at all, just Treasuries and an options structure. A third writes contracts that expire before the day ends, so they never show up in a holdings file. Grouped by what they actually are:
             </Text>
           </Card>
 

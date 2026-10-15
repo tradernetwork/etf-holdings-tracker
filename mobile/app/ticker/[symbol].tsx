@@ -8,7 +8,7 @@ import { FlowBridge } from "@/components/FlowBridge";
 import { OptionHolders } from "@/components/ticker/OptionHolders";
 import { MinorAdjustments } from "@/components/minor-adjustments";
 import { TickerOptions } from "@/components/options/TickerOptions";
-import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
+import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Monogram, Mono, Note, QueryStatus, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { ApiError } from "@/lib/api";
 import { inFile, latestFileDate } from "@/lib/when";
@@ -37,7 +37,7 @@ export default function TickerScreen() {
   const [showAll, setShowAll] = useState(true);
 
   if (q.isLoading) return <Screen topInset={false}><Loading /></Screen>;
-  if (q.isError || !q.data) {
+  if (!q.data) {
     const notFound = q.error instanceof ApiError && q.error.status === 404;
     return (
       <Screen topInset={false}>
@@ -47,7 +47,7 @@ export default function TickerScreen() {
             <Note>No tracked fund holds {symbol}. Check the symbol, or browse funds in Explore.</Note>
           </Card>
         ) : (
-          <ErrorNote message="Couldn't load this ticker." onRetry={() => q.refetch()} />
+          <ErrorNote onRetry={() => q.refetch()} />
         )}
       </Screen>
     );
@@ -77,6 +77,7 @@ export default function TickerScreen() {
       });
   return (
     <Screen topInset={false}>
+      <QueryStatus q={q} />
       <View>
         <Text style={styles.eyebrow}>{sectorLabel(t.sector).toUpperCase() || "STOCK ACTIVITY"}</Text>
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing.md, marginTop: spacing.xs }}>

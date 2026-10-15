@@ -26,12 +26,19 @@ export const initialOptIn: OptInState = { asked: false, enabled: false, denied: 
 export type OptInEvent =
   | { type: "not-now" }
   | { type: "enable-result"; permission: "granted" | "denied"; token?: string | null }
-  | { type: "disable" };
+  | { type: "disable" }
+  /** The OS permission was re-read (after the prompt closed, or the app came back to the foreground). */
+  | { type: "permission-sync"; granted: boolean };
 
 export function reduceOptIn(s: OptInState, e: OptInEvent): OptInState {
   switch (e.type) {
     case "not-now":
       return { ...s, asked: true };
+    case "permission-sync":
+      // Granted: any "blocked" flag is stale (the OS prompt resolved late, or the user fixed it in system settings).
+      if (e.granted) return s.denied ? { ...s, denied: false } : s;
+      // Not granted while digests were on: the user revoked it outside the app.
+      return s.enabled ? { ...s, enabled: false, denied: true, awaitingBuild: false } : s;
     case "disable":
       return { ...s, asked: true, enabled: false, awaitingBuild: false };
     case "enable-result":
@@ -62,9 +69,12 @@ export function parseOptIn(raw: string | null | undefined): OptInState {
 }
 
 /** One-line status for Settings. */
-export function optInStatus(s: OptInState): string {
+export function optInStatus(s: OptInState, followCount?: number): string {
   if (s.denied) return "Notifications are blocked in system settings.";
-  if (s.enabled && s.awaitingBuild) return "Notifications will turn on in the store build.";
+  const noFollows = s.enabled && followCount === 0;
+  const first = "Follow a stock or fund to get your first digest.";
+  if (s.enabled && s.awaitingBuild) return `Notifications will turn on in the store build.${noFollows ? ` ${first}` : ""}`;
+  if (noFollows) return first;
   if (s.enabled) return "You'll get a daily digest when funds move your follows.";
   return "Off. Turn on to get a daily digest when funds move your follows.";
 }

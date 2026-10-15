@@ -31,9 +31,12 @@ import type { Change, FundSummary } from "@/lib/types";
 export function Action({
   children,
   onPress,
+  fill = false,
 }: {
   children: ReactNode;
   onPress: () => void;
+  /** Stretch to the parent's width and centre the label (used in equal-width grids). */
+  fill?: boolean;
 }) {
   const c = useTheme();
   return (
@@ -47,10 +50,12 @@ export function Action({
         borderWidth: 1,
         borderColor: c.border,
         borderRadius: 16,
+        ...(fill ? { width: "100%", alignItems: "center" } : null),
       }}
     >
       <Text
         style={{ color: c.accent, fontFamily: fonts.bodyBold, fontSize: 13 }}
+        numberOfLines={1}
       >
         {children}
       </Text>
@@ -107,6 +112,7 @@ export function ListPage<T>({
   children,
   empty = "No rows match these filters.",
   dense = false,
+  loaded = true,
 }: {
   data: T[];
   header: ReactNode;
@@ -117,6 +123,8 @@ export function ListPage<T>({
   children?: ReactNode;
   empty?: string;
   dense?: boolean;
+  /** False while loading or after a failed first load: the empty-state copy is withheld (a skeleton/error shows instead). */
+  loaded?: boolean;
 }) {
   const c = useTheme(),
     insets = useSafeAreaInsets(),
@@ -143,9 +151,11 @@ export function ListPage<T>({
           <View style={{ gap: 12, marginBottom: 10 }}>{header}</View>
         }
         ListEmptyComponent={
-          <Card>
-            <Note>{empty}</Note>
-          </Card>
+          loaded ? (
+            <Card>
+              <Note>{empty}</Note>
+            </Card>
+          ) : null
         }
       />
       {children}
@@ -398,6 +408,7 @@ export function SectionPage<T extends { id: string }>({
   onRefresh,
   children,
   showHeaders = true,
+  loaded = true,
 }: {
   sections: SectionListData<T, { title: string }>[];
   header: ReactNode;
@@ -406,6 +417,8 @@ export function SectionPage<T extends { id: string }>({
   onRefresh?: () => void;
   children?: ReactNode;
   showHeaders?: boolean;
+  /** False while loading or after a failed first load: the empty-state copy is withheld. */
+  loaded?: boolean;
 }) {
   const c = useTheme(),
     insets = useSafeAreaInsets(),
@@ -455,7 +468,7 @@ export function SectionPage<T extends { id: string }>({
             </View>
           ) : null
         }
-        ListEmptyComponent={<Note>No rows match these filters.</Note>}
+        ListEmptyComponent={loaded ? <Note>No rows match these filters.</Note> : null}
       />
       {children}
     </View>

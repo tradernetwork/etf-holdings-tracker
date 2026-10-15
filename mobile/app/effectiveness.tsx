@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { LeaderRow, MetricChips, openFundScores } from "@/components/effectiveness/BoardParts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen, SectionHeader, StatTile } from "@/components/ui";
+import { Card, Hint, Note, Screen, SectionHeader, StatTile, QueryStatus } from "@/components/ui";
 import { toneColor } from "@/components/fund/effectiveness-view";
 import {
   BOARD_METRICS, BOARD_SHARE_URL, boardShareText, boardSummary, LIMITATIONS, METHODOLOGY, rankFunds, type BoardMetric,
 } from "@/lib/effectiveness-board";
+import { pluralize } from "@/lib/format";
 import { gradeTone } from "@/lib/effectiveness";
 import { usePeers } from "@/lib/fundQueries";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
@@ -26,10 +27,9 @@ export default function EffectivenessScreen() {
   return (
     <Screen topInset={false} refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
       <Text style={styles.title}>Strategy effectiveness</Text>
-      <Hint>How well does each option-income ETF execute its stated strategy? {funds.length > 0 ? `All ${funds.length} funds` : "Every fund"} scored side by side with prospectus-calibrated metrics.</Hint>
+      <Hint>How well does each option-income ETF execute its stated strategy? {funds.length > 0 ? `All ${pluralize(funds.length, "fund")}` : "Every fund"} scored side by side with prospectus-calibrated metrics.</Hint>
 
-      {q.isLoading && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load the effectiveness scores." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
 
       {q.data && funds.length > 0 && (
         <>

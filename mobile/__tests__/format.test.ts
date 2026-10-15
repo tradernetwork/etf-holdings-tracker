@@ -2,6 +2,9 @@ import {
   cleanName,
   formatPp,
   formatShares,
+  formatQty,
+  plural,
+  pluralize,
   formatCount,
   formatWeight,
   formatShortDate,
@@ -22,8 +25,8 @@ describe("formatPp", () => {
   });
   it("handles zero, tiny and missing values", () => {
     expect(formatPp(0)).toBe("0.00 pp");
-    expect(formatPp(0.001)).toBe("+<0.01 pp");
-    expect(formatPp(-0.001)).toBe("−<0.01 pp");
+    expect(formatPp(0.001)).toBe("<0.01 pp");
+    expect(formatPp(-0.001)).toBe("<0.01 pp");
     expect(formatPp(null)).toBe("—");
     expect(formatPp(undefined)).toBe("—");
   });
@@ -161,4 +164,35 @@ test("formatWeight never prints -0.00%", () => {
   expect(formatWeight(-0.0035)).toBe("\u2212<0.01%");
   expect(formatWeight(-7.817)).toBe("-7.82%");
   expect(formatWeight(null)).toBe("—");
+});
+
+describe("formatQty", () => {
+  it("static quantities carry no plus sign; shorts keep a minus", () => {
+    expect(formatQty(1440947)).toBe("1,440,947");
+    expect(formatQty(-50)).toBe("\u221250");
+    expect(formatQty(0)).toBe("0");
+    expect(formatQty(null)).toBe("—");
+  });
+  it("deltas still sign", () => {
+    expect(formatShares(1440947)).toBe("+1,440,947");
+  });
+});
+
+describe("pluralize", () => {
+  it("is singular only for exactly one", () => {
+    expect(pluralize(1, "fund")).toBe("1 fund");
+    expect(pluralize(0, "fund")).toBe("0 funds");
+    expect(pluralize(2, "fund")).toBe("2 funds");
+    expect(pluralize(1, "stock-picking fund")).toBe("1 stock-picking fund");
+    expect(pluralize(146, "fund")).toBe("146 funds");
+  });
+  it("takes an irregular plural and groups thousands", () => {
+    expect(pluralize(1, "family", "families")).toBe("1 family");
+    expect(pluralize(3, "family", "families")).toBe("3 families");
+    expect(pluralize(1234, "contract")).toBe("1,234 contracts");
+  });
+  it("plural() returns the word only", () => {
+    expect(plural(1, "leg")).toBe("leg");
+    expect(plural(2, "leg")).toBe("legs");
+  });
 });

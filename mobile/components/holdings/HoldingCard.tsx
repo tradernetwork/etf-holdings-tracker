@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Hint, Mono } from "@/components/ui";
 import { optionSubtitle, optionTitle } from "@/lib/book";
 import { expiryInfo } from "@/lib/expiry";
-import { cleanName, formatPp, formatShares, formatUsd, formatWeight } from "@/lib/format";
+import { cleanName, formatPp, formatQty, formatShares, formatUsd, formatWeight } from "@/lib/format";
 import { rowType, type RowType } from "@/lib/holdingsBrowser";
 import { deltaColor, fonts, MIN_TAP, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -45,7 +45,7 @@ export function HoldingCard({ r }: { r: HoldingRow }) {
           </View>
           <Hint>{option ? optionSubtitle(r.expiry, r.dte, false, r.fileDate) : cleanName(r.name)}</Hint>
           <View style={styles.line}>
-            <Text style={[styles.mono, { color: qty != null && qty < 0 ? c.sell : c.textSecondary }]}>{qty == null ? "—" : `${formatShares(qty)}${option ? " ct" : " sh"}`}</Text>
+            <Text style={[styles.mono, { color: qty != null && qty < 0 ? c.sell : c.textSecondary }]}>{qty == null ? "—" : `${formatQty(qty)}${option ? " ct" : " sh"}`}</Text>
             <Text style={[styles.mono, { color: catchUp || !r.sharesDelta ? c.textMuted : deltaColor(r.sharesDelta, c) }]}>
               Δ{catchUp || r.sharesDelta == null ? " —" : r.sharesDelta === 0 ? " 0" : ` ${formatShares(r.sharesDelta)}`}
             </Text>
