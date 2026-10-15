@@ -15,8 +15,10 @@ import { inFile, latestFileDate } from "@/lib/when";
 import { deltaLabel } from "@/lib/deltaPeriod";
 import { evidenceNote, tickerEvidence } from "@/lib/derive";
 import { isSignificant } from "@/lib/significance";
-import { cleanName, formatPp, formatShareMove, formatUsd, formatUsdValue, formatWeight, freshnessLabel, resolveUsd, sectorLabel } from "@/lib/format";
+import { cleanName, formatPp, formatShareMove, formatUsd, formatUsdValue, formatWeight, freshnessLabel, sectorLabel } from "@/lib/format";
 import { useTicker } from "@/lib/queries";
+import { useStock } from "@/lib/discovery/api";
+import { changeFlowUsd, evidenceTitle, hasReportingFunds, sharesUnchanged, tickerVerdict } from "@/lib/tickerView";
 import { deltaColor, display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
 import type { Moved } from "@/lib/types";
@@ -30,6 +32,7 @@ export default function TickerScreen() {
   const { symbol: raw } = useLocalSearchParams<{ symbol: string }>();
   const symbol = String(raw ?? "").toUpperCase();
   const q = useTicker(symbol);
+  const stock = useStock(symbol);
   const { isFollowing, toggleFollow } = useAppState();
   const [showAll, setShowAll] = useState(true);
 
@@ -52,7 +55,6 @@ export default function TickerScreen() {
 
   const t = q.data;
   const holdings = t.holdings.filter((h) => !h.isOption).sort((a, b) => b.weight - a.weight);
-  const aumByFund = new Map(t.holdings.map((h) => [h.fund, h.aum]));
   const providerByFund = new Map(t.holdings.map((h) => [h.fund, h.provider]));
   const { added, reduced, minor } = tickerEvidence(t.changes);
   const evidence = [...added.slice(0, EVIDENCE_PER_SIDE), ...reduced.slice(0, EVIDENCE_PER_SIDE)];
@@ -61,8 +63,18 @@ export default function TickerScreen() {
   const shown = showAll ? holdings : holdings.slice(0, HOLDERS_COLLAPSED);
   const following = isFollowing("ticker", symbol);
   const spanLabel = deltaLabel("Δ weight and shares", t);
-  const verdict = added.length > 0 && reduced.length > 0 ? "A divided book." : added.length > 0 ? "Funds are adding." : reduced.length > 0 ? "Funds are trimming." : `No change ${inFile(latestFileDate(t.holdings))}.`;
-
+  const reporting = hasReportingFunds(holdings.length);
+  const inst = stock.data?.institutional;
+  const quietText = `No change ${inFile(latestFileDate(t.holdings))}.`;
+  // Zero reporting funds (e.g. an option-leg name that collides with an ETF ticker): never a direction.
+  const verdict = !reporting
+    ? "No change."
+    : tickerVerdict({
+        addedCount: added.length,
+        reducedCount: reduced.length,
+        institutional: inst ? { signal: inst.signal, daily: inst.daily, streak: inst.streak } : null,
+        quietText,
+      });
   return (
     <Screen topInset={false}>
       <View>
@@ -88,14 +100,14 @@ export default function TickerScreen() {
         </View>
       </View>
 
-      <StockHistory symbol={symbol} />
+      {reporting ? <StockHistory symbol={symbol} /> : null}
       {spanLabel ? <Hint>{spanLabel}</Hint> : null}
-      <SectionHeader title="Opposite moves" right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
+      <SectionHeader title={evidenceTitle(added.length, reduced.length)} right={<Action onPress={() => router.push(`/evidence/${encodeURIComponent(symbol)}`)}>View all →</Action>} />
       {evidence.length === 0 ? (
         <Card><Note>No fund made a significant move in {symbol} in the latest files. Older disclosures are marked below.</Note></Card>
       ) : (
         evidence.map((ch) => (
-          <EvidenceCard key={ch.fund} change={ch} provider={providerByFund.get(ch.fund)} aumBillions={aumByFund.get(ch.fund) ?? null} />
+          <EvidenceCard key={ch.fund} change={ch} provider={providerByFund.get(ch.fund)} />
         ))
       )}
       {hiddenEvidence > 0 && <Hint>+{hiddenEvidence} more significant {hiddenEvidence === 1 ? "move" : "moves"} not shown</Hint>}
@@ -145,12 +157,14 @@ export default function TickerScreen() {
   );
 }
 
-function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provider?: string; aumBillions: number | null }) {
+function EvidenceCard({ change, provider }: { change: Moved; provider?: string }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const up = change.activeWeightDelta > 0;
   const color = up ? c.buy : c.sell;
-  const usd = resolveUsd({ apiUsd: change.activeFlowUsd, weightPercent: change.activeWeightDelta, aumBillions });
+  // Same per-share price as the exposure card (the fund's own market value / shares), never weight x AUM.
+  const flowUsd = changeFlowUsd(change);
+  const usd = { usd: flowUsd, estimated: true };
   return (
     <Tappable onPress={() => router.push(`/fund/${encodeURIComponent(change.fund)}`)}>
       <Card style={{ gap: spacing.sm }}>
@@ -161,7 +175,9 @@ function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provid
           </Text>
           <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
             {change.type === "NEW" && <Badge label="NEW" color={c.isNew} />}
-            <Badge label={up ? "ADDED" : "REDUCED"} color={color} />
+            {sharesUnchanged(change)
+              ? <Badge label="WEIGHT DRIFT" color={c.textMuted} />
+              : <Badge label={up ? "ADDED" : "REDUCED"} color={color} />}
           </View>
         </View>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
@@ -170,7 +186,7 @@ function EvidenceCard({ change, provider, aumBillions }: { change: Moved; provid
         </View>
         <Text style={styles.step}>
           Fund weight <Text style={styles.stepVal}>{formatWeight(change.previousWeight)}</Text> → <Text style={[styles.stepVal, { color: c.textPrimary }]}>{formatWeight(change.currentWeight)}</Text>
-          {usd.usd != null ? <Text style={{ color: c.textMuted }}>  ·  {formatUsdValue(usd)} flow</Text> : null}
+          {flowUsd != null ? <Text style={{ color: c.textMuted }}>  ·  {formatUsdValue(usd)} flow</Text> : null}
         </Text>
         {formatShareMove(change.previousShares, change.currentShares) ? <Hint>{formatShareMove(change.previousShares, change.currentShares)}</Hint> : null}
         <Text style={styles.evNote}>{evidenceNote(change)}</Text>

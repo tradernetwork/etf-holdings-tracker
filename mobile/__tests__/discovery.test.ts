@@ -178,17 +178,23 @@ test("ticker aggregates expose opposing named funds and null-safe dollar totals 
       ...base,
       fund: "ONE",
       activeWeightDelta: 0.1,
-      activeFlowUsd: 100,
+      positionUsd: 1000,
+      currentShares: 10,
+      previousShares: 0,
+      sharesDelta: 1,
       type: "NEW",
     },
     {
       ...base,
       fund: "TWO",
       activeWeightDelta: -0.2,
-      activeFlowUsd: -50,
+      positionUsd: 1000,
+      currentShares: 10,
+      previousShares: 11,
+      sharesDelta: -0.5,
       type: "REMOVED",
     },
-    { ...base, fund: "UNKNOWN", activeWeightDelta: null, activeFlowUsd: null },
+    { ...base, fund: "UNKNOWN", activeWeightDelta: null, positionUsd: null },
   ];
   const out = aggregateChanges(input, map)[0];
   expect(out.buying).toEqual(["ONE"]);
@@ -199,7 +205,7 @@ test("ticker aggregates expose opposing named funds and null-safe dollar totals 
   expect(out.rows).toHaveLength(3);
   expect(
     aggregateChanges(
-      [{ ...base, activeWeightDelta: 0.1, activeFlowUsd: null }],
+      [{ ...base, activeWeightDelta: 0.1, positionUsd: null }],
       map,
     )[0].flowUsd,
   ).toBeNull();
@@ -310,7 +316,7 @@ test("change column sorts preserve nulls at the bottom in either direction", () 
 });
 
 test("Today counts share the complete source but retain category and snapshot identity", () => {
-  const base = { ...rows[0], type: "CHANGED", isOption: false };
+  const base = { ...rows[0], fund: "HACK", type: "CHANGED", isOption: false };
   const response = {
     asOfDate: "2026-10-09",
     count: 2,

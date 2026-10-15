@@ -13,7 +13,7 @@ import {
 import { Action, ChangeCard, Title } from "@/components/discovery-ui";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { useActivity } from "@/lib/discovery/api";
-import { matrixRows, moveType } from "@/lib/discovery/derive";
+import { matrixRows, moveLabel, moveType } from "@/lib/discovery/derive";
 import { useFunds } from "@/lib/queries";
 import type { Change } from "@/lib/types";
 import type { Direction, Period } from "@/lib/discovery/types";
@@ -181,7 +181,7 @@ export default function Activity() {
                               fontSize: 11,
                             }}
                           >
-                            {moveType(v)}
+                            {moveLabel(moveType(v))}
                           </Text>
                           <Mono style={{ fontSize: 12 }}>
                             {formatPp(v.activeWeightDelta)}

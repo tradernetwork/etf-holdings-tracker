@@ -23,10 +23,10 @@ import {
   formatPp,
   formatWeight,
   formatUsdValue,
-  resolveUsd,
   freshnessLabel,
 } from "@/lib/format";
-import { moveType } from "@/lib/discovery/derive";
+import { moveLabel, moveType } from "@/lib/discovery/derive";
+import { changeFlowUsd } from "@/lib/tickerView";
 import type { Change, FundSummary } from "@/lib/types";
 export function Action({
   children,
@@ -164,11 +164,8 @@ function ChangeDetails({
   const c = useTheme(),
     kind = moveType(row);
   const shareMove = formatShareMove(row.previousShares, row.currentShares);
-  const money = resolveUsd({
-    apiUsd: row.activeFlowUsd,
-    weightPercent: row.activeWeightDelta,
-    aumBillions: fund?.aum,
-  });
+  const flowUsd = changeFlowUsd(row);
+  const money = { usd: flowUsd, estimated: true };
   return (
     <Card>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -182,9 +179,9 @@ function ChangeDetails({
           <Hint>{cleanName(row.name)}</Hint>
         </Tappable>
         <Badge
-          label={kind}
+          label={moveLabel(kind)}
           color={
-            kind === "NEW" ? c.isNew : deltaColor(row.activeWeightDelta, c)
+            kind === "NEW" ? c.isNew : kind === "DRIFT" ? c.textMuted : deltaColor(row.activeWeightDelta, c)
           }
         />
       </View>
@@ -210,7 +207,7 @@ function ChangeDetails({
         <Mono bold style={{ color: deltaColor(row.activeWeightDelta, c) }}>
           {formatPp(row.activeWeightDelta)}
         </Mono>
-        <Hint>{formatUsdValue(money)} flow</Hint>
+        {flowUsd != null ? <Hint>{formatUsdValue(money)} flow</Hint> : <Hint>No dollar flow</Hint>}
       </View>
       {fund?.stale && (
         <FreshnessLabel
@@ -326,15 +323,12 @@ export function ChangeCard({
   const c = useTheme(),
     [expanded, setExpanded] = useState(false),
     kind = moveType(row);
-  const money = resolveUsd({
-    apiUsd: row.activeFlowUsd,
-    weightPercent: row.activeWeightDelta,
-    aumBillions: fund?.aum,
-  });
+  const flowUsd = changeFlowUsd(row);
+  const money = { usd: flowUsd, estimated: true };
   const provider = fund?.provider ?? "Provider unknown";
   return (
     <DenseRow
-      label={`${row.ticker}, ${kind}, ${formatPp(row.activeWeightDelta)}, ${row.fund}, ${provider}, ${formatWeight(row.previousWeight)} to ${formatWeight(row.currentWeight)}, ${formatUsdValue(money)} flow${fund?.stale ? ", older disclosure" : ""}. ${expanded ? "Collapse" : "Expand"} details`}
+      label={`${row.ticker}, ${moveLabel(kind)}, ${formatPp(row.activeWeightDelta)}, ${row.fund}, ${provider}, ${formatWeight(row.previousWeight)} to ${formatWeight(row.currentWeight)}, ${flowUsd != null ? `${formatUsdValue(money)} flow` : "no dollar flow"}${fund?.stale ? ", older disclosure" : ""}. ${expanded ? "Collapse" : "Expand"} details`}
       expanded={expanded}
       onPress={() => setExpanded(!expanded)}
       top={
@@ -343,9 +337,9 @@ export function ChangeCard({
             {row.ticker}
           </Mono>
           <RowBadge
-            label={kind}
+            label={moveLabel(kind)}
             color={
-              kind === "NEW" ? c.isNew : deltaColor(row.activeWeightDelta, c)
+              kind === "NEW" ? c.isNew : kind === "DRIFT" ? c.textMuted : deltaColor(row.activeWeightDelta, c)
             }
           />
           {fund?.stale && <RowBadge label="STALE" color={c.stale} />}
@@ -388,7 +382,7 @@ export function ChangeCard({
         <Text
           style={{ fontSize: 11, fontFamily: fonts.mono, color: c.textMuted }}
         >
-          {formatUsdValue(money)} flow
+          {flowUsd != null ? `${formatUsdValue(money)} flow` : "no flow est."}
         </Text>
       }
     >

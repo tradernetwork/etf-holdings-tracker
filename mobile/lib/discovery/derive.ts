@@ -1,6 +1,6 @@
 import { scopeChanges } from "./scope";
 import type { Change, CategoryChoice } from "../types";
-import { resolveUsd } from "../format";
+import { changeFlowUsd, sharesUnchanged } from "../tickerView";
 import type {
   ChangeFilters,
   ChangesResponse,
@@ -37,12 +37,20 @@ export function moveType(row: Change): string {
   if (row.activeWeightDelta == null) return "UNKNOWN";
   if (row.type === "NEW") return "NEW";
   if (row.type === "REMOVED") return "EXIT";
+  // Shares did not move: the weight change is drift, not a trade. Never label it ADD/TRIM.
+  if (sharesUnchanged(row)) return "DRIFT";
   return row.activeWeightDelta > 0
     ? "ADD"
     : row.activeWeightDelta < 0
       ? "TRIM"
       : "UNCHANGED";
 }
+/** Label for a move kind: DRIFT reads "Weight drift", the rest are their own name. */
+export const moveLabel = (kind: string): string => (kind === "DRIFT" ? "Weight drift" : kind);
+
+/** Rows where shares really changed (or were opened/closed). The Changes list hides the rest by default. */
+export const withoutDrift = (rows: Change[]): Change[] => rows.filter((r) => moveType(r) !== "DRIFT");
+
 export function filterChanges(
   rows: Change[],
   f: ChangeFilters,
@@ -90,15 +98,11 @@ export function filterChanges(
     });
 }
 export function moveCounts(rows: Change[]): { added: number; reduced: number } {
+  // Weight drift (shares unchanged) is not a trade, so it is neither an add nor a cut.
+  const moved = rows.filter((r) => !r.isOption && r.activeWeightDelta != null && moveType(r) !== "DRIFT");
   return {
-    added: rows.filter(
-      (r) =>
-        !r.isOption && r.activeWeightDelta != null && r.activeWeightDelta > 0,
-    ).length,
-    reduced: rows.filter(
-      (r) =>
-        !r.isOption && r.activeWeightDelta != null && r.activeWeightDelta < 0,
-    ).length,
+    added: moved.filter((r) => r.activeWeightDelta! > 0).length,
+    reduced: moved.filter((r) => r.activeWeightDelta! < 0).length,
   };
 }
 export function filterStocks(
@@ -185,7 +189,7 @@ export function sparkline(points: HistoryPoint[]): { x: number; y: number }[] {
 
 export function aggregateChanges(
   rows: Change[],
-  funds: FundMap,
+  _funds?: FundMap,
 ): {
   ticker: string;
   rows: Change[];
@@ -204,14 +208,7 @@ export function aggregateChanges(
     .map(([ticker, group]) => {
       const known = group.filter((r) => r.activeWeightDelta != null);
       const dollars = known
-        .map(
-          (r) =>
-            resolveUsd({
-              apiUsd: r.activeFlowUsd,
-              weightPercent: r.activeWeightDelta,
-              aumBillions: funds.get(r.fund)?.aum,
-            }).usd,
-        )
+        .map((r) => changeFlowUsd(r))
         .filter((v): v is number => v != null);
       return {
         ticker,

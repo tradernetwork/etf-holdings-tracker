@@ -11,11 +11,13 @@ import { useStyles, useTheme } from "@/lib/theme-context";
 export function HeroCard({ story }: { story: HeroStory }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
+  const verb = story.direction === "selling" ? "REDUCED" : "INCREASED";
+  const opposition = story.direction === "selling" ? story.added.length : story.reduced.length;
   const eyebrow = story.countercase
-    ? "ALLOCATION INCREASED · WITH A COUNTERCASE"
-    : story.reduced.length > 0
-      ? "ALLOCATION INCREASED"
-      : "ALLOCATION INCREASED · NO MEANINGFUL OPPOSITION";
+    ? `ALLOCATION ${verb} · WITH A COUNTERCASE`
+    : opposition > 0
+      ? `ALLOCATION ${verb}`
+      : `ALLOCATION ${verb} · NO MEANINGFUL OPPOSITION`;
   const sub = [cleanName(story.name), sectorLabel(story.sector)].filter(Boolean).join(" · ");
   const rows = [
     ...story.added.map((r) => ({ ...r, verb: "added", color: c.heroBuy })),

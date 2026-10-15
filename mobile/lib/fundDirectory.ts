@@ -56,3 +56,25 @@ export function directoryHeadline(funds: DirectoryFund[]): string {
   const money = aum >= 1 ? `$${aum.toFixed(1)}B` : `$${Math.round(aum * 1000)}M`;
   return `${funds.length} ${funds.length === 1 ? "fund" : "funds"} · ${providers} ${providers === 1 ? "provider" : "providers"} · ${money} combined AUM`;
 }
+
+const TICKER_SHAPE = /^[A-Za-z][A-Za-z0-9.\-]{0,9}$/;
+
+/**
+ * What a search box entry means. A query that is a tracked fund ticker (ARKK) is a FUND: it ranks first and goes to
+ * the fund page, and is never offered as a stock lookup (a fund ticker can collide with an option-leg name).
+ * Anything else ticker-shaped is a stock lookup.
+ */
+export function resolveSearch(query: string, funds: { fund: string }[]): { fund: string | null; ticker: string | null } {
+  const q = query.trim().toUpperCase();
+  if (!q) return { fund: null, ticker: null };
+  const fund = funds.find((f) => f.fund.toUpperCase() === q)?.fund ?? null;
+  if (fund) return { fund, ticker: null };
+  return { fund: null, ticker: TICKER_SHAPE.test(q) ? q : null };
+}
+
+/** Exact fund-ticker match first, the rest in their given order. */
+export function rankExactFundFirst<T extends { fund: string }>(funds: T[], query: string): T[] {
+  const q = query.trim().toUpperCase();
+  if (!q) return funds;
+  return [...funds].sort((a, b) => Number(b.fund.toUpperCase() === q) - Number(a.fund.toUpperCase() === q));
+}
