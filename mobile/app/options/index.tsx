@@ -6,7 +6,7 @@ import { ActivityRow } from "@/components/options/ActivityRow";
 import { ListingScanCard } from "@/components/options/ListingScanCard";
 import { ScheduleCard } from "@/components/options/ScheduleCard";
 import { TotalTile, ViewAll } from "@/components/options/parts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen, SectionHeader } from "@/components/ui";
+import { Card, Hint, Note, Screen, SectionHeader, QueryStatus } from "@/components/ui";
 import { activityTitle } from "@/lib/when";
 import { useStats } from "@/lib/stats";
 import { ApiError } from "@/lib/api";
@@ -61,8 +61,7 @@ export default function OptionsHub() {
       </View>
 
       <SectionHeader title={activityTitle(stats.data?.asOfDate)} right={<ViewAll label={total > 0 ? `View all ${total}` : "Windows & filters"} onPress={() => router.push("/options/activity")} />} />
-      {activity.isLoading && <Loading />}
-      {activity.isError && <ErrorNote message="Couldn't load option activity." onRetry={() => activity.refetch()} />}
+      <QueryStatus q={activity} />
       {activity.data && (
         <Card style={{ paddingVertical: spacing.xs }}>
           {top.length === 0 ? (
@@ -74,8 +73,7 @@ export default function OptionsHub() {
       )}
 
       <SectionHeader title="New option listings (CBOE)" right={<ViewAll label="View all scans" onPress={() => router.push("/options/listings")} />} />
-      {listings.isLoading && <Loading />}
-      {listings.isError && <ErrorNote message="Couldn't load the CBOE scan." onRetry={() => listings.refetch()} />}
+      <QueryStatus q={listings} />
       {listings.data?.latest && (
         <>
           <View style={styles.tiles}>
@@ -89,13 +87,10 @@ export default function OptionsHub() {
       {listings.data && !listings.data.latest && <Card><Note>No scan history yet. The scanner runs each weekday morning.</Note></Card>}
 
       <SectionHeader title="MWF Elite schedule" right={<ViewAll label="Calendar & holidays" onPress={() => router.push("/options/schedule")} />} />
-      {schedule.isLoading && <Loading />}
+      <QueryStatus q={schedule} ignoreError={schedule.error instanceof ApiError && schedule.error.status === 404} />
       {schedule.data && <ScheduleCard schedule={schedule.data} />}
       {schedule.error instanceof ApiError && schedule.error.status === 404 && (
         <Card><Note>This server doesn't publish the expiration schedule yet. It will appear after the next API update.</Note></Card>
-      )}
-      {schedule.isError && !(schedule.error instanceof ApiError && schedule.error.status === 404) && (
-        <ErrorNote message="Couldn't load the schedule." onRetry={() => schedule.refetch()} />
       )}
     </Screen>
   );

@@ -12,7 +12,47 @@
  */
 export type On429 = "retry" | "terminal" | "retry-after-once";
 
+/** No request waits on the network longer than this, retries included. A hung socket must end in an error state, not a spinner. */
+export const REQUEST_DEADLINE_MS = 15_000;
+
+/** The overall deadline passed before the server answered. */
+export class TimeoutError extends Error {
+  constructor(ms: number) {
+    super(`Request timed out after ${Math.round(ms / 1000)}s`);
+    this.name = "TimeoutError";
+  }
+}
+
+/**
+ * One fetch that gives up after `ms` (or when the caller's own signal aborts). Rejects with TimeoutError on
+ * timeout even if `fetchImpl` ignores the abort signal.
+ */
+export async function fetchWithTimeout(fetchImpl: typeof fetch, url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const outer = init.signal;
+  const onOuter = () => ctrl.abort();
+  if (outer) {
+    if (outer.aborted) ctrl.abort();
+    else outer.addEventListener("abort", onOuter);
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      ctrl.abort();
+      reject(new TimeoutError(ms));
+    }, Math.max(1, ms));
+  });
+  try {
+    return await Promise.race([fetchImpl(url, { ...init, signal: ctrl.signal }), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    outer?.removeEventListener("abort", onOuter);
+  }
+}
+
 export interface RetryOptions {
+  /** Total time budget across attempts and backoff. Default REQUEST_DEADLINE_MS. */
+  deadlineMs?: number;
   retries?: number;
   baseMs?: number;
   sleep?: (ms: number) => Promise<void>;
@@ -37,16 +77,19 @@ export async function fetchWithRetry(
   fetchImpl: typeof fetch,
   url: string,
   init: RequestInit,
-  { retries = 3, baseMs = 1000, sleep = defaultSleep, on429 = "retry", maxRetryAfterMs = 30_000, now = Date.now }: RetryOptions = {},
+  { retries = 3, baseMs = 1000, sleep = defaultSleep, on429 = "retry", maxRetryAfterMs = 30_000, now = Date.now, deadlineMs = REQUEST_DEADLINE_MS }: RetryOptions = {},
 ): Promise<Response> {
   let retryAfterUsed = false;
+  const started = now();
+  const left = () => deadlineMs - (now() - started);
   for (let attempt = 0; ; attempt++) {
-    const canRetry = attempt < retries;
+    // Out of budget: stop retrying, the next failure is final.
+    const canRetry = attempt < retries && left() > baseMs * 2 ** attempt;
     let res: Response;
     try {
-      res = await fetchImpl(url, init);
+      res = await fetchWithTimeout(fetchImpl, url, init, Math.max(1_000, left()));
     } catch (e) {
-      if (!canRetry) throw e;
+      if (init.signal?.aborted || e instanceof TimeoutError || !canRetry) throw e;
       await sleep(baseMs * 2 ** attempt);
       continue;
     }

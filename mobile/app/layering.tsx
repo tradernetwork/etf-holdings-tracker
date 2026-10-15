@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Chip } from "@/components/options/parts";
 import { LayeringCard } from "@/components/today/Parts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen } from "@/components/ui";
+import { Card, Hint, Note, Screen, QueryStatus } from "@/components/ui";
 import { useLayeringFull } from "@/lib/today/queries";
 import { display, fonts, type Palette } from "@/lib/theme";
 import { useStyles } from "@/lib/theme-context";
@@ -26,8 +26,7 @@ export default function LayeringScreen() {
       <Text style={styles.label}>AT LEAST THIS MANY FUNDS</Text>
       <View style={styles.row}>{MIN_FUNDS.map((m) => <Chip key={m} label={`${m}+`} on={minFunds === m} onPress={() => setMinFunds(m)} />)}</View>
 
-      {q.isLoading && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load layering patterns." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
       {d && (
         <>
           <Hint>{d.total} {d.total === 1 ? "pattern" : "patterns"} in the last {d.windowDays} trading days with {d.minFunds}+ funds · as of {d.asOfDate}{d.patterns.length < d.total ? ` · showing ${d.patterns.length}` : ""}</Hint>

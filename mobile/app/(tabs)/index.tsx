@@ -14,11 +14,11 @@ import { ViewAll } from "@/components/options/parts";
 import { KpiGrid, StaleBanner } from "@/components/today/Parts";
 import { SignalRow } from "@/components/signal-row";
 import {
-  Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Segmented, StatTile, Tappable,
+  Card, Hint, Mono, Note, QueryStatus, Screen, SectionHeader, Segmented, StatTile, Tappable,
 } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { alsoWorthLook, consensusCards, convictionFractions, mergeSectorFlow, pickHero } from "@/lib/derive";
-import { cleanName, formatPp, formatShortDate, formatUsd, sectorShort } from "@/lib/format";
+import { cleanName, formatPp, formatShortDate, formatUsd, pluralize, sectorShort } from "@/lib/format";
 import { useDivergences, useFunds, useLayering, useSectors, useSignals } from "@/lib/queries";
 import { kpis, staleMessage } from "@/lib/today/logic";
 import type { TodayStats } from "@/lib/today/types";
@@ -69,7 +69,8 @@ export default function Today() {
       <Text style={styles.headline}>The daily shift.</Text>
       <Text style={styles.sub}>
         {asOf ? `${formatShortDate(asOf)} disclosures` : "Institutional ETF moves"}
-        {stats ? ` · ${stats.fundsTracked} funds tracked` : ""}
+        {/* Same source as Explore (the /funds list), so the two screens can never disagree. */}
+        {funds.data ? ` · ${pluralize(funds.data.funds.length, "fund")} tracked` : ""}
         {snapshotSpan(signals.data ?? {}) ? ` · Δ ${snapshotSpan(signals.data ?? {})}` : ""}
       </Text>
 
@@ -81,8 +82,7 @@ export default function Today() {
 
       {staleMessage(asOf) ? <StaleBanner text={staleMessage(asOf)!} /> : null}
 
-      {signals.isLoading && <Loading />}
-      {signals.isError && <ErrorNote message="Couldn't load today's signals. Check your connection." onRetry={refresh} />}
+      <QueryStatus q={signals} />
 
       {hero && <HeroCard story={hero} />}
 
@@ -112,7 +112,14 @@ export default function Today() {
         </View>
       )}
 
-      {stats && <KpiGrid items={kpis(stats as unknown as TodayStats).filter((k) => k.key !== "new" && k.key !== "exits")} />}
+      {stats && (
+        <KpiGrid
+          items={kpis({ ...stats, fundsTracked: funds.data?.funds.length ?? stats.fundsTracked } as unknown as TodayStats).filter(
+            // Funds tracked reads the /funds list (same as Explore); until it loads, hide the tile rather than flip a number.
+            (k) => k.key !== "new" && k.key !== "exits" && (k.key !== "funds" || !!funds.data),
+          )}
+        />
+      )}
 
       <Action onPress={() => router.push("/changes")}>View all changes →</Action>
       <Action onPress={() => router.push("/signals?tab=briefing")}>Briefing, streaks, divergences →</Action>
@@ -128,7 +135,7 @@ export default function Today() {
                   <Mono bold style={{ fontSize: 18 }}>{k.ticker}</Mono>
                   <Text style={styles.name} numberOfLines={1}>{cleanName(k.name)}</Text>
                   <Text style={styles.name}>
-                    {k.fundCount} funds from {k.providerCount} {k.providerCount === 1 ? "provider" : "providers"} entered since {formatShortDate(k.firstEntry)}
+                    {pluralize(k.fundCount, "fund")} from {pluralize(k.providerCount, "provider")} entered since {formatShortDate(k.firstEntry)}
                   </Text>
                   <View style={styles.chips}>
                     {k.funds.slice(0, 6).map((f) => (

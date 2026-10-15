@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Card, Hint, Note, Screen, SectionHeader } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { optInStatus } from "@/lib/notify";
@@ -67,13 +67,23 @@ export default function Settings() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
               <Text style={styles.title}>Daily digest</Text>
               <Switch
+                // Colours come from the active theme and the key remounts the native switch on a theme change,
+                // so a cached thumb/track pair from the previous theme can never linger.
+                key={themeName}
                 value={notify.enabled}
                 onValueChange={(on) => (on ? void enableNotifications() : disableNotifications())}
-                trackColor={{ true: c.accent, false: c.border }}
+                trackColor={{ true: c.accent + "66", false: c.border }}
+                thumbColor={notify.enabled ? c.accent : c.textMuted}
+                ios_backgroundColor={c.border}
                 accessibilityLabel="Daily digest notifications"
               />
             </View>
-            <Text style={styles.blurb}>{optInStatus(notify)}</Text>
+            <Text style={styles.blurb}>{optInStatus(notify, follows.length)}</Text>
+            {notify.denied && (
+              <Pressable onPress={() => void Linking.openSettings()} accessibilityRole="button" style={styles.clear}>
+                <Text style={{ color: c.accent, fontFamily: fonts.bodyBold, fontSize: 14 }}>Open settings</Text>
+              </Pressable>
+            )}
           </Card>
         </>
       )}

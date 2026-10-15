@@ -1,12 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Platform } from "react-native";
+import { AppState as RNAppState, Platform } from "react-native";
 import { isFollowing as isFollowingIn, parseFollows, serializeFollows, toggleFollow as toggleIn, type Follow, type FollowKind } from "./follows";
 import { initialOptIn, parseOptIn, reduceOptIn, shouldPrompt, type OptInState } from "./notify";
 import { createSecureDeviceStore } from "./device-store";
 import { NotifySync } from "./notify-sync";
 import { createNotifyApi, NOTIFICATIONS_BACKEND_ENABLED } from "./notifyApi";
-import { currentPushToken, requestEnable } from "./notifications";
+import { currentPushToken, readPermissionGranted, requestEnable } from "./notifications";
 import { CATEGORY_KEY, parseCategory } from "./discovery/scope";
 import type { CategoryChoice } from "./types";
 
@@ -81,6 +81,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setNotify(s);
     AsyncStorage.setItem(NOTIFY_KEY, JSON.stringify(s)).catch(() => {});
   }, []);
+
+  // Re-read the OS permission on launch and every return to the foreground, so the card never keeps a stale
+  // "blocked" after the prompt closed or after the user changed it in system settings.
+  useEffect(() => {
+    if (!hydrated || Platform.OS === "web") return;
+    const syncPermission = () => {
+      void readPermissionGranted().then((granted) => {
+        if (granted === null) return;
+        const cur = notifyRef.current;
+        const next = reduceOptIn(cur, { type: "permission-sync", granted });
+        if (next !== cur) saveNotify(next);
+      });
+    };
+    syncPermission();
+    const sub = RNAppState.addEventListener("change", (st) => st === "active" && syncPermission());
+    return () => sub.remove();
+  }, [hydrated, saveNotify]);
 
   const toggleFollow = useCallback(
     (kind: FollowKind, symbol: string) => {

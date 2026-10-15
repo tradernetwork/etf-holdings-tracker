@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { createContext, useContext } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, Hint, Mono, ThinBar } from "@/components/ui";
-import { formatCount, formatShares, formatUsd } from "@/lib/format";
+import { formatCount, formatQty, formatShares, formatUsd } from "@/lib/format";
 import type { IncomePosition, OtherPosition, PositionLeg, PositionsSummary } from "@/lib/fundExtras";
 import { formatExpiry, formatStrike, normalizeOptionType } from "@/lib/book";
 import { COVERAGE_CLASS_LABEL, coverageClass, legMeta, noCoverageMessage, qtyNote, ROLE_LABEL, type Notice, type PosRow } from "@/lib/incomeBook";
@@ -77,7 +77,7 @@ export function LegRow({ leg, ticker, opened }: { leg: PositionLeg; ticker?: str
       </View>
       <View style={{ alignItems: "flex-end", gap: 2 }}>
         <Mono bold style={{ fontSize: 13, color: leg.marketValue != null && leg.marketValue < 0 ? c.isNew : c.textPrimary }}>{money(leg.marketValue)}</Mono>
-        <Hint>{formatShares(leg.contracts)} ct · {price(leg.price)} · {pctText(leg.weight)}</Hint>
+        <Hint>{formatQty(leg.contracts)} ct · {price(leg.price)} · {pctText(leg.weight)}</Hint>
       </View>
     </View>
   );

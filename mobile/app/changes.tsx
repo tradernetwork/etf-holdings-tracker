@@ -18,14 +18,7 @@ import {
   Search,
   Title,
 } from "@/components/discovery-ui";
-import {
-  Mono,
-  ErrorNote,
-  Hint,
-  Loading,
-  Note,
-  Segmented,
-} from "@/components/ui";
+import { Mono, Hint, Note, Segmented, QueryStatus } from "@/components/ui";
 import { useChanges } from "@/lib/discovery/api";
 import { deltaLabel } from "@/lib/deltaPeriod";
 import {
@@ -165,13 +158,7 @@ export default function Changes() {
           Further changes may be omitted.
         </Note>
       )}
-      {q.isLoading && <Loading />}
-      {q.isError && (
-        <ErrorNote
-          message="Couldn't load changes."
-          onRetry={() => q.refetch()}
-        />
-      )}{" "}
+      <QueryStatus q={q} />
       {funds.isError && (
         <Note>
           Provider and AUM lookup unavailable; fund symbols and reported dollar
@@ -182,6 +169,7 @@ export default function Changes() {
   );
   return (
     <SectionPage
+      loaded={!!q.data}
       sections={sections}
       showHeaders={grouped || byTicker}
       header={header}

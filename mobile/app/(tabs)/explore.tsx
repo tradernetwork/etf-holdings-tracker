@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { OptionsTeaser } from "@/components/options/OptionsTeaser";
-import { Card, ErrorNote, FreshnessLabel, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
-import { formatPp, formatUsd, freshnessLabel, fundAumUsd } from "@/lib/format";
+import { Card, FreshnessLabel, Mono, Note, Screen, SectionHeader, Tappable, QueryStatus } from "@/components/ui";
+import { formatPp, formatUsd, pluralize, freshnessLabel, fundAumUsd } from "@/lib/format";
 import { buildFundActivity, buildTopMovers, directoryHeadline, FUND_SORTS, rankExactFundFirst, resolveSearch, sortFunds, type DirectoryFund, type FundSort } from "@/lib/fundDirectory";
 import { useChanges } from "@/lib/discovery/api";
 import { useFunds } from "@/lib/queries";
@@ -20,6 +20,15 @@ const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
   { value: "active-equity", label: "Active Equity" },
   { value: "option-income", label: "Option-Income" },
 ];
+const EXPLORE_LINKS = [
+  { label: "Changes", href: "/changes" },
+  { label: "Stocks", href: "/stocks" },
+  { label: "Holdings", href: "/holdings" },
+  { label: "Institutional trend", href: "/trend" },
+  { label: "Effectiveness", href: "/effectiveness" },
+  { label: "Consensus", href: "/layering" },
+  { label: "Income funds", href: "/income" },
+] as const;
 
 export default function Explore() {
   const c = useTheme();
@@ -68,7 +77,13 @@ export default function Explore() {
   return (
     <Screen refreshing={funds.isRefetching} onRefresh={() => funds.refetch()}>
       <Text style={styles.title}>Explore</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Action onPress={() => router.push("/changes")}>Changes →</Action><Action onPress={() => router.push("/stocks")}>Stocks →</Action><Action onPress={() => router.push("/holdings")}>Holdings →</Action><Action onPress={() => router.push("/trend")}>Institutional trend →</Action><Action onPress={() => router.push("/effectiveness")}>Effectiveness →</Action><Action onPress={() => router.push("/layering")}>Consensus →</Action><Action onPress={() => router.push("/income")}>Income funds →</Action></View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {EXPLORE_LINKS.map((l) => (
+          <View key={l.href} style={{ width: "48.5%", flexGrow: 1, flexBasis: "47%" }}>
+            <Action fill onPress={() => router.push(l.href)}>{l.label} →</Action>
+          </View>
+        ))}
+      </View>
 
       <View style={styles.searchRow}>
         <View style={styles.search}>
@@ -124,12 +139,11 @@ export default function Explore() {
 
       <OptionsTeaser />
 
-      {funds.isLoading && <Loading />}
-      {funds.isError && <ErrorNote message="Couldn't load the fund list." onRetry={() => funds.refetch()} />}
+      <QueryStatus q={funds} />
 
       {funds.data && (
         <>
-          <SectionHeader title="Funds" right={<Text style={styles.hint}>{visible.length} of {all.length}</Text>} />
+          <SectionHeader title="Funds" right={<Text style={styles.hint}>{visible.length} of {all.length}{funds.isFetching ? " · updating" : ""}</Text>} />
           <Text style={styles.hint}>{directoryHeadline(visible as DirectoryFund[])}</Text>
           <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
             <Text style={styles.sortLabel}>SORT</Text>
@@ -168,7 +182,7 @@ export default function Explore() {
         </>
       )}
 
-      <FilterSheet visible={sheet} title="Filters" onClose={() => setSheet(false)} onReset={reset} applyLabel={`Show ${visible.length} funds`}>
+      <FilterSheet visible={sheet} title="Filters" onClose={() => setSheet(false)} onReset={reset} applyLabel={`Show ${pluralize(visible.length, "fund")}`}>
         <OptionGroup label="Category" options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
         <OptionGroup
           label="Provider"

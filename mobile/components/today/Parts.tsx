@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, Hint, Mono, Tappable } from "@/components/ui";
-import { cleanName, formatPp, formatUsd, sectorShort } from "@/lib/format";
+import { cleanName, formatPp, formatUsd, pluralize, sectorShort } from "@/lib/format";
 import { convText, fundFlowUsd, fundPositionUsd, signalFlowUsd, signalStreak, signalSummary, streakLabel, strengthText, usdOrDash, type Kpi } from "@/lib/today/logic";
 import type { ActiveStreak, FullDivergence, FullSignal, LayeringPatternFull } from "@/lib/today/types";
 import { deltaColor, fonts, radii, spacing, type Palette } from "@/lib/theme";
@@ -154,7 +154,7 @@ export function LayeringCard({ p, rank }: { p: LayeringPatternFull; rank: number
           </View>
           <Text style={styles.name} numberOfLines={1}>{cleanName(p.name)}{p.sector ? ` · ${sectorShort(p.sector)}` : ""}</Text>
           <Hint>
-            {p.distinctFunds} funds · {p.distinctProviders} {p.distinctProviders === 1 ? "family" : "families"}{cross ? " (cross-family)" : ""}
+            {pluralize(p.distinctFunds, "fund")} · {pluralize(p.distinctProviders, "family", "families")}{cross ? " (cross-family)" : ""}
           </Hint>
           <Hint>{usdOrDash(p.consensusAumUsd ?? p.consensusAum * 1e9)} combined fund AUM (not capital in this stock){p.positionUsdTotal != null ? ` · est. ${formatUsd(p.positionUsdTotal)} entry positions` : ""}</Hint>
           <Hint>first entry {p.firstEntry} · last {p.lastEntry}</Hint>

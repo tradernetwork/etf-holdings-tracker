@@ -32,7 +32,9 @@ export async function requestEnable(): Promise<EnableOutcome> {
     }).catch(() => {});
   }
   const existing = await N.getPermissionsAsync();
-  const perm = existing.granted ? existing : await N.requestPermissionsAsync();
+  let perm = existing.granted ? existing : await N.requestPermissionsAsync();
+  // The prompt's own result can lag the real grant on Android; re-read before calling it a refusal.
+  if (!perm.granted) perm = await N.getPermissionsAsync().catch(() => perm);
   if (!perm.granted) return { permission: "denied", token: null };
 
   const projectId = easProjectId();
@@ -42,6 +44,17 @@ export async function requestEnable(): Promise<EnableOutcome> {
     return { permission: "granted", token: t.data };
   } catch {
     return { permission: "granted", token: null };
+  }
+}
+
+/** Current OS notification permission, without prompting. null where it cannot be known (web, errors). */
+export async function readPermissionGranted(): Promise<boolean | null> {
+  if (Platform.OS === "web") return null;
+  try {
+    const N = await import("expo-notifications");
+    return (await N.getPermissionsAsync()).granted;
+  } catch {
+    return null;
   }
 }
 

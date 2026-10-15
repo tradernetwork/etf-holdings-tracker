@@ -18,6 +18,7 @@ import {
   formatShortDate,
   formatUsd,
   formatWeight,
+  pluralize,
 } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
 import { deltaColor } from "@/lib/theme";
@@ -72,13 +73,7 @@ export function StockHistory({ symbol }: { symbol: string }) {
     [horizon, setHorizon] = useState<Period>("daily"),
     [sessions, setSessions] = useState(false);
   if (q.isLoading) return <Loading />;
-  if (q.isError || !q.data)
-    return (
-      <ErrorNote
-        message="Couldn't load institutional history."
-        onRetry={() => q.refetch()}
-      />
-    );
+  if (!q.data) return <ErrorNote onRetry={() => q.refetch()} />;
   const t = q.data,
     inst = t.institutional;
   return (
@@ -87,7 +82,7 @@ export function StockHistory({ symbol }: { symbol: string }) {
       <Card>
         <Mono bold>{trendLabels[inst.signal]}</Mono>
         <Hint>
-          {inst.fundCount} stock-picking funds ·{" "}
+          {pluralize(inst.fundCount, "stock-picking fund")} ·{" "}
           {inst.estimatedExposureM == null
             ? "Dollar exposure unknown"
             : `est. ${formatUsd(inst.estimatedExposureM * 1e6)} exposure`}
@@ -139,7 +134,7 @@ export function StockHistory({ symbol }: { symbol: string }) {
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >
               <Hint>
-                {formatShortDate(p.date)} · {p.fundCount} funds
+                {formatShortDate(p.date)} · {pluralize(p.fundCount, "fund")}
               </Hint>
               <Mono>{formatWeight(p.blendedWeight)}</Mono>
             </View>

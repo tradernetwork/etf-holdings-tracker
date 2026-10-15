@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { HoldingCard } from "@/components/holdings/HoldingCard";
-import { Card, ErrorNote, Hint, Loading, Note, Screen } from "@/components/ui";
+import { Card, EdgeFade, Hint, Note, Screen, QueryStatus } from "@/components/ui";
 import { deltaLabel } from "@/lib/deltaPeriod";
 import { formatShortDate } from "@/lib/format";
 import {
@@ -62,7 +62,7 @@ export default function HoldingsBrowser() {
       <Text style={styles.title}>Holdings</Text>
       <Hint>Every position row across all tracked funds, as the funds filed it: stocks, option legs, swaps, cash and Treasuries.</Hint>
       {groups.map((g) => (
-        <Note key={g.since ?? "x"}>{g.funds.join(", ")}: catch-up{g.since ? ` since ${formatShortDate(g.since)}` : ""}. Their previous file was carried forward, so Δ columns show — instead of weeks of trades as one day.</Note>
+        <Note key={g.since ?? "x"}>{g.funds.join(", ")}: catch-up{g.since ? ` since ${formatShortDate(g.since)}` : ""}. Their previous file was carried forward, so Δ columns show a dash instead of weeks of trades as one day.</Note>
       ))}
 
       <View style={styles.search}>
@@ -77,7 +77,8 @@ export default function HoldingsBrowser() {
       </View>
 
       <Text style={styles.small}>SORT</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
+      <EdgeFade>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs, paddingRight: spacing.xxl }}>
         {SORT_COLUMNS.map((col) => {
           const ok = sortAllowed(col, f);
           const on = f.sort === col.key;
@@ -98,10 +99,10 @@ export default function HoldingsBrowser() {
           );
         })}
       </ScrollView>
+      </EdgeFade>
       {note ? <Hint>{note}</Hint> : null}
 
-      {q.isLoading && !q.data && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load holdings. The API allows 30 requests a minute for this book." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
 
       {view && (
         <>

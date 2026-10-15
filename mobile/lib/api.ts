@@ -4,7 +4,7 @@
  * (minus Clerk auth and the offline write-queue: nothing here is ever written).
  */
 import type { paths } from "./generated/api-types";
-import { fetchWithRetry } from "./retry";
+import { fetchWithRetry, fetchWithTimeout, REQUEST_DEADLINE_MS, TimeoutError } from "./retry";
 import type {
   Category,
   Divergence,
@@ -56,14 +56,16 @@ export async function request<T>(
     .join("&");
   const url = `${API_BASE}${path}${qs ? `?${qs}` : ""}`;
 
+  const started = Date.now();
+  const left = () => REQUEST_DEADLINE_MS - (Date.now() - started);
   for (let attempt = 0; ; attempt++) {
-    const canRetry = attempt < MAX_RETRIES;
+    const canRetry = attempt < MAX_RETRIES && left() > BACKOFF_BASE_MS * 2 ** attempt;
     let res: Response;
     try {
-      res = await fetch(url, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } });
+      res = await fetchWithTimeout(fetch, url, { signal, headers: { Accept: "application/json", "X-TickerTrace-Client": "app" } }, Math.max(1_000, left()));
     } catch (e) {
       if (signal?.aborted) throw e;
-      if (!canRetry) throw new NetworkError(e instanceof Error ? e.message : "network error");
+      if (e instanceof TimeoutError || !canRetry) throw new NetworkError(e instanceof Error ? e.message : "network error");
       await delay(BACKOFF_BASE_MS * 2 ** attempt);
       continue;
     }
