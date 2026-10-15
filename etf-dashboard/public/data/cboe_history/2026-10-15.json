@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-15T20:16:31.833409+00:00",
+  "date": "2026-10-15T20:33:45.728669+00:00",
   "isInitial": false,
   "totals": {
     "allOptionable": 5344,
@@ -12,18 +12,13 @@
       "removed": {}
     },
     "weeklyEtfs": {
-      "new": {
-        "RAM": "Roundhill T-REX 2X Long DRAM Daily Target ETF"
-      },
+      "new": {},
       "removed": {}
     },
     "weeklyEquities": {
-      "new": {
-        "GFL": "GFL ENVIRONMENTAL INC SUB VTG SHS",
-        "XRPN": "EVERNORTH HOLDINGS INC COM CL A"
-      },
+      "new": {},
       "removed": {}
     }
   },
-  "hasChanges": true
+  "hasChanges": false
 }
