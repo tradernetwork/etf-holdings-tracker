@@ -20,3 +20,7 @@ No price outcomes have been inspected at the time of this preregistration commit
 ## Results
 
 Pending execution after the preregistration commit.
+
+## Preregistered scope extension — October 15, 2026
+
+After the first method commit and before running any matching/results, the user expanded the scope to **MSTR, TSLA, NVDA and COIN**. Apply exactly the same thresholds, cutoffs, matching and per-expiry statistics separately to each. Also report a pooled mean across underlying-expiry observations, with **calendar ISO-week cluster** sign flips and bootstrap resamples shared across all symbols, rather than treating correlated same-week stock outcomes as independent. Report per-symbol N, pooled observations and distinct weeks. Preserve the original MSTR-only document filename for continuity. This changes scope, not exposure/control selection after seeing outcomes.
