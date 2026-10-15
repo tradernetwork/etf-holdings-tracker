@@ -1506,16 +1506,24 @@ def _compute_institutional_trend(limit: int = 15) -> dict:
     }
 
 
+def tracked_funds(latest: list[dict]) -> set[str]:
+    """Funds with at least one row in the latest file, minus EXCLUDED_FUNDS.
+
+    The single definition behind both /stats `fundsTracked` and the length of
+    the /funds list, so the two can never disagree.
+    """
+    return {r.get('ETF Ticker', '') for r in latest} - EXCLUDED_FUNDS - {''}
+
+
 def get_global_stats(changes: list[dict] | None = None) -> dict:
     latest = get_latest_holdings()
-    funds = set()
+    funds = tracked_funds(latest)
     tickers = set()
     options = 0
     puts = 0
     calls = 0
 
     for r in latest:
-        funds.add(r.get('ETF Ticker', ''))
         if r.get('Option_Type', ''):
             options += 1
             if r.get('Option_Type', '') == 'Put':

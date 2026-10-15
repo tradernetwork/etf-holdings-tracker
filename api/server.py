@@ -37,6 +37,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from . import data, usage
 from . import income
@@ -215,11 +216,51 @@ app.add_middleware(
 app.add_middleware(RequestIdMiddleware)
 
 
+class _GZipSkipMCP(GZipMiddleware):
+    """GZip for the REST API, but never for the /mcp streamable-HTTP mount.
+
+    MCP responses can be SSE streams; buffering them behind a compressor
+    breaks incremental delivery, so /mcp is passed through untouched.
+    """
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope.get("path", "").startswith("/mcp"):
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
+# Daily-static read-only data: holdings refresh once a day, so 5 minutes of
+# client/CDN caching is safe. /health, /auth*, /mcp and everything else are
+# deliberately absent.
+_CACHEABLE_EXACT = frozenset({
+    "/api/v1/signals", "/api/v1/changes", "/api/v1/funds", "/api/v1/sectors",
+    "/api/v1/divergences", "/api/v1/stats", "/api/v1/fund-effectiveness",
+})
+_CACHEABLE_PREFIXES = (
+    "/api/v1/fund/", "/api/v1/ticker/", "/api/v1/options/",
+    "/api/v1/fund-effectiveness/",
+)
+_CACHE_CONTROL = "public, max-age=300"
+
+
+def _is_cacheable_path(path: str) -> bool:
+    return path in _CACHEABLE_EXACT or path.startswith(_CACHEABLE_PREFIXES)
+
+
+# Outermost, so it compresses the final bytes (CORS/request-id headers already set).
+app.add_middleware(_GZipSkipMCP, minimum_size=1000)
+
+
 @app.middleware("http")
 async def snapshot_aum_context(request: Request, call_next):
     # One existing middleware hop; aggregate tracking adds no I/O or waiting.
     with data.aum_snapshot_scope():
         response = await call_next(request)
+    if (request.method == 'GET' and response.status_code == 200
+            and 'cache-control' not in response.headers
+            and _is_cacheable_path(request.url.path)):
+        response.headers['Cache-Control'] = _CACHE_CONTROL
     try:
         if request.method == 'GET' and response.status_code == 200:
             key = usage.request_key(request.url.path, request.headers.get('X-TickerTrace-Client', ''), request.headers.get('User-Agent', ''))
