@@ -336,7 +336,7 @@ FUND_PROVIDERS = {
     'AVEM': 'Avantis', 'AVDV': 'Avantis', 'AVDE': 'Avantis', 'AVUS': 'Avantis', 'AVSC': 'Avantis', 'AVES': 'Avantis', 'AVIV': 'Avantis',
     'ARKK': 'ARK Invest', 'ARKQ': 'ARK Invest', 'ARKW': 'ARK Invest',
     'ARKG': 'ARK Invest', 'ARKF': 'ARK Invest', 'ARKX': 'ARK Invest',
-    'KYLD': 'Kurv', 'KQQQ': 'Kurv',
+    'KYLD': 'Kurv', 'KQQQ': 'Kurv', 'TSLP': 'Kurv',
     'ULTY': 'YieldMax',
     'SLTY': 'YieldMax',
     'ULTI': 'REX Shares',
@@ -362,6 +362,7 @@ FUND_PROVIDERS = {
     'NVII': 'REX Shares', 'TSII': 'REX Shares',
     'YMAG': 'YieldMax',
     'MSST': 'YieldMax',
+    'NVIT': 'YieldMax',
     'AMDW': 'Roundhill', 'TOPW': 'Roundhill', 'XPAY': 'Roundhill', 'WEEK': 'Roundhill',
     'FEPI': 'REX Shares', 'AIPI': 'REX Shares', 'CEPI': 'REX Shares',
     # Neos Funds — covered-call / put-write income ETFs
