@@ -46,7 +46,7 @@ def contract(row):
     """Return standard root/expiry/type/strike, conservatively exclude FLEX/adjusted."""
     ticker = (row.get('Ticker') or '').strip()
     name = (row.get('Name') or '').strip()
-    if str(row.get('Is_Flex', '')).lower() == 'true' or re.match(r'^\d[A-Z]', ticker or name):
+    if str(row.get('Is_Flex', '')).lower() == 'true' or any(re.match(r'^\d[A-Z]', value) for value in (ticker, name)):
         return None
     underlying = row.get('Underlying_Ticker', '').strip()
     expiry = date_value(row.get('Option_Expiry'))
@@ -65,7 +65,7 @@ def contract(row):
             underlying, day, kind, strike = match.groups()
             expiry = dt.datetime.strptime(day, '%m/%d/%Y' if len(day) == 10 else '%m/%d/%y').date()
             strike = float(strike)
-    if underlying not in SYMBOLS or strike <= 0 or round(strike * 100) % 25:
+    if underlying not in SYMBOLS or not math.isfinite(strike) or strike <= 0 or round(strike * 100) % 25:
         return None
     quantity = number(row.get('Share Quantity'))
     if quantity is None or not math.isfinite(quantity):

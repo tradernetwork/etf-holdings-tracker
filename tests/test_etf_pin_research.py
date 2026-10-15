@@ -14,6 +14,9 @@ class PinResearchTests(unittest.TestCase):
         self.assertEqual(pin.contract(base),('MSTR','2026-09-18','C',150.,-1234.))
         self.assertIsNone(pin.contract({**base,'Ticker':'2MSTR 260918C00150000'}))
         self.assertIsNone(pin.contract({**base,'Is_Flex':'True'}))
+        normalized={**base,'Underlying_Ticker':'MSTR','Option_Expiry':'2026-09-18','Option_Type':'Call','Option_Strike':'150'}
+        self.assertIsNone(pin.contract({**normalized,'Ticker':'595112103','Name':'2MSTR 260918C00150000'}))
+        self.assertIsNone(pin.contract({**normalized,'Option_Strike':'nan'}))
         self.assertIsNone(pin.contract({**base,'Option_Strike':'150.01','Underlying_Ticker':'MSTR','Option_Expiry':'2026-09-18','Option_Type':'Call'}))
 
     def test_net_threshold_excludes_offsetting_longs_and_any_short_control(self):
