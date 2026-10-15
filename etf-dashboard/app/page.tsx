@@ -402,6 +402,12 @@ export default async function LandingPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
             date="October 15, 2026"
+            tag="bugfix"
+            title="T-bill funds no longer say 0 holdings"
+            desc="TSLP, Kurv's Tesla income fund, holds only T-bills, cash and custom FLEX options, and we were counting zero holdings because none of that is a stock. We were wrong. The fund count and total weight now cover the whole book, and I checked all 148 funds: every row in every fund is accounted for."
+          />
+          <ChangelogEntry
+            date="October 15, 2026"
             tag="feature"
             title="TSLA, NVDA and COIN income funds, covered"
             desc="We went through every issuer for funds that sell options on Tesla, Nvidia and Coinbase. Two were missing: YieldMax's NVIT and Kurv's TSLP. Both are on the board now, so we're at 148 funds. TSLP only holds the custom FLEX options, so you won't find listed contracts in it. GraniteShares' YieldBOOST funds write options on leveraged ETFs, not on the stocks themselves, so we left them out."
