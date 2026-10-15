@@ -7,7 +7,7 @@ import pytest
 import scrape_avantis
 from api.data import FUND_PROVIDERS, get_fund_category
 
-NEW = "AIYY BABO BIGY CRSH CVNY DIPS FBY FIAT GPTY LFGY MARO MRNY MSFO NFLY OARK PYPY RDTY SDTY SMCY SNOY SOXY TSMY WNTR XOMO YQQQ".split()
+NEW = "AIYY BABO BIGY CRSH CVNY DIPS FBY FIAT GPTY LFGY MARO MRNY MSFO NFLY OARK PYPY RDTY SDTY SMCY SNOY SOXY TSMY WNTR XOMO YQQQ MSST".split()
 PROVIDERS_TS = Path(__file__).resolve().parent.parent / "etf-dashboard" / "lib" / "providers.ts"
 
 

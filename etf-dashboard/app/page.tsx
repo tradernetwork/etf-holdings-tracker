@@ -401,6 +401,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 15, 2026"
+            tag="feature"
+            title="MSST joins the MSTR income crowd"
+            desc="You asked for every MSTR income ETF, so we went through the issuers. Only one was missing: YieldMax's MSST, a small one at about $5M that sells MSTR calls. It's on the board now, bringing us to 146 funds. The rest were either already here (MSTY, WNTR, MSTW) or gone, like REX's MSII and Bitwise's IMST. The leveraged MSTX and MSTU aren't income funds, so we left them out."
+          />
+          <ChangelogEntry
             date="October 14, 2026"
             tag="feature"
             title="Global X covered-call funds join the board"

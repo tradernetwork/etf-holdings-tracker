@@ -361,6 +361,7 @@ FUND_PROVIDERS = {
     'WNTR': 'YieldMax', 'XOMO': 'YieldMax', 'YQQQ': 'YieldMax',
     'NVII': 'REX Shares', 'TSII': 'REX Shares',
     'YMAG': 'YieldMax',
+    'MSST': 'YieldMax',
     'AMDW': 'Roundhill', 'TOPW': 'Roundhill', 'XPAY': 'Roundhill', 'WEEK': 'Roundhill',
     'FEPI': 'REX Shares', 'AIPI': 'REX Shares', 'CEPI': 'REX Shares',
     # Neos Funds — covered-call / put-write income ETFs

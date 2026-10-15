@@ -165,6 +165,7 @@ FUNDS = [
     {'ticker': 'HOOY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/HOOY/TidalFG_Holdings_HOOY.csv'},
     {'ticker': 'PLTY', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/PLTY/TidalFG_Holdings_PLTY.csv'},
     {'ticker': 'YMAG', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/YMAG/TidalFG_Holdings_YMAG.csv'},
+    {'ticker': 'MSST', 'type': 'csv', 'url': 'https://yieldmaxetfs.com/wp-content/uploads/funds/MSST/TidalFG_Holdings_MSST.csv'},
     # Neos income ETFs: Tidal-style columns but numbers arrive as text ("$1,234", "0.07%").
     {'ticker': 'SPYI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=SPYI'},
     {'ticker': 'QQQI', 'type': 'csv', 'url': 'https://www.neosfunds.com/wp-admin/admin-ajax.php?action=download_holdings_csv&ticker=QQQI'},
