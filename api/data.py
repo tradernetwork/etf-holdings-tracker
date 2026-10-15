@@ -2730,9 +2730,12 @@ def get_fund_detail(fund: str) -> dict | None:
 
     equities = []
     options = []
+    others = []  # Treasuries, cash, money-market, swaps: part of the book, not stocks
     for r in fund_rows:
         if r.get('Option_Type', ''):
             options.append(r)
+        elif _is_junk_ticker(r.get('Ticker', '')):
+            others.append(r)
         elif not _is_junk_ticker(r.get('Ticker', '')):
             ticker = _clean_ticker(r.get('Ticker', ''))
             weight = _safe_float(r.get('Weight', '0'))
@@ -2753,6 +2756,19 @@ def get_fund_detail(fund: str) -> dict | None:
             })
 
     equities.sort(key=lambda x: -x['weight'])
+
+    # The rest of the non-option book, so a fund whose stock sleeve is empty
+    # (a FLEX-only book of T-bills + cash) still lists every position.
+    other_holdings = [{
+        'ticker': r.get('Ticker', '').strip(),
+        'name': r.get('Name', ''),
+        'weight': _safe_float(r.get('Weight', '0')),
+        'positionUsd': estimate_position_usd(fund, _safe_float(r.get('Weight', '0'))),
+        'shares': _safe_float(r.get('Share Quantity', '0')),
+        'assetClass': holding_asset_class(r),
+        'marketValue': _nullable_float(r.get('Market Value')),
+    } for r in others]
+    other_holdings.sort(key=lambda x: -x['weight'])
 
     # Current option book — the fund's live option positions (type/strike/
     # expiry/underlying). Used by the income-fund Portfolio section.
@@ -2894,10 +2910,14 @@ def get_fund_detail(fund: str) -> dict | None:
         'aumUsd': get_fund_aum_usd(fund),
         'asOfDate': get_as_of_date(),
         **comparison_info('daily'),
-        'holdingsCount': len(equities),
+        # Every non-option position (stocks + Treasuries + cash + swaps), so a
+        # FLEX-only / T-bill book never reads "0 holdings". Option legs are
+        # counted separately in optionsCount.
+        'holdingsCount': len(equities) + len(other_holdings),
         'optionsCount': len(options),
-        'totalWeight': round(sum(e['weight'] for e in equities), 2),
+        'totalWeight': round(sum(e['weight'] for e in equities) + sum(o['weight'] for o in other_holdings), 2),
         'topHoldings': equities[:20],
+        'otherHoldings': other_holdings,
         'optionHoldings': option_holdings,
         'recentChanges': recent_changes,
         'streaks': fund_streaks,
@@ -3180,9 +3200,9 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             d['options'] += 1
             continue
         ticker = _clean_ticker(r.get('Ticker', ''))
+        d['holdings'] += 1
         if _is_junk_ticker(ticker):
             continue
-        d['holdings'] += 1
         w = _safe_float(r.get('Weight', '0'))
         if d['top'] is None or w > d['top']['weight']:
             d['top'] = {'ticker': ticker, 'weight': round(w, 4)}
