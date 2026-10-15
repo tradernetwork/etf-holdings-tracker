@@ -173,7 +173,9 @@ option-income fund work.
 
 148 funds across 15 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
-the README table whenever `FUNDS` changes.
+the README table whenever `FUNDS` changes. `fundsTracked` and the length of
+`/api/v1/funds` are the same number by construction (`data.tracked_funds`: funds
+with rows in the latest file, minus `EXCLUDED_FUNDS`).
 
 - **Avantis**: AVUV, AVLV, AVMV, AVUS, AVEM, AVDE, AVDV, AVIV, AVSC, AVES
   (systematic value/profitability/size tilts; AVEM/AVDE/AVDV/AVIV are the only
@@ -217,6 +219,13 @@ the README table whenever `FUNDS` changes.
 - **NicholasX**: BLOX (blockchain/crypto equity)
 - **NestYield**: EGGQ, EGGY, EGGS (active equity + options overlay)
 - **Sprott**: GBUG
+
+## HTTP behaviour
+
+The REST API gzips responses over 1000 bytes (`GZipMiddleware`, skipped for `/mcp`) and sends
+`Cache-Control: public, max-age=300` on the daily-static read endpoints only (signals, changes,
+funds, fund/ticker/options detail, sectors, divergences, stats, fund-effectiveness). Never add it
+to `/health`, `/auth*` or `/mcp`.
 
 ## Dashboard Tiers
 
