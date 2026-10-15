@@ -162,7 +162,7 @@ def metrics(strikes, price, spot, step):
                 range_straddle=sum(price['low'] < k < price['high'] for k in strikes) / len(strikes))
 
 
-def observations(snapshots, prices, as_of, threshold=1000, kind='C', known_only=False):
+def observations(snapshots, prices, as_of, threshold=1000, kind='C', known_only=False, strict_spot=False):
     expiries = sorted({(r['symbol'], r['expiry']) for snap in snapshots for r in snap['options'] if r['kind'] == kind and r['expiry'] < as_of})
     rows, excluded = [], []
     for symbol, expiry in expiries:
@@ -171,7 +171,8 @@ def observations(snapshots, prices, as_of, threshold=1000, kind='C', known_only=
         if not eligible:
             reason = 'no_pre_expiry_snapshot'
         market = prices.get(symbol, {})
-        prior_days = [day for day in market if day < expiry]
+        spot_cutoff = eligible[-1]['day'] if strict_spot and eligible else expiry
+        prior_days = [day for day in market if day < spot_cutoff]
         if expiry not in market or not prior_days:
             reason = 'no_expiry_or_prior_session_price'
         if reason:
@@ -306,6 +307,19 @@ def main():
             mean_difference=statistics.mean([r['difference']['distance'] for r in rows if r['symbol']==symbol]) if any(r['symbol']==symbol for r in rows) else None) for symbol in SYMBOLS},exclusions=exc)
     known,_ = observations(snapshots,prices,args.as_of,known_only=True)
     results['known_freshness_only']=dict(by_symbol={symbol:inference([r for r in known if r['symbol']==symbol]) for symbol in SYMBOLS},pooled=inference(known,True))
+    # Explicitly post-hoc: independent review requested a holdings-effective-time
+    # spot diagnostic. Keep the registered prior-session result above unchanged.
+    strict, _ = observations(snapshots, prices, args.as_of, strict_spot=True)
+    strict_stats = {symbol:inference([r for r in strict if r['symbol']==symbol]) for symbol in SYMBOLS}
+    baseline = {}
+    for symbol in SYMBOLS:
+        subset = [row for row in strict if row['symbol']==symbol]
+        baseline[symbol] = statistics.mean(
+            min(abs(row['prior_close']-k)/row['prior_close'] for k in row['written'])
+            - min(abs(row['prior_close']-k)/row['prior_close'] for k in row['controls'])
+            for row in subset) if subset else None
+    results['posthoc_strict_spot'] = dict(by_symbol=strict_stats, pooled=inference(strict,True),
+                                        baseline_difference=baseline, rows=strict)
     out=args.output/'results.json';out.write_text(json.dumps(results,indent=2,allow_nan=False)+'\n')
     print(json.dumps(dict(by_symbol=results['by_symbol'],pooled=results['pooled']),indent=2))
 

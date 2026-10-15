@@ -8828,5 +8828,4849 @@
         }
       }
     }
+  },
+  "posthoc_strict_spot": {
+    "by_symbol": {
+      "MSTR": {
+        "n": 21,
+        "weeks": 21,
+        "mean_difference": 0.0022170695080269516,
+        "p_value": 0.5842541574584255,
+        "ci95": [
+          -0.005732399255149585,
+          0.009591694442650803
+        ],
+        "method": "100000 Monte Carlo sign-flips",
+        "clustered": false,
+        "written_distance_mean": 0.06182218034630832,
+        "control_distance_mean": 0.05960511083828137,
+        "secondary": {
+          "hit_one_pct": {
+            "written": 0.14285714285714285,
+            "control": 0.09523809523809523
+          },
+          "hit_half_step": {
+            "written": 0.14285714285714285,
+            "control": 0.0
+          },
+          "range_straddle": {
+            "written": 0.20952380952380953,
+            "control": 0.2222222222222222
+          }
+        }
+      },
+      "TSLA": {
+        "n": 22,
+        "weeks": 22,
+        "mean_difference": -0.005143093515554055,
+        "p_value": 0.1947080529194708,
+        "ci95": [
+          -0.012438339991800825,
+          0.0021655572964353284
+        ],
+        "method": "100000 Monte Carlo sign-flips",
+        "clustered": false,
+        "written_distance_mean": 0.04554578424681717,
+        "control_distance_mean": 0.05068887776237123,
+        "secondary": {
+          "hit_one_pct": {
+            "written": 0.13636363636363635,
+            "control": 0.22727272727272727
+          },
+          "hit_half_step": {
+            "written": 0.09090909090909091,
+            "control": 0.09090909090909091
+          },
+          "range_straddle": {
+            "written": 0.23484848484848483,
+            "control": 0.20075757575757575
+          }
+        }
+      },
+      "NVDA": {
+        "n": 20,
+        "weeks": 20,
+        "mean_difference": -0.014032316566580116,
+        "p_value": 0.00112152099609375,
+        "ci95": [
+          -0.020376925238524538,
+          -0.007381144841972929
+        ],
+        "method": "exact sign-flip",
+        "clustered": false,
+        "written_distance_mean": 0.037278730862809153,
+        "control_distance_mean": 0.051311047429389266,
+        "secondary": {
+          "hit_one_pct": {
+            "written": 0.2,
+            "control": 0.05
+          },
+          "hit_half_step": {
+            "written": 0.2,
+            "control": 0.0
+          },
+          "range_straddle": {
+            "written": 0.275,
+            "control": 0.1
+          }
+        }
+      },
+      "COIN": {
+        "n": 20,
+        "weeks": 20,
+        "mean_difference": -0.0020811483448986597,
+        "p_value": 0.6797771453857422,
+        "ci95": [
+          -0.01179014663308986,
+          0.007244487533089292
+        ],
+        "method": "exact sign-flip",
+        "clustered": false,
+        "written_distance_mean": 0.0637926558079392,
+        "control_distance_mean": 0.06587380415283786,
+        "secondary": {
+          "hit_one_pct": {
+            "written": 0.15,
+            "control": 0.15
+          },
+          "hit_half_step": {
+            "written": 0.15,
+            "control": 0.05
+          },
+          "range_straddle": {
+            "written": 0.25,
+            "control": 0.2833333333333333
+          }
+        }
+      }
+    },
+    "pooled": {
+      "n": 83,
+      "weeks": 27,
+      "mean_difference": -0.004685046938592756,
+      "p_value": 0.057389426105738946,
+      "ci95": [
+        -0.009256897261549699,
+        -0.0001271608386617604
+      ],
+      "method": "100000 Monte Carlo sign-flips",
+      "clustered": true,
+      "written_distance_mean": 0.05206868402551108,
+      "control_distance_mean": 0.056753730964103834,
+      "secondary": {
+        "hit_one_pct": {
+          "written": 0.1566265060240964,
+          "control": 0.13253012048192772
+        },
+        "hit_half_step": {
+          "written": 0.14457831325301204,
+          "control": 0.03614457831325301
+        },
+        "range_straddle": {
+          "written": 0.24176706827309236,
+          "control": 0.20180722891566266
+        }
+      }
+    },
+    "baseline_difference": {
+      "MSTR": -0.0024744659985120525,
+      "TSLA": -0.010672584301934865,
+      "NVDA": -0.016238851499218537,
+      "COIN": -0.0031229108010456417
+    },
+    "rows": [
+      {
+        "symbol": "COIN",
+        "expiry": "2026-03-13",
+        "week": "2026-11",
+        "snapshot": "2026-03-12",
+        "prior_session": "2026-03-11",
+        "source_dates": [
+          "2026-03-12"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 198.6300048828125,
+        "open": 203.75999450683594,
+        "high": 207.1300048828125,
+        "low": 193.83999633789062,
+        "close": 195.52999877929688,
+        "written": [
+          210.0
+        ],
+        "controls": [
+          212.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          1000.0
+        ],
+        "written_metrics": {
+          "distance": 0.07284902011274741,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08543523538004777,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.01258621526730036,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-03-20",
+        "week": "2026-12",
+        "snapshot": "2026-03-19",
+        "prior_session": "2026-03-18",
+        "source_dates": [
+          "2026-03-19"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 202.2899932861328,
+        "open": 202.5,
+        "high": 203.3000030517578,
+        "low": 194.7899932861328,
+        "close": 197.5,
+        "written": [
+          202.5
+        ],
+        "controls": [
+          210.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          9340.0
+        ],
+        "written_metrics": {
+          "distance": 0.02471699127958177,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.061792478198954434,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.037075486919372666,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-04-02",
+        "week": "2026-14",
+        "snapshot": "2026-04-01",
+        "prior_session": "2026-03-31",
+        "source_dates": [
+          "2026-04-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 174.61000061035156,
+        "open": 167.6300048828125,
+        "high": 173.02999877929688,
+        "low": 163.55999755859375,
+        "close": 171.4600067138672,
+        "written": [
+          180.0
+        ],
+        "controls": [
+          177.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4000.0
+        ],
+        "written_metrics": {
+          "distance": 0.04890895857213878,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03459133649286946,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.014317622079269322,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-04-10",
+        "week": "2026-15",
+        "snapshot": "2026-04-09",
+        "prior_session": "2026-04-08",
+        "source_dates": [
+          "2026-04-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 175.08999633789062,
+        "open": 169.36000061035156,
+        "high": 170.47999572753906,
+        "low": 163.1300048828125,
+        "close": 167.85000610351562,
+        "written": [
+          170.0,
+          180.0
+        ],
+        "controls": [
+          172.5,
+          182.5
+        ],
+        "step": 2.5,
+        "unmatched": 4,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          5090.0,
+          2250.0
+        ],
+        "written_metrics": {
+          "distance": 0.01227936456366869,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.026557735985731388,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.014278371422062697,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-04-24",
+        "week": "2026-17",
+        "snapshot": "2026-04-23",
+        "prior_session": "2026-04-22",
+        "source_dates": [
+          "2026-04-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 206.24000549316406,
+        "open": 202.0800018310547,
+        "high": 202.5399932861328,
+        "low": 196.52999877929688,
+        "close": 199.77000427246094,
+        "written": [
+          212.5
+        ],
+        "controls": [
+          207.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          7385.0
+        ],
+        "written_metrics": {
+          "distance": 0.06172418244995152,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03748058340599335,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.024243599043958175,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-05-08",
+        "week": "2026-19",
+        "snapshot": "2026-05-07",
+        "prior_session": "2026-05-06",
+        "source_dates": [
+          "2026-05-07"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 197.9600067138672,
+        "open": 186.0500030517578,
+        "high": 201.3699951171875,
+        "low": 182.8000030517578,
+        "close": 201.16000366210938,
+        "written": [
+          185.0,
+          200.0,
+          192.5
+        ],
+        "controls": [
+          182.5,
+          202.5,
+          190.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          5530.0,
+          2050.0,
+          1910.0
+        ],
+        "written_metrics": {
+          "distance": 0.005859787950937245,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.006769025522551458,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.3333333333333333
+        },
+        "difference": {
+          "distance": -0.0009092375716142137,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.6666666666666667
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-05-22",
+        "week": "2026-21",
+        "snapshot": "2026-05-21",
+        "prior_session": "2026-05-20",
+        "source_dates": [
+          "2026-05-21"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 191.2899932861328,
+        "open": 194.02000427246094,
+        "high": 195.58999633789062,
+        "low": 184.60000610351562,
+        "close": 184.99000549316406,
+        "written": [
+          197.5,
+          200.0
+        ],
+        "controls": [
+          195.0,
+          192.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4625.0,
+          2050.0
+        ],
+        "written_metrics": {
+          "distance": 0.06539806025359313,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03925973532552975,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.026138324928063374,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -1.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-06-05",
+        "week": "2026-23",
+        "snapshot": "2026-06-04",
+        "prior_session": "2026-06-03",
+        "source_dates": [
+          "2026-06-04"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 163.22000122070312,
+        "open": 158.6999969482422,
+        "high": 158.6999969482422,
+        "low": 147.8800048828125,
+        "close": 152.39999389648438,
+        "written": [
+          180.0
+        ],
+        "controls": [
+          182.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          10830.0
+        ],
+        "written_metrics": {
+          "distance": 0.16909696052627396,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.1844137108099573,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.015316750283683345,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-06-12",
+        "week": "2026-24",
+        "snapshot": "2026-06-11",
+        "prior_session": "2026-06-10",
+        "source_dates": [
+          "2026-06-11"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 153.97000122070312,
+        "open": 160.42999267578125,
+        "high": 165.49000549316406,
+        "low": 155.4199981689453,
+        "close": 159.77999877929688,
+        "written": [
+          167.5,
+          155.0
+        ],
+        "controls": [
+          165.0,
+          160.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          13450.0,
+          2000.0
+        ],
+        "written_metrics": {
+          "distance": 0.03104500059362308,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.0014288576927902446,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.029616142900832837,
+          "hit_one_pct": -1.0,
+          "hit_half_step": -1.0,
+          "range_straddle": -1.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-06-18",
+        "week": "2026-25",
+        "snapshot": "2026-06-17",
+        "prior_session": "2026-06-16",
+        "source_dates": [
+          "2026-06-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 169.27000427246094,
+        "open": 167.75,
+        "high": 169.80999755859375,
+        "low": 160.5399932861328,
+        "close": 163.25999450683594,
+        "written": [
+          162.5
+        ],
+        "controls": [
+          165.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          3500.0
+        ],
+        "written_metrics": {
+          "distance": 0.004489835692404383,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.01027946741445879,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": -0.0057896317220544075,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-07-02",
+        "week": "2026-27",
+        "snapshot": "2026-07-01",
+        "prior_session": "2026-06-30",
+        "source_dates": [
+          "2026-07-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 146.19000244140625,
+        "open": 165.19000244140625,
+        "high": 173.08999633789062,
+        "low": 163.22000122070312,
+        "close": 165.47999572753906,
+        "written": [
+          150.0
+        ],
+        "controls": [
+          152.5
+        ],
+        "step": 2.5,
+        "unmatched": 4,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          1000.0
+        ],
+        "written_metrics": {
+          "distance": 0.10588956473780435,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08878853212100818,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.017101032616796172,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-07-10",
+        "week": "2026-28",
+        "snapshot": "2026-07-09",
+        "prior_session": "2026-07-08",
+        "source_dates": [
+          "2026-07-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 159.36000061035156,
+        "open": 166.6699981689453,
+        "high": 167.97999572753906,
+        "low": 158.6699981689453,
+        "close": 159.07000732421875,
+        "written": [
+          170.0
+        ],
+        "controls": [
+          175.0
+        ],
+        "step": 0.5,
+        "unmatched": 3,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          9615.0
+        ],
+        "written_metrics": {
+          "distance": 0.06858680116666158,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.09996230305452498,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.03137550188786341,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-07-31",
+        "week": "2026-31",
+        "snapshot": "2026-07-30",
+        "prior_session": "2026-07-29",
+        "source_dates": [
+          "2026-07-30"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 160.08999633789062,
+        "open": 153.10000610351562,
+        "high": 153.67999267578125,
+        "low": 139.11000061035156,
+        "close": 146.25999450683594,
+        "written": [
+          162.5
+        ],
+        "controls": [
+          167.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          7925.0
+        ],
+        "written_metrics": {
+          "distance": 0.10144297498069418,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.13267540745228257,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.031232432471588384,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-08-07",
+        "week": "2026-32",
+        "snapshot": "2026-08-06",
+        "prior_session": "2026-08-05",
+        "source_dates": [
+          "2026-08-06"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 149.88999938964844,
+        "open": 148.2100067138672,
+        "high": 155.39999389648438,
+        "low": 145.57000732421875,
+        "close": 153.60000610351562,
+        "written": [
+          146.0,
+          143.0
+        ],
+        "controls": [
+          148.0,
+          149.0
+        ],
+        "step": 0.5,
+        "unmatched": 5,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2050.0,
+          2000.0
+        ],
+        "written_metrics": {
+          "distance": 0.050703890416057266,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.03068921290444215,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.020014677511615116,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -0.5
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-08-21",
+        "week": "2026-34",
+        "snapshot": "2026-08-20",
+        "prior_session": "2026-08-19",
+        "source_dates": [
+          "2026-08-20"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 160.1999969482422,
+        "open": 180.05999755859375,
+        "high": 191.36000061035156,
+        "low": 179.1999969482422,
+        "close": 186.49000549316406,
+        "written": [
+          152.5
+        ],
+        "controls": [
+          155.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          7425.0
+        ],
+        "written_metrics": {
+          "distance": 0.21217232297542202,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.19656682954455942,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.015605493430862594,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-08-28",
+        "week": "2026-35",
+        "snapshot": "2026-08-27",
+        "prior_session": "2026-08-26",
+        "source_dates": [
+          "2026-08-27"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 181.77999877929688,
+        "open": 186.02999877929688,
+        "high": 189.10000610351562,
+        "low": 176.05999755859375,
+        "close": 178.63999938964844,
+        "written": [
+          175.0,
+          192.5,
+          172.5
+        ],
+        "controls": [
+          180.0,
+          197.5,
+          170.0
+        ],
+        "step": 2.5,
+        "unmatched": 4,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4750.0,
+          2300.0,
+          1315.0
+        ],
+        "written_metrics": {
+          "distance": 0.020024201859896815,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.007481574537816833,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.3333333333333333
+        },
+        "difference": {
+          "distance": 0.012542627322079981,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -0.3333333333333333
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-09-11",
+        "week": "2026-37",
+        "snapshot": "2026-09-10",
+        "prior_session": "2026-09-09",
+        "source_dates": [
+          "2026-09-10"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 174.72000122070312,
+        "open": 174.0500030517578,
+        "high": 182.0800018310547,
+        "low": 172.8000030517578,
+        "close": 175.25999450683594,
+        "written": [
+          187.5
+        ],
+        "controls": [
+          185.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [
+          "CONY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2710.0
+        ],
+        "written_metrics": {
+          "distance": 0.07005497600530984,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.05574636804667066,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.014308607958639183,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-09-25",
+        "week": "2026-39",
+        "snapshot": "2026-09-24",
+        "prior_session": "2026-09-23",
+        "source_dates": [
+          "2026-09-24"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 198.1300048828125,
+        "open": 199.16000366210938,
+        "high": 199.75,
+        "low": 192.5800018310547,
+        "close": 195.11000061035156,
+        "written": [
+          195.0
+        ],
+        "controls": [
+          197.5
+        ],
+        "step": 2.5,
+        "unmatched": 6,
+        "funds": [
+          "CONY",
+          "ULTI"
+        ],
+        "unknown_freshness_funds": [
+          "CONY",
+          "ULTI"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2474.0
+        ],
+        "written_metrics": {
+          "distance": 0.0005551941030669449,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.012062783681159473,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": -0.011507589578092527,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-10-02",
+        "week": "2026-40",
+        "snapshot": "2026-10-01",
+        "prior_session": "2026-09-30",
+        "source_dates": [
+          "2026-10-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 186.41000366210938,
+        "open": 194.63999938964844,
+        "high": 200.35000610351562,
+        "low": 180.80999755859375,
+        "close": 183.0,
+        "written": [
+          202.5
+        ],
+        "controls": [
+          205.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "CONY",
+          "ULTI"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          15215.0
+        ],
+        "written_metrics": {
+          "distance": 0.10460811982679911,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.11801941724049131,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.013411297413692194,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "COIN",
+        "expiry": "2026-10-09",
+        "week": "2026-41",
+        "snapshot": "2026-10-08",
+        "prior_session": "2026-10-07",
+        "source_dates": [
+          "2026-10-08"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 178.4499969482422,
+        "open": 174.82000732421875,
+        "high": 183.61000061035156,
+        "low": 171.60000610351562,
+        "close": 179.38999938964844,
+        "written": [
+          187.5
+        ],
+        "controls": [
+          195.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "CONY"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          7275.0
+        ],
+        "written_metrics": {
+          "distance": 0.045446908092151975,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08747548824491772,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.04202858015276574,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-03-13",
+        "week": "2026-11",
+        "snapshot": "2026-03-12",
+        "prior_session": "2026-03-11",
+        "source_dates": [
+          "2026-03-12"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 138.3300018310547,
+        "open": 143.86000061035156,
+        "high": 147.25999450683594,
+        "low": 138.44000244140625,
+        "close": 139.6699981689453,
+        "written": [
+          147.0,
+          148.0
+        ],
+        "controls": [
+          149.0,
+          150.0
+        ],
+        "step": 0.5,
+        "unmatched": 4,
+        "funds": [
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          26990.0,
+          14475.0
+        ],
+        "written_metrics": {
+          "distance": 0.052989241191559955,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.06744742071535294,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.014458179523792983,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-03-20",
+        "week": "2026-12",
+        "snapshot": "2026-03-19",
+        "prior_session": "2026-03-18",
+        "source_dates": [
+          "2026-03-19"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 140.55999755859375,
+        "open": 139.47000122070312,
+        "high": 139.69000244140625,
+        "low": 134.1300048828125,
+        "close": 135.66000366210938,
+        "written": [
+          141.0,
+          150.0,
+          148.0
+        ],
+        "controls": [
+          147.0,
+          149.0,
+          152.5
+        ],
+        "step": 0.5,
+        "unmatched": 4,
+        "funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          15000.0,
+          13540.0,
+          4675.0
+        ],
+        "written_metrics": {
+          "distance": 0.03799086817474223,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.0806772661842388,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.04268639800949657,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-04-02",
+        "week": "2026-14",
+        "snapshot": "2026-04-01",
+        "prior_session": "2026-03-31",
+        "source_dates": [
+          "2026-04-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 124.80000305175781,
+        "open": 119.80000305175781,
+        "high": 122.6500015258789,
+        "low": 116.4000015258789,
+        "close": 119.83000183105469,
+        "written": [
+          130.0
+        ],
+        "controls": [
+          129.0
+        ],
+        "step": 1.0,
+        "unmatched": 1,
+        "funds": [
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          21540.0
+        ],
+        "written_metrics": {
+          "distance": 0.0814903679507728,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.07347754763389129,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.008012820316881511,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-04-10",
+        "week": "2026-15",
+        "snapshot": "2026-04-09",
+        "prior_session": "2026-04-08",
+        "source_dates": [
+          "2026-04-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 128.3000030517578,
+        "open": 130.0500030517578,
+        "high": 132.27999877929688,
+        "low": 127.4000015258789,
+        "close": 128.63999938964844,
+        "written": [
+          129.0,
+          130.0
+        ],
+        "controls": [
+          131.0,
+          132.0
+        ],
+        "step": 1.0,
+        "unmatched": 5,
+        "funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          15500.0,
+          9685.0
+        ],
+        "written_metrics": {
+          "distance": 0.0028059283070034986,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.018394392472457766,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": -0.015588464165454268,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-04-24",
+        "week": "2026-17",
+        "snapshot": "2026-04-23",
+        "prior_session": "2026-04-22",
+        "source_dates": [
+          "2026-04-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 179.36000061035156,
+        "open": 176.8800048828125,
+        "high": 177.27999877929688,
+        "low": 169.00999450683594,
+        "close": 171.02000427246094,
+        "written": [
+          180.0,
+          170.0,
+          160.0,
+          172.5,
+          182.5
+        ],
+        "controls": [
+          185.0,
+          165.0,
+          152.5,
+          177.5,
+          187.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          32000.0,
+          17300.0,
+          9550.0,
+          5000.0,
+          5000.0
+        ],
+        "written_metrics": {
+          "distance": 0.005686910509533467,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.4
+        },
+        "control_metrics": {
+          "distance": 0.03356380604357279,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.027876895534039325,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.4
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-05-01",
+        "week": "2026-18",
+        "snapshot": "2026-04-30",
+        "prior_session": "2026-04-29",
+        "source_dates": [
+          "2026-04-30"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 158.19000244140625,
+        "open": 170.8000030517578,
+        "high": 180.3800048828125,
+        "low": 169.42999267578125,
+        "close": 177.1699981689453,
+        "written": [
+          167.5
+        ],
+        "controls": [
+          170.0
+        ],
+        "step": 2.5,
+        "unmatched": 5,
+        "funds": [
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2500.0
+        ],
+        "written_metrics": {
+          "distance": 0.06112900954361569,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.04532522952328222,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.015803780020333474,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -1.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-05-08",
+        "week": "2026-19",
+        "snapshot": "2026-05-07",
+        "prior_session": "2026-05-06",
+        "source_dates": [
+          "2026-05-07"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 186.82000732421875,
+        "open": 178.67999267578125,
+        "high": 187.77000427246094,
+        "low": 177.60000610351562,
+        "close": 187.58999633789062,
+        "written": [
+          180.0,
+          170.0,
+          192.5
+        ],
+        "controls": [
+          177.5,
+          175.0,
+          190.0
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          23000.0,
+          11200.0,
+          7500.0
+        ],
+        "written_metrics": {
+          "distance": 0.026282001229066744,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.3333333333333333
+        },
+        "control_metrics": {
+          "distance": 0.012900136857006481,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.013381864372060263,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.3333333333333333
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-05-22",
+        "week": "2026-21",
+        "snapshot": "2026-05-21",
+        "prior_session": "2026-05-20",
+        "source_dates": [
+          "2026-05-21"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 165.80999755859375,
+        "open": 164.08999633789062,
+        "high": 165.66000366210938,
+        "low": 159.24000549316406,
+        "close": 159.88999938964844,
+        "written": [
+          180.0,
+          182.5
+        ],
+        "controls": [
+          177.5,
+          185.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          29175.0,
+          25445.0
+        ],
+        "written_metrics": {
+          "distance": 0.12128340212564753,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.10620590356216947,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.015077498563478064,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-05-29",
+        "week": "2026-22",
+        "snapshot": "2026-05-28",
+        "prior_session": "2026-05-27",
+        "source_dates": [
+          "2026-05-28"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 154.1999969482422,
+        "open": 149.92999267578125,
+        "high": 162.05999755859375,
+        "low": 148.1999969482422,
+        "close": 159.08999633789062,
+        "written": [
+          170.0
+        ],
+        "controls": [
+          172.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          44040.0
+        ],
+        "written_metrics": {
+          "distance": 0.07075229492884724,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08696500601495144,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.016212711086104198,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-06-18",
+        "week": "2026-25",
+        "snapshot": "2026-06-17",
+        "prior_session": "2026-06-16",
+        "source_dates": [
+          "2026-06-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 122.80999755859375,
+        "open": 117.63999938964844,
+        "high": 117.75,
+        "low": 107.8499984741211,
+        "close": 112.52999877929688,
+        "written": [
+          132.0,
+          127.0,
+          128.0,
+          122.0
+        ],
+        "controls": [
+          131.0,
+          125.0,
+          124.0,
+          120.0
+        ],
+        "step": 1.0,
+        "unmatched": 2,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          16050.0,
+          15375.0,
+          11500.0,
+          9029.0
+        ],
+        "written_metrics": {
+          "distance": 0.07711099592022141,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.060825676811361556,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.016285319108859858,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-07-02",
+        "week": "2026-27",
+        "snapshot": "2026-07-01",
+        "prior_session": "2026-06-30",
+        "source_dates": [
+          "2026-07-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 86.93000030517578,
+        "open": 99.8499984741211,
+        "high": 104.11000061035156,
+        "low": 97.56999969482422,
+        "close": 100.7699966430664,
+        "written": [
+          89.0
+        ],
+        "controls": [
+          91.0
+        ],
+        "step": 1.0,
+        "unmatched": 5,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          11785.0
+        ],
+        "written_metrics": {
+          "distance": 0.135396256778405,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.1123892397189455,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.023007017059459497,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-07-10",
+        "week": "2026-28",
+        "snapshot": "2026-07-09",
+        "prior_session": "2026-07-08",
+        "source_dates": [
+          "2026-07-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 93.87000274658203,
+        "open": 98.76000213623047,
+        "high": 100.12000274658203,
+        "low": 93.3499984741211,
+        "close": 94.63999938964844,
+        "written": [
+          105.0,
+          98.0
+        ],
+        "controls": [
+          104.0,
+          97.0
+        ],
+        "step": 0.5,
+        "unmatched": 8,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          12715.0,
+          3000.0
+        ],
+        "written_metrics": {
+          "distance": 0.03579418889996683,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.02514115842440938,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "difference": {
+          "distance": 0.010653030475557448,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-07-24",
+        "week": "2026-30",
+        "snapshot": "2026-07-23",
+        "prior_session": "2026-07-22",
+        "source_dates": [
+          "2026-07-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 100.01000213623047,
+        "open": 93.37000274658203,
+        "high": 93.68000030517578,
+        "low": 89.76000213623047,
+        "close": 91.66999816894531,
+        "written": [
+          101.0,
+          96.5,
+          98.0
+        ],
+        "controls": [
+          102.0,
+          96.0,
+          100.0
+        ],
+        "step": 0.5,
+        "unmatched": 3,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          29040.0,
+          15000.0,
+          13874.0
+        ],
+        "written_metrics": {
+          "distance": 0.048295187760074354,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.043295687816869516,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.004999499943204838,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-08-07",
+        "week": "2026-32",
+        "snapshot": "2026-08-06",
+        "prior_session": "2026-08-05",
+        "source_dates": [
+          "2026-08-06"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 98.37000274658203,
+        "open": 101.33999633789062,
+        "high": 105.5,
+        "low": 96.7699966430664,
+        "close": 100.01000213623047,
+        "written": [
+          100.0,
+          99.0
+        ],
+        "controls": [
+          101.0,
+          98.5
+        ],
+        "step": 0.5,
+        "unmatched": 5,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4700.0,
+          3287.0
+        ],
+        "written_metrics": {
+          "distance": 0.00010167872269187554,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.010064021918551077,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": -0.0099623431958592,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-08-21",
+        "week": "2026-34",
+        "snapshot": "2026-08-20",
+        "prior_session": "2026-08-19",
+        "source_dates": [
+          "2026-08-20"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 104.25,
+        "open": 119.69000244140625,
+        "high": 121.91000366210938,
+        "low": 115.80000305175781,
+        "close": 119.25,
+        "written": [
+          97.5,
+          105.0,
+          100.0
+        ],
+        "controls": [
+          98.5,
+          106.0,
+          101.0
+        ],
+        "step": 0.5,
+        "unmatched": 6,
+        "funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          13000.0,
+          7950.0,
+          2500.0
+        ],
+        "written_metrics": {
+          "distance": 0.1366906474820144,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.12709832134292565,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.009592326139088753,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-08-28",
+        "week": "2026-35",
+        "snapshot": "2026-08-27",
+        "prior_session": "2026-08-26",
+        "source_dates": [
+          "2026-08-27"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 123.19000244140625,
+        "open": 134.0,
+        "high": 135.97000122070312,
+        "low": 126.33999633789062,
+        "close": 127.30999755859375,
+        "written": [
+          115.0,
+          124.0,
+          126.0,
+          122.0
+        ],
+        "controls": [
+          111.0,
+          128.0,
+          129.0,
+          121.0
+        ],
+        "step": 1.0,
+        "unmatched": 4,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          17325.0,
+          14300.0,
+          6500.0,
+          5390.0
+        ],
+        "written_metrics": {
+          "distance": 0.010633960001882731,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.0056011236929266305,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "difference": {
+          "distance": 0.005032836308956101,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -0.5
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-09-04",
+        "week": "2026-36",
+        "snapshot": "2026-09-03",
+        "prior_session": "2026-09-02",
+        "source_dates": [
+          "2026-09-03"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 123.19000244140625,
+        "open": 137.35000610351562,
+        "high": 144.39999389648438,
+        "low": 137.07000732421875,
+        "close": 142.8000030517578,
+        "written": [
+          136.0
+        ],
+        "controls": [
+          137.0
+        ],
+        "step": 0.5,
+        "unmatched": 6,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          13340.0
+        ],
+        "written_metrics": {
+          "distance": 0.05519930933512358,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.0470817674877189,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.00811754184740468,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-09-11",
+        "week": "2026-37",
+        "snapshot": "2026-09-10",
+        "prior_session": "2026-09-09",
+        "source_dates": [
+          "2026-09-10"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 132.6999969482422,
+        "open": 130.6699981689453,
+        "high": 137.88999938964844,
+        "low": 129.27999877929688,
+        "close": 130.97000122070312,
+        "written": [
+          145.0,
+          147.0,
+          146.0
+        ],
+        "controls": [
+          141.0,
+          148.0,
+          149.0
+        ],
+        "step": 0.5,
+        "unmatched": 3,
+        "funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          21625.0,
+          13500.0,
+          2500.0
+        ],
+        "written_metrics": {
+          "distance": 0.10572719745252958,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.07558401665381302,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.030143180798716557,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-09-18",
+        "week": "2026-38",
+        "snapshot": "2026-09-17",
+        "prior_session": "2026-09-16",
+        "source_dates": [
+          "2026-09-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 126.18000030517578,
+        "open": 136.5800018310547,
+        "high": 154.02000427246094,
+        "low": 136.17999267578125,
+        "close": 153.9199981689453,
+        "written": [
+          139.0,
+          135.0,
+          140.0
+        ],
+        "controls": [
+          141.0,
+          134.0,
+          142.0
+        ],
+        "step": 1.0,
+        "unmatched": 2,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          18400.0,
+          14450.0,
+          13840.0
+        ],
+        "written_metrics": {
+          "distance": 0.11031857770866028,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.6666666666666666
+        },
+        "control_metrics": {
+          "distance": 0.09446820526324223,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.6666666666666666
+        },
+        "difference": {
+          "distance": 0.01585037244541805,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-09-25",
+        "week": "2026-39",
+        "snapshot": "2026-09-24",
+        "prior_session": "2026-09-23",
+        "source_dates": [
+          "2026-09-24"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 162.1999969482422,
+        "open": 162.83999633789062,
+        "high": 162.86000061035156,
+        "low": 156.77999877929688,
+        "close": 158.61000061035156,
+        "written": [
+          142.0,
+          150.0,
+          170.0
+        ],
+        "controls": [
+          141.0,
+          148.0,
+          165.0
+        ],
+        "step": 0.5,
+        "unmatched": 7,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "MSTW",
+          "MSTY",
+          "ULTI",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          10000.0,
+          8719.0,
+          3000.0
+        ],
+        "written_metrics": {
+          "distance": 0.05308261881841467,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03939580462314977,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.0136868141952649,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "expiry": "2026-10-09",
+        "week": "2026-41",
+        "snapshot": "2026-10-08",
+        "prior_session": "2026-10-07",
+        "source_dates": [
+          "2026-10-08"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 153.3699951171875,
+        "open": 154.22000122070312,
+        "high": 158.11000061035156,
+        "low": 150.5,
+        "close": 154.33999633789062,
+        "written": [
+          165.0,
+          170.0
+        ],
+        "controls": [
+          167.5,
+          172.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "MSTW",
+          "MSTY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          14500.0,
+          6975.0
+        ],
+        "written_metrics": {
+          "distance": 0.06950514443170087,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08580559484307235,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.016300450411371473,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-03-13",
+        "week": "2026-11",
+        "snapshot": "2026-03-12",
+        "prior_session": "2026-03-11",
+        "source_dates": [
+          "2026-03-12"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 186.02999877929688,
+        "open": 184.9199981689453,
+        "high": 186.08999633789062,
+        "low": 179.94000244140625,
+        "close": 180.25,
+        "written": [
+          187.5
+        ],
+        "controls": [
+          192.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          31814.0
+        ],
+        "written_metrics": {
+          "distance": 0.038972209039259784,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.06584959458357688,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.026877385544317095,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-03-27",
+        "week": "2026-13",
+        "snapshot": "2026-03-26",
+        "prior_session": "2026-03-25",
+        "source_dates": [
+          "2026-03-26"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 178.67999267578125,
+        "open": 170.0,
+        "high": 170.97000122070312,
+        "low": 167.00999450683594,
+        "close": 167.52000427246094,
+        "written": [
+          180.0,
+          182.5
+        ],
+        "controls": [
+          185.0,
+          187.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "NVDY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          44110.0,
+          25340.0
+        ],
+        "written_metrics": {
+          "distance": 0.06984551286715289,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.09782850035849787,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.02798298749134498,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-04-02",
+        "week": "2026-14",
+        "snapshot": "2026-04-01",
+        "prior_session": "2026-03-31",
+        "source_dates": [
+          "2026-04-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 174.39999389648438,
+        "open": 172.17999267578125,
+        "high": 177.49000549316406,
+        "low": 171.3699951171875,
+        "close": 177.38999938964844,
+        "written": [
+          177.5,
+          175.0
+        ],
+        "controls": [
+          180.0,
+          182.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          17940.0,
+          12500.0
+        ],
+        "written_metrics": {
+          "distance": 0.0006307374667504501,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.014965600353751938,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.014334862887001488,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.5
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-04-10",
+        "week": "2026-15",
+        "snapshot": "2026-04-09",
+        "prior_session": "2026-04-08",
+        "source_dates": [
+          "2026-04-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 182.0800018310547,
+        "open": 184.30999755859375,
+        "high": 190.0,
+        "low": 184.3000030517578,
+        "close": 188.6300048828125,
+        "written": [
+          177.5
+        ],
+        "controls": [
+          180.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          46010.0
+        ],
+        "written_metrics": {
+          "distance": 0.06112700335503962,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.047396775022113424,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.013730228332926198,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-04-24",
+        "week": "2026-17",
+        "snapshot": "2026-04-23",
+        "prior_session": "2026-04-22",
+        "source_dates": [
+          "2026-04-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 202.5,
+        "open": 199.9600067138672,
+        "high": 210.9499969482422,
+        "low": 199.80999755859375,
+        "close": 208.27000427246094,
+        "written": [
+          202.5
+        ],
+        "controls": [
+          205.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          50810.0
+        ],
+        "written_metrics": {
+          "distance": 0.028493848259066357,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.01614816924672068,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.012345679012345678,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-05-01",
+        "week": "2026-18",
+        "snapshot": "2026-04-30",
+        "prior_session": "2026-04-29",
+        "source_dates": [
+          "2026-04-30"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 209.25,
+        "open": 201.27999877929688,
+        "high": 203.0,
+        "low": 197.1199951171875,
+        "close": 198.4499969482422,
+        "written": [
+          212.5
+        ],
+        "controls": [
+          210.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          63150.0
+        ],
+        "written_metrics": {
+          "distance": 0.06714457850302419,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.05519714720075418,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.011947431302270009,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-05-22",
+        "week": "2026-21",
+        "snapshot": "2026-05-21",
+        "prior_session": "2026-05-20",
+        "source_dates": [
+          "2026-05-21"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 223.47000122070312,
+        "open": 220.89999389648438,
+        "high": 221.00999450683594,
+        "low": 214.8000030517578,
+        "close": 215.3300018310547,
+        "written": [
+          240.0,
+          237.5
+        ],
+        "controls": [
+          242.5,
+          245.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          38940.0,
+          22860.0
+        ],
+        "written_metrics": {
+          "distance": 0.0992079386398258,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.12158230644171214,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.02237436780188634,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-05-29",
+        "week": "2026-22",
+        "snapshot": "2026-05-28",
+        "prior_session": "2026-05-27",
+        "source_dates": [
+          "2026-05-28"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 212.60000610351562,
+        "open": 214.5800018310547,
+        "high": 217.86000061035156,
+        "low": 211.1300048828125,
+        "close": 211.13999938964844,
+        "written": [
+          225.0
+        ],
+        "controls": [
+          227.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "EGGS",
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "EGGS",
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          3000.0
+        ],
+        "written_metrics": {
+          "distance": 0.06519285142260571,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.07695202323929297,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.011759171816687258,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-06-05",
+        "week": "2026-23",
+        "snapshot": "2026-06-04",
+        "prior_session": "2026-06-03",
+        "source_dates": [
+          "2026-06-04"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 214.75,
+        "open": 214.52999877929688,
+        "high": 214.8699951171875,
+        "low": 204.3300018310547,
+        "close": 205.10000610351562,
+        "written": [
+          217.5
+        ],
+        "controls": [
+          222.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          42050.0
+        ],
+        "written_metrics": {
+          "distance": 0.05774153153194121,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.08102441860993888,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.023282887077997666,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-06-12",
+        "week": "2026-24",
+        "snapshot": "2026-06-11",
+        "prior_session": "2026-06-10",
+        "source_dates": [
+          "2026-06-11"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 200.4199981689453,
+        "open": 204.86000061035156,
+        "high": 207.07000732421875,
+        "low": 203.44000244140625,
+        "close": 205.19000244140625,
+        "written": [
+          212.5
+        ],
+        "controls": [
+          220.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "NVDY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          24700.0
+        ],
+        "written_metrics": {
+          "distance": 0.03647339399949371,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.07389480936981932,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.03742141537032561,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-06-18",
+        "week": "2026-25",
+        "snapshot": "2026-06-17",
+        "prior_session": "2026-06-16",
+        "source_dates": [
+          "2026-06-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 207.41000366210938,
+        "open": 207.3300018310547,
+        "high": 211.38999938964844,
+        "low": 206.5,
+        "close": 210.69000244140625,
+        "written": [
+          207.5,
+          210.0
+        ],
+        "controls": [
+          215.0,
+          217.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          32700.0,
+          25400.0
+        ],
+        "written_metrics": {
+          "distance": 0.0033267558421643424,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.020780085253819993,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.01745332941165565,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-07-02",
+        "week": "2026-27",
+        "snapshot": "2026-07-01",
+        "prior_session": "2026-06-30",
+        "source_dates": [
+          "2026-07-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 200.08999633789062,
+        "open": 197.13999938964844,
+        "high": 200.05999755859375,
+        "low": 192.35000610351562,
+        "close": 194.8300018310547,
+        "written": [
+          202.5
+        ],
+        "controls": [
+          207.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          36900.0
+        ],
+        "written_metrics": {
+          "distance": 0.038332741812804265,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.06332149733037913,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.024988755517574866,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-07-10",
+        "week": "2026-28",
+        "snapshot": "2026-07-09",
+        "prior_session": "2026-07-08",
+        "source_dates": [
+          "2026-07-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 204.1199951171875,
+        "open": 202.0,
+        "high": 211.0,
+        "low": 201.9199981689453,
+        "close": 210.9600067138672,
+        "written": [
+          200.0,
+          207.5
+        ],
+        "controls": [
+          202.5,
+          212.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          32900.0,
+          13000.0
+        ],
+        "written_metrics": {
+          "distance": 0.016950846544361124,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.007544548907365423,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "difference": {
+          "distance": 0.0094062976369957,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-07-17",
+        "week": "2026-29",
+        "snapshot": "2026-07-16",
+        "prior_session": "2026-07-15",
+        "source_dates": [
+          "2026-07-16"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 212.5,
+        "open": 202.63999938964844,
+        "high": 206.64999389648438,
+        "low": 197.97000122070312,
+        "close": 202.80999755859375,
+        "written": [
+          212.5
+        ],
+        "controls": [
+          215.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          8000.0
+        ],
+        "written_metrics": {
+          "distance": 0.04560001148897059,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.05736471737132353,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.011764705882352941,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-07-31",
+        "week": "2026-31",
+        "snapshot": "2026-07-30",
+        "prior_session": "2026-07-29",
+        "source_dates": [
+          "2026-07-30"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 190.00999450683594,
+        "open": 198.44000244140625,
+        "high": 202.0,
+        "low": 194.9499969482422,
+        "close": 200.75,
+        "written": [
+          202.5,
+          200.0
+        ],
+        "controls": [
+          205.0,
+          207.5
+        ],
+        "step": 2.5,
+        "unmatched": 0,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          8942.0,
+          1200.0
+        ],
+        "written_metrics": {
+          "distance": 0.003947160789865806,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.022367244475906232,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.018420083686040426,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.5
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-08-07",
+        "week": "2026-32",
+        "snapshot": "2026-08-06",
+        "prior_session": "2026-08-05",
+        "source_dates": [
+          "2026-08-06"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 219.22000122070312,
+        "open": 221.5399932861328,
+        "high": 224.75999450683594,
+        "low": 220.66000366210938,
+        "close": 223.9600067138672,
+        "written": [
+          200.0,
+          202.5,
+          217.5
+        ],
+        "controls": [
+          205.0,
+          207.5,
+          210.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          29700.0,
+          21600.0,
+          9400.0
+        ],
+        "written_metrics": {
+          "distance": 0.029468144685226398,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.06368035141014682,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.03421220672492042,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-08-28",
+        "week": "2026-35",
+        "snapshot": "2026-08-27",
+        "prior_session": "2026-08-26",
+        "source_dates": [
+          "2026-08-27"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 209.66000366210938,
+        "open": 227.36000061035156,
+        "high": 229.25999450683594,
+        "low": 216.80999755859375,
+        "close": 217.5500030517578,
+        "written": [
+          222.5,
+          225.0
+        ],
+        "controls": [
+          227.5,
+          230.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          31400.0,
+          14942.0
+        ],
+        "written_metrics": {
+          "distance": 0.023609638756945092,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.04745777341622928,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "difference": {
+          "distance": -0.02384813465928419,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-09-04",
+        "week": "2026-36",
+        "snapshot": "2026-09-03",
+        "prior_session": "2026-09-02",
+        "source_dates": [
+          "2026-09-03"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 224.41000366210938,
+        "open": 231.08999633789062,
+        "high": 234.75999450683594,
+        "low": 229.6300048828125,
+        "close": 230.36000061035156,
+        "written": [
+          230.0
+        ],
+        "controls": [
+          227.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          9900.0
+        ],
+        "written_metrics": {
+          "distance": 0.001604209279785984,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.01274453261298378,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.011140323333197796,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 1.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-09-18",
+        "week": "2026-38",
+        "snapshot": "2026-09-17",
+        "prior_session": "2026-09-16",
+        "source_dates": [
+          "2026-09-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 213.89999389648438,
+        "open": 219.35000610351562,
+        "high": 222.72999572753906,
+        "low": 218.02999877929688,
+        "close": 222.27000427246094,
+        "written": [
+          225.0
+        ],
+        "controls": [
+          227.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CHPY",
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [
+          "CHPY",
+          "KQQQ",
+          "NVDY",
+          "ULTY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          10190.0
+        ],
+        "written_metrics": {
+          "distance": 0.012762953742112903,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.024450658610444317,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.011687704868331414,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "expiry": "2026-10-09",
+        "week": "2026-41",
+        "snapshot": "2026-10-08",
+        "prior_session": "2026-10-07",
+        "source_dates": [
+          "2026-10-08"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 237.47000122070312,
+        "open": 233.83999633789062,
+        "high": 233.9199981689453,
+        "low": 229.11000061035156,
+        "close": 229.27999877929688,
+        "written": [
+          240.0
+        ],
+        "controls": [
+          242.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "CHPY",
+          "NVDY",
+          "ULTY"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          49942.0
+        ],
+        "written_metrics": {
+          "distance": 0.04514254922978681,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.055670194773008566,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.010527645543221754,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-03-13",
+        "week": "2026-11",
+        "snapshot": "2026-03-12",
+        "prior_session": "2026-03-11",
+        "source_dates": [
+          "2026-03-12"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 407.82000732421875,
+        "open": 399.1700134277344,
+        "high": 400.20001220703125,
+        "low": 389.95001220703125,
+        "close": 391.20001220703125,
+        "written": [
+          410.0
+        ],
+        "controls": [
+          417.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          5550.0
+        ],
+        "written_metrics": {
+          "distance": 0.04609873830447626,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.06448920435642123,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.018390466051944977,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-03-27",
+        "week": "2026-13",
+        "snapshot": "2026-03-26",
+        "prior_session": "2026-03-25",
+        "source_dates": [
+          "2026-03-26"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 385.95001220703125,
+        "open": 369.69000244140625,
+        "high": 369.8599853515625,
+        "low": 359.4700012207031,
+        "close": 361.8299865722656,
+        "written": [
+          392.5,
+          390.0,
+          395.0
+        ],
+        "controls": [
+          397.5,
+          402.5,
+          405.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          9000.0,
+          7408.0,
+          4000.0
+        ],
+        "written_metrics": {
+          "distance": 0.07298876159284436,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.09242132996384068,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.019432568370996328,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-04-02",
+        "week": "2026-14",
+        "snapshot": "2026-04-01",
+        "prior_session": "2026-03-31",
+        "source_dates": [
+          "2026-04-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 371.75,
+        "open": 364.20001220703125,
+        "high": 370.2799987792969,
+        "low": 359.0299987792969,
+        "close": 360.5899963378906,
+        "written": [
+          385.0,
+          375.0
+        ],
+        "controls": [
+          387.5,
+          390.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          6000.0,
+          4033.0
+        ],
+        "written_metrics": {
+          "distance": 0.03876261913143073,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.07238736694582212,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.03362474781439139,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-04-10",
+        "week": "2026-15",
+        "snapshot": "2026-04-09",
+        "prior_session": "2026-04-08",
+        "source_dates": [
+          "2026-04-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 343.25,
+        "open": 346.2900085449219,
+        "high": 350.3599853515625,
+        "low": 342.739990234375,
+        "close": 348.95001220703125,
+        "written": [
+          367.5
+        ],
+        "controls": [
+          370.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2611.0
+        ],
+        "written_metrics": {
+          "distance": 0.05404220769983613,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.061325528894300804,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.007283321194464676,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-04-24",
+        "week": "2026-17",
+        "snapshot": "2026-04-23",
+        "prior_session": "2026-04-22",
+        "source_dates": [
+          "2026-04-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 387.510009765625,
+        "open": 373.5,
+        "high": 382.760009765625,
+        "low": 370.7300109863281,
+        "close": 376.29998779296875,
+        "written": [
+          410.0,
+          407.5,
+          412.5
+        ],
+        "controls": [
+          415.0,
+          420.0,
+          422.5
+        ],
+        "step": 2.5,
+        "unmatched": 4,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4014.0,
+          2000.0,
+          2000.0
+        ],
+        "written_metrics": {
+          "distance": 0.08051408072246118,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.09986841947757145,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.01935433875511028,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-05-08",
+        "week": "2026-19",
+        "snapshot": "2026-05-07",
+        "prior_session": "2026-05-06",
+        "source_dates": [
+          "2026-05-07"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 398.7300109863281,
+        "open": 416.4800109863281,
+        "high": 431.20001220703125,
+        "low": 416.3900146484375,
+        "close": 428.3500061035156,
+        "written": [
+          400.0,
+          402.5,
+          405.0
+        ],
+        "controls": [
+          407.5,
+          410.0,
+          412.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4000.0,
+          4000.0,
+          1814.0
+        ],
+        "written_metrics": {
+          "distance": 0.058560944649627245,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03975122430415477,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.018809720345472472,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-05-22",
+        "week": "2026-21",
+        "snapshot": "2026-05-21",
+        "prior_session": "2026-05-20",
+        "source_dates": [
+          "2026-05-21"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 417.260009765625,
+        "open": 422.6700134277344,
+        "high": 431.510009765625,
+        "low": 420.510009765625,
+        "close": 426.010009765625,
+        "written": [
+          435.0
+        ],
+        "controls": [
+          427.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "KQQQ",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          9808.0
+        ],
+        "written_metrics": {
+          "distance": 0.021545295556659454,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.00357089152926955,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.017974404027389902,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -1.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-05-29",
+        "week": "2026-22",
+        "snapshot": "2026-05-28",
+        "prior_session": "2026-05-27",
+        "source_dates": [
+          "2026-05-28"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 440.3599853515625,
+        "open": 439.8500061035156,
+        "high": 441.07000732421875,
+        "low": 428.1400146484375,
+        "close": 435.7900085449219,
+        "written": [
+          432.5,
+          435.0,
+          442.5
+        ],
+        "controls": [
+          427.5,
+          420.0,
+          445.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          6658.0,
+          4000.0,
+          4000.0
+        ],
+        "written_metrics": {
+          "distance": 0.001794006202201069,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.6666666666666666
+        },
+        "control_metrics": {
+          "distance": 0.018825526434477297,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.017031520232276227,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.6666666666666666
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-06-05",
+        "week": "2026-23",
+        "snapshot": "2026-06-04",
+        "prior_session": "2026-06-03",
+        "source_dates": [
+          "2026-06-04"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 423.70001220703125,
+        "open": 420.5,
+        "high": 424.67999267578125,
+        "low": 388.5899963378906,
+        "close": 391.0,
+        "written": [
+          452.5
+        ],
+        "controls": [
+          455.0
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          8358.0
+        ],
+        "written_metrics": {
+          "distance": 0.1451498660093251,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.15105026706661476,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.005900401057289645,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-06-18",
+        "week": "2026-25",
+        "snapshot": "2026-06-17",
+        "prior_session": "2026-06-16",
+        "source_dates": [
+          "2026-06-17"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 404.6600036621094,
+        "open": 398.1000061035156,
+        "high": 402.5199890136719,
+        "low": 384.70001220703125,
+        "close": 400.489990234375,
+        "written": [
+          410.0
+        ],
+        "controls": [
+          412.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4819.0
+        ],
+        "written_metrics": {
+          "distance": 0.02350123481332701,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.02967926075455024,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.0061780259412232315,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-07-02",
+        "week": "2026-27",
+        "snapshot": "2026-07-01",
+        "prior_session": "2026-06-30",
+        "source_dates": [
+          "2026-07-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 420.6000061035156,
+        "open": 428.010009765625,
+        "high": 432.3500061035156,
+        "low": 389.29998779296875,
+        "close": 393.45001220703125,
+        "written": [
+          385.0,
+          382.5,
+          425.0,
+          420.0
+        ],
+        "controls": [
+          392.5,
+          397.5,
+          435.0,
+          407.5
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          10228.0,
+          4000.0,
+          4000.0,
+          1511.0
+        ],
+        "written_metrics": {
+          "distance": 0.020090375854515757,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.5
+        },
+        "control_metrics": {
+          "distance": 0.0022587070690565764,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.75
+        },
+        "difference": {
+          "distance": 0.017831668785459182,
+          "hit_one_pct": -1.0,
+          "hit_half_step": -1.0,
+          "range_straddle": -0.25
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-07-10",
+        "week": "2026-28",
+        "snapshot": "2026-07-09",
+        "prior_session": "2026-07-08",
+        "source_dates": [
+          "2026-07-09"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 394.05999755859375,
+        "open": 410.489990234375,
+        "high": 413.1600036621094,
+        "low": 402.80999755859375,
+        "close": 407.760009765625,
+        "written": [
+          422.5
+        ],
+        "controls": [
+          420.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2000.0
+        ],
+        "written_metrics": {
+          "distance": 0.03740544669770312,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.0310612351170078,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.006344211580695321,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-07-17",
+        "week": "2026-29",
+        "snapshot": "2026-07-16",
+        "prior_session": "2026-07-15",
+        "source_dates": [
+          "2026-07-16"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 394.4599914550781,
+        "open": 381.7799987792969,
+        "high": 385.69000244140625,
+        "low": 377.2200012207031,
+        "close": 380.8399963378906,
+        "written": [
+          402.5,
+          415.0,
+          420.0
+        ],
+        "controls": [
+          395.0,
+          417.5,
+          422.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4000.0,
+          1758.0,
+          1681.0
+        ],
+        "written_metrics": {
+          "distance": 0.054910521044758624,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.03589718594749284,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.019013335097265785,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-07-24",
+        "week": "2026-30",
+        "snapshot": "2026-07-23",
+        "prior_session": "2026-07-22",
+        "source_dates": [
+          "2026-07-23"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 374.010009765625,
+        "open": 320.7200012207031,
+        "high": 322.9599914550781,
+        "low": 306.510009765625,
+        "close": 313.0299987792969,
+        "written": [
+          395.0,
+          397.5,
+          400.0
+        ],
+        "controls": [
+          402.5,
+          405.0,
+          407.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2000.0,
+          2000.0,
+          2000.0
+        ],
+        "written_metrics": {
+          "distance": 0.21916526050217208,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.23921819973954678,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.020052939237374695,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-07-31",
+        "week": "2026-31",
+        "snapshot": "2026-07-30",
+        "prior_session": "2026-07-29",
+        "source_dates": [
+          "2026-07-30"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 298.32000732421875,
+        "open": 309.69000244140625,
+        "high": 315.5,
+        "low": 301.9700012207031,
+        "close": 311.2099914550781,
+        "written": [
+          315.0
+        ],
+        "controls": [
+          325.0
+        ],
+        "step": 2.5,
+        "unmatched": 0,
+        "funds": [
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          2440.0
+        ],
+        "written_metrics": {
+          "distance": 0.01270450674400405,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.04622555714117653,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.03352105039717248,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-08-07",
+        "week": "2026-32",
+        "snapshot": "2026-08-06",
+        "prior_session": "2026-08-05",
+        "source_dates": [
+          "2026-08-06"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 321.54998779296875,
+        "open": 322.3399963378906,
+        "high": 333.7300109863281,
+        "low": 321.25,
+        "close": 328.5799865722656,
+        "written": [
+          315.0,
+          325.0,
+          322.5
+        ],
+        "controls": [
+          312.5,
+          327.5,
+          330.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          8140.0,
+          4000.0,
+          1681.0
+        ],
+        "written_metrics": {
+          "distance": 0.01113353042504425,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.6666666666666666
+        },
+        "control_metrics": {
+          "distance": 0.003358689514119897,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.6666666666666666
+        },
+        "difference": {
+          "distance": 0.007774840910924353,
+          "hit_one_pct": -1.0,
+          "hit_half_step": -1.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-08-21",
+        "week": "2026-34",
+        "snapshot": "2026-08-20",
+        "prior_session": "2026-08-19",
+        "source_dates": [
+          "2026-08-20"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 351.1199951171875,
+        "open": 349.8800048828125,
+        "high": 366.5,
+        "low": 346.8999938964844,
+        "close": 362.8599853515625,
+        "written": [
+          352.5,
+          355.0
+        ],
+        "controls": [
+          357.5,
+          360.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          4000.0,
+          3700.0
+        ],
+        "written_metrics": {
+          "distance": 0.022385467819738387,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.00814532180261614,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.014240146017122247,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-08-28",
+        "week": "2026-35",
+        "snapshot": "2026-08-27",
+        "prior_session": "2026-08-26",
+        "source_dates": [
+          "2026-08-27"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 345.82000732421875,
+        "open": 357.1000061035156,
+        "high": 358.79998779296875,
+        "low": 345.20001220703125,
+        "close": 348.75,
+        "written": [
+          365.0,
+          367.5,
+          347.5
+        ],
+        "controls": [
+          370.0,
+          375.0,
+          360.0
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          8178.0,
+          4000.0,
+          3214.0
+        ],
+        "written_metrics": {
+          "distance": 0.00361459711273466,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.3333333333333333
+        },
+        "control_metrics": {
+          "distance": 0.03253137401461194,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.02891677690187728,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 1.0,
+          "range_straddle": 0.3333333333333333
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-09-04",
+        "week": "2026-36",
+        "snapshot": "2026-09-03",
+        "prior_session": "2026-09-02",
+        "source_dates": [
+          "2026-09-03"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 357.010009765625,
+        "open": 362.07000732421875,
+        "high": 364.69000244140625,
+        "low": 351.32000732421875,
+        "close": 354.0799865722656,
+        "written": [
+          360.0,
+          357.5,
+          362.5
+        ],
+        "controls": [
+          365.0,
+          370.0,
+          372.5
+        ],
+        "step": 2.5,
+        "unmatched": 1,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          7514.0,
+          6440.0,
+          1700.0
+        ],
+        "written_metrics": {
+          "distance": 0.00957960094726642,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "control_metrics": {
+          "distance": 0.030587415279765686,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.021007814332499264,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-09-11",
+        "week": "2026-37",
+        "snapshot": "2026-09-10",
+        "prior_session": "2026-09-09",
+        "source_dates": [
+          "2026-09-10"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 367.80999755859375,
+        "open": 364.20001220703125,
+        "high": 368.6600036621094,
+        "low": 361.6000061035156,
+        "close": 365.44000244140625,
+        "written": [
+          357.5
+        ],
+        "controls": [
+          367.5
+        ],
+        "step": 2.5,
+        "unmatched": 3,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "excluded_funds": [],
+        "written_contracts": [
+          6159.0
+        ],
+        "written_metrics": {
+          "distance": 0.021587239319511353,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.005600711161380499,
+          "hit_one_pct": 1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 1.0
+        },
+        "difference": {
+          "distance": 0.015986528158130855,
+          "hit_one_pct": -1.0,
+          "hit_half_step": 0.0,
+          "range_straddle": -1.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-10-02",
+        "week": "2026-40",
+        "snapshot": "2026-10-01",
+        "prior_session": "2026-09-30",
+        "source_dates": [
+          "2026-10-01"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 354.80999755859375,
+        "open": 360.0799865722656,
+        "high": 374.6000061035156,
+        "low": 359.4100036621094,
+        "close": 370.5899963378906,
+        "written": [
+          377.5
+        ],
+        "controls": [
+          380.0
+        ],
+        "step": 2.5,
+        "unmatched": 0,
+        "funds": [
+          "KQQQ",
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          7138.0
+        ],
+        "written_metrics": {
+          "distance": 0.019475222540673333,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.026521247222058324,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": -0.0070460246813849915,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "expiry": "2026-10-09",
+        "week": "2026-41",
+        "snapshot": "2026-10-08",
+        "prior_session": "2026-10-07",
+        "source_dates": [
+          "2026-10-08"
+        ],
+        "snapshot_calendar_lag": 1,
+        "prior_close": 377.80999755859375,
+        "open": 382.3800048828125,
+        "high": 388.55999755859375,
+        "low": 379.7099914550781,
+        "close": 382.70001220703125,
+        "written": [
+          372.5
+        ],
+        "controls": [
+          375.0
+        ],
+        "step": 2.5,
+        "unmatched": 2,
+        "funds": [
+          "SLTY",
+          "TSLY"
+        ],
+        "unknown_freshness_funds": [],
+        "excluded_funds": [],
+        "written_contracts": [
+          10709.0
+        ],
+        "written_metrics": {
+          "distance": 0.02699772973966723,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "control_metrics": {
+          "distance": 0.02038064703631108,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        },
+        "difference": {
+          "distance": 0.0066170827033561475,
+          "hit_one_pct": 0.0,
+          "hit_half_step": 0.0,
+          "range_straddle": 0.0
+        }
+      }
+    ]
   }
 }

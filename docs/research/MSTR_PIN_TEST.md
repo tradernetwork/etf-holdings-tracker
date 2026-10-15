@@ -85,8 +85,8 @@ MSTR finishes within1% on3/22 expiries for both sets. There is no consistent low
 ### Matching and data limitations that matter to the conclusion
 
 1. **Coverage/freshness dominates confidence.**75/80 matched observations include at least one relevant fund with unknown historical freshness metadata. They are not necessarily stale; the archive simply cannot attest freshness. The preregistered known-metadata-only rerun leaves just5 observations in2 weeks; pooled p=0.5. That is far too small for a conclusion.
-2. **Exposure lag.**Every matched case uses a file dated one calendar day before expiry. Under the prior-close publication convention that commonly means positions at the close two sessions before expiry. Funds can roll in between. The archive's date is not proof of actual trade time.
-3. **Sparse, selected controls.**All51 exclusions are no-matched-heavy-strike cases, combining no qualifying exposure and failed matching; no excluded expiry was silently assigned a zero outcome. Historical listing universes are unavailable. Controls are real contracts previously observed in fund holdings, but are often protective spread legs, and may have been written previously. Unobserved short exposure outside tracked funds is unknown.
+2. **Exposure lag.**Every matched case uses a file dated one calendar day before expiry. Under the prior-close publication convention that commonly means positions at the close two sessions before expiry. Funds can roll in between. The matching spot is the expiry-eve close, one session newer than the inferred portfolio effective date. It was available before expiry, so no expiry outcome enters selection, but this is not holdings-effective-time matching. The archive's date is not proof of actual trade time.
+3. **Sparse, selected controls.**All51 exclusions are no-matched-heavy-strike cases, combining no qualifying exposure and failed matching; no excluded expiry was silently assigned a zero outcome. Historical listing universes are unavailable. Controls are real contracts previously observed in fund holdings, but are often protective spread legs, and may have been written previously. The zero-short condition is evaluated only among freshness-eligible funds: a stale-excluded tracked fund could also have written a control strike. Thus “unwritten” is conditional on the eligible observed book, not every tracked or nationwide fund. Unobserved short exposure outside tracked funds is unknown.
 4. **Coarse matching leaves a baseline difference.**The5pp moneyness-bin rule is fixed in the preregistration, but it does not match exact moneyness. The post-run diagnostic below shows written strikes were already nearer the prior close. This is a diagnostic of design limitations, **not a newly chosen primary test**.
 
 | Symbol | Matched strike pairs | Unmatched heavy strikes within included expiries | Written-minus-control distance at prior close (pp) | Controls above written strike |
@@ -100,6 +100,19 @@ NVDA's1.108pp expiry advantage is preceded by a0.911pp prior-close advantage. Th
 
 5. **Actual fund coverage.**Relevant portfolios in the included matched snapshots contain CHPY, CONY, EGGS, KQQQ, MSTW, MSTY, NVDY, QDVO, SLTY, TSLY, ULTI and ULTY. That list includes long holders, not just writers of the matched strikes. Coverage grows during the archive; Builder's newly added funds have no retrospective history and are not backfilled into the test. No nationwide ETF exposure claim follows.
 6. **No historical OI or counterparties.**Absolute net-written quantities define exposures. There is no historical OI denominator, market-wide call wall, dealer gamma, options closing flow or causal instrument in this study.
+
+### Post-hoc timing diagnostic requested in review
+
+This is **not preregistered** and does not replace the primary test. Repeat the same matching with spot taken from the last trading session strictly before the snapshot file date (typically the inferred portfolio effective date). The script emits this as `posthoc_strict_spot`; its rows, baseline diagnostic and inference are included in the frozen result JSON.
+
+| Symbol | Matched N | Expiry distance difference pp | Two-sided p | Baseline distance difference pp |
+|---|---:|---:|---:|---:|
+| MSTR | 21 | +0.222 | 0.5843 | -0.247 |
+| TSLA | 22 | -0.514 | 0.1947 | -1.067 |
+| NVDA | 20 | -1.403 | 0.0011 | -1.624 |
+| COIN | 20 | -0.208 | 0.6798 | -0.312 |
+
+Pooled:83 observations /27 weeks, p=0.0574. NVDA now reaches20 observations and has a small p-value, but its written strikes already start **1.624pp closer** at spot, versus1.403pp closer at expiry. That is not evidence that expiry prices converged toward the written strikes. Matching design and controls remain the limiting factors; do not conceal this stronger-looking post-hoc association or promote it to the primary result.
 
 ### Prespecified descriptive sensitivities
 

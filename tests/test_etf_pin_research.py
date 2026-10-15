@@ -37,6 +37,10 @@ class PinResearchTests(unittest.TestCase):
         prices={'MSTR':{'2026-09-17':dict(open=100.,high=101.,low=99.,close=100.),'2026-09-18':dict(open=101.,high=105.,low=100.,close=102.)}}
         rows,_=pin.observations([first,future],prices,'2026-09-19')
         self.assertEqual(rows[0]['written'],[102.]);self.assertEqual(rows[0]['snapshot'],'2026-09-17')
+        prices['MSTR']['2026-09-16']=dict(open=105.,high=106.,low=104.,close=105.)
+        strict,_=pin.observations([first,future],prices,'2026-09-19',strict_spot=True)
+        self.assertEqual(strict[0]['prior_session'],'2026-09-16')
+        self.assertEqual(strict[0]['prior_close'],105.)
         carried=dict(first,flags={'MSTY':dict(flags['MSTY'],bad=True)})
         rows,excluded=pin.observations([carried],prices,'2026-09-19')
         self.assertEqual(rows,[]);self.assertEqual(excluded[0]['excluded_funds'],['MSTY'])
