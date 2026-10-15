@@ -13,6 +13,7 @@ The important limitation is timing: these are **reported position/OI comparisons
 - CHPY's and YRAM's 10/15 CSVs both mark MU shares at **$914.13**, exactly the Cboe chain's **previous-day close**, versus today's opening $871.25 and snapshot $921.305. That is strong evidence for Oct 14 valuation, not intraday Oct 15 valuation. The quantity snapshot is therefore most plausibly the prior-close disclosure, but old marks alone do not prove that no quantities were edited intraday.
 - The [ETF disclosure rule, 17 CFR 270.6c-11(c)(1)(i) and (c)(2)](https://www.ecfr.gov/current/title-17/chapter-II/part-270/section-270.6c-11) requires the pre-open disclosed portfolio underlying the next NAV calculation to be the prior-business-day portfolio. This supports the interpretation for transparent daily holdings; it is not issuer-specific attestation that this particular download was that pre-open file.
 - [Cboe's DataShop FAQ](https://datashop.cboe.com/faqs) identifies the OI convention as the previous night's OCC end-of-day value. Thus the Oct 15 chain normally carries Oct 14 OI. The JSON does not expose a separate OI date, so store that as inferred, alongside the actual chain timestamp.
+- The date inference above is **equity-mark based**. Option marks are unreconciled: CHPY C955 is $5.10 in the holdings file versus $6.50 chain previous close, C965 is $3.525 versus $4.55, and FEPI Nov20 C1020 is $22.60 versus $24.57. Different valuation conventions could explain this, but were not verified. Treat the percentage comparisons as **dates not verified**, not confirmed same-close ownership shares.
 - The archive's Oct 14 CHPY rows still show −645 C1065 / +645 C1095, plus a one-contract −C955/+C970 spread. The current CSV instead shows −646 C955/+646 C965. Those archives are retrieval/publication snapshots, **not execution timestamps**. Their diff cannot by itself settle the trade date.
 - If the 646-contract roll actually happened Oct 15, those contracts may not be in this morning's OI. In that case 55.07% is a mismatched-date comparison, **not an ownership share**. Intraday volume does not solve this: volume includes closes and repeated turnover. Tomorrow's OI change would be a consistency check, not unique trade attribution.
 
@@ -67,11 +68,11 @@ CHPY's earlier 1065/1095 spread from the Oct 14 archive gives 645/1,860 = 34.68%
 | MU expiry | Call OI | Put OI | Observed short calls | Observed long calls | Short / all call OI |
 |---|---:|---:|---:|---:|---:|
 | 2026-10-16 | 336,857 | 316,202 | 716 | 656 | 0.21% |
-| 2026-10-19 | 19,147 | 11,028 | 0 | 0 | 0.00% |
-| 2026-10-21 | 13,774 | 7,681 | 0 | 0 | 0.00% |
+| 2026-10-19 | 19,147 | 11,028 | 0 | 0 | none observed |
+| 2026-10-21 | 13,774 | 7,681 | 0 | 0 | none observed |
 | 2026-10-23 | 47,767 | 59,321 | 46 | 23 | 0.10% |
-| 2026-10-30 | 61,593 | 38,141 | 0 | 0 | 0.00% |
-| 2026-11-06 | 13,249 | 20,429 | 0 | 0 | 0.00% |
+| 2026-10-30 | 61,593 | 38,141 | 0 | 0 | none observed |
+| 2026-11-06 | 13,249 | 20,429 | 0 | 0 | none observed |
 | 2026-11-20 | 154,046 | 175,385 | 772 | 40 | 0.50% |
 
 ### Later strikes with disclosed positions
@@ -100,7 +101,7 @@ At Nov 20 C1010, AIPI and CEPI together report 199 shorts / 1,166 OI = **17.07%*
 
 | Issuer / funds screened | Finding for direct listed MU contracts | Coverage or source |
 |---|---|---|
-| YieldMax: all fund-page tickers exposed by current directory, plus tracked CSV funds | CHPY, SOXY, BIGY, MUY and YRAM confirmed; other retrieved funds no additional direct MU legs | [Directory](https://yieldmaxetfs.com/our-etfs/); 21 additional feeds attempted beyond initial universe, 20 succeeded; YSKH unavailable, so unknown |
+| YieldMax: all fund-page tickers exposed by current directory, plus tracked CSV funds | CHPY, SOXY, BIGY, MUY and YRAM confirmed; other retrieved funds no additional direct MU legs | [Directory](https://yieldmaxetfs.com/our-etfs/); 22 untracked feeds attempted including MUY beyond the tracked universe, 21 succeeded; YSKH unavailable, so unknown |
 | YMAX / YMAG | Fund-of-funds: do not count owned ETF shares as more option contracts | Direct issuer CSVs inspected. Count underlying fund's portfolio once; do not add look-through a second time |
 | Roundhill: 55 accounts in shared file | No direct MU options found; CHAT and DRAM hold MU equity; WeeklyPay wrappers do not establish dealer option positions | [Bulk CSV](https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_10142026.csv), rows dated 10/15; covers tracked and untracked accounts |
 | Kurv: current catalog CSVs | KYLD and KQQQ listed MU; KMEM only synthetic/FLEX MU in this capture | [Catalog](https://www.kurvinvest.com/etfs); all catalog ticker feeds retrieved; an extra guessed obsolete NVDP URL failed and is not treated as a live fund |
@@ -139,6 +140,8 @@ The set was chosen for income-fund relevance, not a claim of a ranked national �
 | AVGO | 2,086 / 222,670 | 0.94% | 2026-10-16 C375 | 1,864 / 7,183 | 25.95% | 4 |
 | NFLX | 4,976 / 315,995 | 1.57% | 2026-11-20 C77.5 | 7,002 / 12,011 | 58.30% | 3 |
 
+The largest percentages often come from a single frequently rolling weekly-write fund, such as MSTY. Those peaks are especially sensitive to whether the holdings and OI refer to the same close; they are not verified same-day ownership percentages.
+
 This is economically meaningful: MSTR's inspected short calls represent about16.26% of the entire Oct16 call OI; several single strikes exceed50%. It is also selective: MU is only0.213% across that whole expiry. “A huge fraction at one selected strike” and “a tiny fraction of the entire chain” can both be true. These are incomplete-coverage estimates, not a complete national ETF total. Missing funds may increase the observed short-side numerator, but stale timing may also make the current estimate too high; **not a mathematically guaranteed lower bound**.
 
 ## Product verdict and candidate additions
@@ -154,7 +157,7 @@ Market makers may be on the other side, or other funds/customers may be. Public 
 | **KMEM** | Medium | ≈$24.50M net holdings value; memory exposure useful, but its MU option exposure here is synthetic/FLEX only. Do not sell this as adding listed-MU OI coverage |
 | **MUIB** plus GOIB/MEIB/NVIB/PLIB/TSIB | Investigate | Issuer filings establish swap-led replication. Resolve daily holdings/AUM first; add for holdings visibility, not invented listed-option look-through |
 | **GraniteShares MUYY / wider YieldBOOST suite** | Separate chain universe | Public XLSX/XLS ingestion and leveraged-underlying root mapping needed; MUYY adds **MULL**, not MU, chain coverage |
-| Remaining live YieldMax CSV funds in manifest | Medium | 20 additional retrieved portfolios extend the15-underlying universe; screen AUM, launch/closure status and feed freshness before proposing each. YSKH remains unavailable |
+| Remaining live YieldMax CSV funds in manifest | Medium | 21 additional retrieved portfolios including MUY extend the15-underlying universe; screen AUM, launch/closure status and feed freshness before proposing each. YSKH remains unavailable |
 | Defiance / other live single-stock writers | Coverage backlog | First establish current portfolio files and real listed contracts; no guessed quantities or national coverage claim |
 
 ## Evidence and reproducibility
