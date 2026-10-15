@@ -126,3 +126,19 @@ def test_mcp_not_gzipped_or_cached():
     assert 'TickerTrace' in r.text
     assert 'content-encoding' not in r.headers
     assert 'max-age=300' not in r.headers.get('cache-control', '')
+
+
+def test_effectiveness_endpoint_is_memoised_per_as_of_date(monkeypatch):
+    """analyze_all_funds takes ~30s; the endpoint must compute it once per data date."""
+    from api import server
+
+    calls = []
+    monkeypatch.setattr(server, "analyze_all_funds", lambda: calls.append(1) or [{"fund": "X"}])
+    monkeypatch.setattr(server.data, "get_as_of_date", lambda: "2099-01-01")
+    server._EFF_CACHE.update(key=None, value=None)
+    assert server._all_effectiveness() == [{"fund": "X"}]
+    assert server._all_effectiveness() == [{"fund": "X"}]
+    assert len(calls) == 1
+    monkeypatch.setattr(server.data, "get_as_of_date", lambda: "2099-01-02")
+    server._all_effectiveness()
+    assert len(calls) == 2
