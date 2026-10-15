@@ -199,7 +199,7 @@ the README table whenever `FUNDS` changes.
 - **First Trust**: FTLS, WCME, WCMG, WCMI, CRPT, MMSC, EMLP (actively managed —
   long/short equity, multi-manager small cap, sub-advised international
   equity, energy infrastructure, crypto-adjacent equity)
-- **Kurv**: KYLD, KQQQ, TSLP (options-based income). TSLP (added 2026-10-15) holds only FLEX `2TSLA` legs plus T-bills
+- **Kurv**: KYLD, KQQQ, TSLP (options-based income). TSLP (added 2026-10-15) holds only FLEX `2TSLA` legs plus T-bills. Kurv NVDP and COIP do not exist: the host answers 403 for any missing ticker (ZZZZ too), and kurvinvest.com lists no such funds, so the earlier census guess was wrong, not a blocked feed
 - **YieldMax**: ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX,
   AMDY, AMZY, GOOY, GDXY, plus 25 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) plus NVIT (NVDA, ~$14M, listed calls + FLEX pair) and MSST (added 2026-10-15; MSTR Performance & Distribution Target 25, ~$5M, listed MSTR calls + a FLEX 2MSTR pair) (options income). CHPY is a real stock-picking
   semiconductor book that also writes calls; YMAX holds other YieldMax funds,
