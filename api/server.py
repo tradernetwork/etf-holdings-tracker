@@ -531,7 +531,7 @@ def get_ticker(request: Request, ticker: str):
     """Cross-fund ticker detail — who's buying/selling this?"""
     if not _TICKER_PATTERN.match(ticker):
         raise HTTPException(status_code=400, detail="Invalid ticker format")
-    detail = data.get_ticker_detail(ticker.upper())
+    detail = data.get_ticker_detail(data._clean_ticker(ticker.upper()))
     if not detail:
         raise HTTPException(status_code=404, detail=f"Ticker '{ticker.upper()}' not found")
     return detail
@@ -543,7 +543,7 @@ def get_stock(request: Request, ticker: str):
     """Per-stock page payload — holders + the institutional A/D trend & history."""
     if not _TICKER_PATTERN.match(ticker):
         raise HTTPException(status_code=400, detail="Invalid ticker format")
-    detail = data.get_stock_detail(ticker.upper())
+    detail = data.get_stock_detail(data._clean_ticker(ticker.upper()))
     if not detail:
         raise HTTPException(status_code=404, detail=f"Ticker '{ticker.upper()}' not found")
     return detail
