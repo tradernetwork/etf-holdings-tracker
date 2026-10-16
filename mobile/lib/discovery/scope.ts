@@ -14,10 +14,10 @@ export function parseCategory(raw: string | null | undefined): CategoryChoice {
 /**
  * Mirrors `_OPTION_INCOME_FUNDS` / `_ACTIVE_EQUITY_FUNDS` in api/data.py (keep in lockstep). The API's per-row
  * category is authoritative; these per-fund overrides only win over a stale or provider-level value so a covered-call
- * overlay (DIVO, QDVO, IDVO) can never sit under Active Equity, and the Roundhill stock-pickers (DRAM, CHAT) never
+ * overlay (DIVO, QDVO, IDVO) or the CEF-holding income fund YYY can never sit under Active Equity, and the Roundhill stock-pickers (DRAM, CHAT) never
  * under Option-Income.
  */
-export const OPTION_INCOME_FUNDS: ReadonlySet<string> = new Set(["DIVO", "QDVO", "IDVO"]);
+export const OPTION_INCOME_FUNDS: ReadonlySet<string> = new Set(["DIVO", "QDVO", "IDVO", "YYY"]);
 export const ACTIVE_EQUITY_FUNDS: ReadonlySet<string> = new Set(["DRAM", "CHAT"]);
 
 export function effectiveCategory(fund: string, apiCategory: Category | undefined): Category | undefined {

@@ -59,6 +59,11 @@ def test_amplify_overlay_funds_are_option_income(fund):
     assert get_fund_category(fund) == "option-income"
 
 
+def test_yyy_is_income_not_active_equity():
+    """YYY holds closed-end funds; its turnover is allocation noise, not conviction."""
+    assert get_fund_category("YYY") == "option-income"
+
+
 def test_amplify_thematic_funds_stay_active_equity():
     """The override must be per-fund, not a blanket provider flip."""
     for fund in ["BLOK", "HACK", "SILJ", "IBUY", "AIEQ"]:

@@ -81,11 +81,12 @@ describe("4. weight drift is not a trade", () => {
 
 describe("5. Active Equity excludes income overlays (mirrors api/data.py)", () => {
   it("mirrors the API override sets", () => {
-    expect([...OPTION_INCOME_FUNDS].sort()).toEqual(["DIVO", "IDVO", "QDVO"]);
+    expect([...OPTION_INCOME_FUNDS].sort()).toEqual(["DIVO", "IDVO", "QDVO", "YYY"]);
     expect([...ACTIVE_EQUITY_FUNDS].sort()).toEqual(["CHAT", "DRAM"]);
   });
   it("override beats a stale or provider-level API category", () => {
     expect(effectiveCategory("DIVO", "active-equity")).toBe("option-income");
+    expect(effectiveCategory("YYY", "active-equity")).toBe("option-income");
     expect(effectiveCategory("DRAM", "option-income")).toBe("active-equity");
     expect(effectiveCategory("HACK", "active-equity")).toBe("active-equity");
     expect(effectiveCategory("ZZZ", undefined)).toBeUndefined();
