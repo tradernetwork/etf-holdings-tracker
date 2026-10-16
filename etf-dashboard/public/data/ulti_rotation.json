@@ -2,8 +2,8 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-10-15",
-  "holdings": 15,
+  "asOf": "2026-10-16",
+  "holdings": 12,
   "dates": [
     "2026-07-31",
     "2026-08-07",
@@ -16,23 +16,23 @@
     "2026-09-25",
     "2026-10-02",
     "2026-10-10",
-    "2026-10-15"
+    "2026-10-16"
   ],
   "themes": [
     "Uncategorized",
     "Semis/photonics",
     "Cloud/AI",
     "Clean energy",
-    "Other",
-    "Nuclear/uranium",
     "Fintech",
+    "Healthcare/biotech",
     "Rare earth/materials",
-    "Crypto financials",
-    "Bitcoin miners",
+    "Nuclear/uranium",
+    "Other",
     "Quantum",
+    "Crypto financials",
     "Precious metals",
-    "Space",
-    "Healthcare/biotech"
+    "Bitcoin miners",
+    "Space"
   ],
   "timeline": [
     {
@@ -156,44 +156,43 @@
       }
     },
     {
-      "date": "2026-10-15",
+      "date": "2026-10-16",
       "weights": {
-        "Uncategorized": 46.72755122174216,
-        "Cloud/AI": 9.298559007670207,
-        "Clean energy": 4.786695869291602,
-        "Semis/photonics": 13.761149024397447
+        "Uncategorized": 38.75529600196718,
+        "Semis/photonics": 14.89571262304576,
+        "Cloud/AI": 4.814378827563403,
+        "Clean energy": 4.679524603995302
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 46.7,
-    "Semis/photonics": 13.8,
-    "Cloud/AI": 9.3,
-    "Clean energy": 4.8,
-    "Other": 0.0,
-    "Nuclear/uranium": 0.0,
+    "Uncategorized": 38.8,
+    "Semis/photonics": 14.9,
+    "Cloud/AI": 4.8,
+    "Clean energy": 4.7,
     "Fintech": 0.0,
+    "Healthcare/biotech": 0.0,
     "Rare earth/materials": 0.0,
-    "Crypto financials": 0.0,
-    "Bitcoin miners": 0.0,
+    "Nuclear/uranium": 0.0,
+    "Other": 0.0,
     "Quantum": 0.0,
+    "Crypto financials": 0.0,
     "Precious metals": 0.0,
-    "Space": 0.0,
-    "Healthcare/biotech": 0.0
+    "Bitcoin miners": 0.0,
+    "Space": 0.0
   },
   "churnSincePrior": {
     "added": [
       "AAOI",
-      "CBRS",
       "FIG",
       "FPS",
       "IOVA",
-      "MRNA",
       "TEM"
     ],
     "dropped": [
       "APLD",
       "ASST.UQ",
+      "CRWV",
       "FSLY",
       "IONQ",
       "IREN",
@@ -204,21 +203,18 @@
     "held": [
       "BE",
       "CRDO",
-      "CRWV",
       "LITE",
       "NBIS",
       "PURR",
       "SLS",
       "SMCI"
     ],
-    "rate": 0.47
+    "rate": 0.42
   },
   "unmapped": [
-    "CBRS",
     "FIG",
     "FPS",
     "IOVA",
-    "MRNA",
     "PURR",
     "SLS",
     "SMCI",
