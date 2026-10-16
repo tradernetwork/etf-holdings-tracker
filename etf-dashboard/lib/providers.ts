@@ -156,7 +156,7 @@ const OPTION_INCOME_PROVIDERS = new Set<string>([
 
 // Per-fund overrides for providers shipping BOTH product lines. Mirrors
 // _OPTION_INCOME_FUNDS in api/data.py — keep the two in lockstep.
-const OPTION_INCOME_FUNDS = new Set<string>(['DIVO', 'QDVO', 'IDVO']);
+const OPTION_INCOME_FUNDS = new Set<string>(['DIVO', 'QDVO', 'IDVO', 'YYY']);
 
 // Mirror image: Roundhill is an income provider, but DRAM and CHAT are active
 // stock-pickers. Mirrors _ACTIVE_EQUITY_FUNDS in api/data.py; checked first.

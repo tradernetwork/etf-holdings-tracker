@@ -104,9 +104,49 @@ def _is_junk_ticker(ticker: str) -> bool:
 # Bloomberg exchange suffixes (ARK funds use these: "RKLB UQ", "NU UN", etc.)
 _BLOOMBERG_SUFFIX_RE = re.compile(r'\s+(?:UQ|UN|UW|UP|UA|FP|LN|GY|SJ|AU|CT|CN|JP|HK|SW|SS|IT|SM|NA|BB|PL|DC|NO|AV|ID|MK|TB|PM|IJ)$')
 
+# Same company, two lines in the data. Providers disagree on how to ticker a
+# Korean stock: Avantis AVEM ships Samsung as the London GDR "SMSN", Capital
+# Group / Roundhill ship the KRX code "A005930", First Trust ships "005930.KS".
+# Left alone, one stock's buying and selling is split across entries (SMSN on
+# the Today screen, A005930 on Institutional trend).
+#
+# Folded into the A-prefixed KRX code because that is the convention the data
+# already uses for every other Korean name (A000660, A009150 ...; see
+# _prepare_roundhill_active_book in scrape_avantis.py), it is the line the
+# majority of funds carry, and it passes the ticker-shape filter that hides
+# digit-leading codes like "005930.KS". Only pairs where BOTH lines exist in the
+# history files and the names clearly match are listed; never infer one. Not
+# aliased on purpose: A005935 (Samsung PREFERRED, a different security), the
+# ADRs of Korean banks (KB), and 2330 (TSMC's local line collides with an
+# unrelated Saudi 2330 in AVEM).
+#
+# Applied once at read time (_read_csv_uncached), so every endpoint, diff and
+# aggregate sees one ticker. Where a single fund holds both lines (CGGR/CGXU
+# hold SK Hynix as both the ADR and the KRX line) the rows are merged there.
+_TICKER_ALIASES: dict[str, str] = {
+    'SMSN': 'A005930',        # Samsung Electronics GDR (AVEM)
+    '005930.KS': 'A005930',   # Samsung Electronics (WCME)
+    'SKHY': 'A000660',        # SK Hynix ADR (CGGR, CGXU)
+    '000660.KS': 'A000660',   # SK Hynix (WCME)
+    '105560.KS': 'A105560',   # KB Financial Group, KRX line (WCME, WCMI)
+    '021240.KS': 'A021240',   # Coway (WCME)
+}
+
+# Provider names are truncated or noisy ("SAMSUNG ELECTR GDR REG S GDR",
+# "SK HYNIX INC COMMON STOCK KRW5000.0"). One clean full name per aliased company.
+_ALIAS_DISPLAY_NAMES: dict[str, str] = {
+    'A005930': 'Samsung Electronics Co Ltd',
+    'A000660': 'SK Hynix Inc',
+    'A105560': 'KB Financial Group Inc',
+    'A021240': 'Coway Co Ltd',
+}
+
+
 def _clean_ticker(ticker: str) -> str:
-    """Strip Bloomberg exchange suffixes and whitespace from ticker strings."""
-    return _BLOOMBERG_SUFFIX_RE.sub('', ticker.strip())
+    """Strip Bloomberg exchange suffixes and whitespace from ticker strings,
+    then fold known same-company aliases (see _TICKER_ALIASES)."""
+    t = _BLOOMBERG_SUFFIX_RE.sub('', ticker.strip())
+    return _TICKER_ALIASES.get(t, t)
 
 
 # ─── Sector canonicalization ─────────────────────────────────────────────────
@@ -578,11 +618,15 @@ _OPTION_INCOME_PROVIDERS = frozenset({
 # rows is written (short). Before this override DIVO drove the #1 sell signal
 # on the board as an "active-equity" fund.
 #
+# YYY (Amplify High Income) holds closed-end funds and is an income vehicle: its
+# turnover is allocation noise across CEFs, not stock-picking conviction, so it
+# stays out of Active Equity even though it writes no options.
+#
 # INVARIANT: any fund holding written option rows must land in 'option-income'.
 # tests/test_categories.py asserts this against the latest snapshot, so a new
 # overlay fund from a mixed provider fails CI instead of silently polluting
 # the equity signals.
-_OPTION_INCOME_FUNDS = frozenset({'DIVO', 'QDVO', 'IDVO'})
+_OPTION_INCOME_FUNDS = frozenset({'DIVO', 'QDVO', 'IDVO', 'YYY'})
 
 # The mirror image: Roundhill is an option-income provider (WeeklyPay, 0DTE
 # overlays), but DRAM and CHAT are actively managed stock-pickers with no
@@ -681,11 +725,42 @@ def _read_csv_uncached(path: str) -> list[dict]:
         # Empty / missing dates sort last, so a real date beats nothing.
         if r.get('holding_date', '') > existing.get('holding_date', ''):
             seen[key] = r
+    _apply_ticker_aliases(seen)
     # Only curated labels are safe: symbols collide across exchanges and funds.
     for r in seen.values():
         if not r.get('Sector') and not r.get('Option_Type'):
             r['Sector'] = _SECTOR_FALLBACK.get(_clean_ticker(r.get('Ticker', '')), '')
     return list(seen.values())
+
+
+def _apply_ticker_aliases(seen: dict[tuple[str, str], dict]) -> None:
+    """Fold _TICKER_ALIASES into the (fund, ticker) -> row map, in place.
+
+    Active-weight math is zero-sum within a fund, so a fund must never end up
+    with two rows for one ticker (the later would silently overwrite the
+    earlier in _build_map and its weight would vanish). When a fund holds both
+    lines, weight and market value are summed and the share count / price stay
+    those of the canonical (KRX) line: ADR and GDR share counts are in
+    depositary units, not comparable to ordinary shares, and mixing them would
+    fake a share delta. Option rows are never touched.
+    """
+    for key in [k for k in seen if k[1].strip() in _TICKER_ALIASES]:
+        row = seen[key]
+        if row.get('Option_Type'):
+            continue
+        fund = key[0]
+        canon = _TICKER_ALIASES[key[1].strip()]
+        del seen[key]
+        target = seen.get((fund, canon))
+        if target is None:
+            row['Ticker'] = canon
+            seen[(fund, canon)] = row
+        else:
+            target['Weight'] = repr(_safe_float(target.get('Weight')) + _safe_float(row.get('Weight')))
+            target['Market Value'] = repr(_safe_float(target.get('Market Value')) + _safe_float(row.get('Market Value')))
+    for (fund, t), row in seen.items():
+        if t in _ALIAS_DISPLAY_NAMES and not row.get('Option_Type'):
+            row['Name'] = _ALIAS_DISPLAY_NAMES[t]
 
 
 def _safe_float(v: str, default: float = 0.0) -> float:
@@ -1066,6 +1141,12 @@ def _split_factor(prev_shares: float, curr_shares: float,
     return 1.0
 
 
+# Day-over-day implied price ratios outside this band, with no recognisable
+# split, mean the share/value columns can't be trusted for that position.
+_MIN_PLAUSIBLE_PRICE_RATIO = 0.2
+_MAX_PLAUSIBLE_PRICE_RATIO = 5.0
+
+
 def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float]:
     """Weight change attributable to the MANAGER, with price drift removed.
 
@@ -1114,6 +1195,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
         prev_by_fund[key[0]].append(key)
 
     active: dict[tuple[str, str], float] = {}
+    unreliable: set[tuple[str, str]] = set()
     for _fund, keys in prev_by_fund.items():
         prev_sum = sum(prev[k]['weight'] for k in keys)
         if prev_sum <= 0:
@@ -1132,7 +1214,16 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
                 # k * price_ratio, not price_ratio. Without this the split
                 # reads as a massive discretionary buy.
                 split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
-                ratio = (c['price'] / p['price']) * split
+                price_ratio = c['price'] / p['price']
+                if split == 1.0 and not (_MIN_PLAUSIBLE_PRICE_RATIO <= price_ratio <= _MAX_PLAUSIBLE_PRICE_RATIO):
+                    # Implied price (value / shares) moved >5x overnight and it
+                    # is not a recognised split: a corporate action or provider
+                    # restatement we can't model (AVIV IAG: shares 1,333,518 ->
+                    # 25,381, implied price ~26x, came out as a fake -8.77pp
+                    # "active" sell). Treat as no drift and report 0 below.
+                    unreliable.add(k)
+                else:
+                    ratio = price_ratio * split
             ratios[k] = ratio
             denom += p['weight'] * ratio
         if denom <= 0:
@@ -1140,7 +1231,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
         for k in keys:
             drift = prev[k]['weight'] * ratios[k] / denom * prev_sum
             curr_weight = curr[k]['weight'] if k in curr else 0.0
-            active[k] = curr_weight - drift
+            active[k] = 0.0 if k in unreliable else curr_weight - drift
 
     # A position with no previous snapshot has no drift to subtract — all of it
     # is a decision the manager made today.
