@@ -10,6 +10,7 @@ import type {
   Category,
   CategoryChoice,
   Divergence,
+  FundDetailRow,
   FundSummary,
   LayeringPattern,
   SectorFlowRow,
@@ -170,26 +171,65 @@ export interface HeroStory {
 /** A hero candidate must move at least this much in total active weight (pp), or it is noise, not a headline. */
 export const HERO_MIN_TOTAL_PP = 0.1;
 
+/** Fallback plausibility floor (pp) when a fund row has no previous weight to bound the move against. */
+export const HERO_IMPLAUSIBLE_FLOOR_PP = 1.0;
+/** Fallback: an active move this many times larger than the raw weight move (and over the floor) is a data artifact. */
+export const HERO_IMPLAUSIBLE_RAW_MULT = 5;
+
+/**
+ * Plausibility guard for one fund move. A position cannot be cut by more than it was, nor grown by more than it
+ * now is, so |activeWeightDelta| must fit inside max(previous, current) weight (+0.01pp slack). Previous weight comes
+ * from the matching `changes` row, else current - raw delta. With no weights at all, fall back to
+ * |active| <= max(1.0pp, 5 x |raw weight delta|); with no raw delta either, the move is given the benefit of the doubt.
+ * Real case: IAG/AVIV active -8.774pp on a 0.364% position (raw -0.178pp) is rejected.
+ */
+export function isCredibleMove(f: FundDetailRow, prevWeight?: number | null): boolean {
+  const a = Math.abs(f.activeWeightDelta);
+  const raw = f.rawWeightDelta;
+  const cur = f.currentWeight;
+  let prev = prevWeight;
+  if (prev == null && cur != null && raw != null) prev = cur - raw;
+  if (prev != null && prev >= 0) return a <= Math.max(prev, cur ?? 0) + 0.01;
+  if (raw != null) return a <= Math.max(HERO_IMPLAUSIBLE_FLOOR_PP, HERO_IMPLAUSIBLE_RAW_MULT * Math.abs(raw));
+  return true;
+}
+
+type PrevWeights = Map<string, number>;
+const prevKey = (fund: string, ticker: string) => `${fund}|${ticker}`;
+function prevWeights(changes: Change[] | undefined): PrevWeights {
+  const m: PrevWeights = new Map();
+  for (const c of changes ?? []) if (c.previousWeight != null) m.set(prevKey(c.fund, c.ticker), c.previousWeight);
+  return m;
+}
+/** The signal's fund rows that pass the plausibility guard. */
+export function credibleFunds(s: Signal, changes?: Change[]): FundDetailRow[] {
+  const pw = prevWeights(changes);
+  return s.fundDetails.filter((f) => isCredibleMove(f, pw.get(prevKey(f.fund, s.ticker))));
+}
+
 /**
  * Hero sort key (documented here, tested in __tests__/hero.test.ts). Candidates are every buying AND selling
- * signal. Highest conviction wins, compared in this order:
- *   1. agreement: number of funds that moved in the signal's direction by a significant amount (more funds first);
- *   2. size: |sum of active weight deltas| in pp (bigger first);
+ * signal, counting only CREDIBLE fund moves (see `isCredibleMove`; impossible numbers never headline or add to size).
+ * Highest conviction wins, compared in this order:
+ *   1. agreement: number of funds that moved in the signal's direction by a significant, credible amount (more first);
+ *   2. size: |sum of credible active weight deltas| in pp (bigger first);
  *   3. ticker, A-Z, so the pick is deterministic.
  * Candidates under HERO_MIN_TOTAL_PP (|sum|) or with no significant fund are dropped, so a tiny single-fund move
  * can not outrank a big one; if nothing clears the bar the biggest |sum| is used rather than an empty hero.
+ * A signal with no credible fund rows at all is never a candidate.
  */
-export function heroRank(s: Signal): { agree: number; size: number; eligible: boolean } {
+export function heroRank(s: Signal, changes?: Change[]): { agree: number; size: number; eligible: boolean; credible: number } {
   const sign = s.direction === "buying" ? 1 : -1;
-  const agree = s.fundDetails.filter((f) => Math.sign(f.activeWeightDelta) === sign && isSignificant(f.fund, f.activeWeightDelta)).length;
-  const size = Math.abs(sumActive(s));
-  return { agree, size, eligible: agree > 0 && size >= HERO_MIN_TOTAL_PP };
+  const rows = credibleFunds(s, changes);
+  const agree = rows.filter((f) => Math.sign(f.activeWeightDelta) === sign && isSignificant(f.fund, f.activeWeightDelta)).length;
+  const size = Math.abs(rows.reduce((a, d) => a + d.activeWeightDelta, 0));
+  return { agree, size, credible: rows.length, eligible: agree > 0 && size >= HERO_MIN_TOTAL_PP };
 }
 
 function pickHeroSignal(signals: SignalsResponse | undefined): Signal | null {
   const all = [...(signals?.signals.buying ?? []), ...(signals?.signals.selling ?? [])];
-  if (all.length === 0) return null;
-  const ranked = all.map((s) => ({ s, ...heroRank(s) }));
+  const ranked = all.map((s) => ({ s, ...heroRank(s, signals?.changes) })).filter((r) => r.credible > 0);
+  if (ranked.length === 0) return null;
   const pool = ranked.some((r) => r.eligible) ? ranked.filter((r) => r.eligible) : ranked;
   pool.sort((a, b) => b.agree - a.agree || b.size - a.size || a.s.ticker.localeCompare(b.s.ticker));
   return pool[0].s;
@@ -220,7 +260,7 @@ export function pickHero(divergences: Divergence[] | undefined, signals: Signals
       streak,
     };
   }
-  const rows = top.fundDetails
+  const rows = credibleFunds(top, signals?.changes)
     .filter((f) => isSignificant(f.fund, f.activeWeightDelta))
     .map((f) => ({ fund: f.fund, delta: f.activeWeightDelta }));
   const up = rows.filter((r) => r.delta > 0).sort((a, b) => b.delta - a.delta);
