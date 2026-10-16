@@ -1,4 +1,4 @@
-import { heroRank, HERO_MIN_TOTAL_PP, pickHero } from "../lib/derive";
+import { heroRank, HERO_MIN_TOTAL_PP, isCredibleMove, pickHero } from "../lib/derive";
 import { filterChanges, moveCounts, moveLabel, moveType, withoutDrift, emptyChangeFilters } from "../lib/discovery/derive";
 import { ACTIVE_EQUITY_FUNDS, OPTION_INCOME_FUNDS, effectiveCategory, scopeChanges } from "../lib/discovery/scope";
 import { rankExactFundFirst, resolveSearch } from "../lib/fundDirectory";
@@ -127,6 +127,48 @@ describe("6. hero = highest conviction", () => {
     const hero = pickHero([], resp([], [sig("IAG", "selling", [-8.77])]));
     expect(hero?.reduced).toEqual([{ fund: "FIAG0", delta: -8.77 }]);
     expect(hero?.added).toEqual([]);
+  });
+});
+
+describe("6b. hero never promotes an impossible fund move", () => {
+  // Live 2026-10-15: AVIV/IAG active -8.774pp on a 0.3642% position (raw -0.1779pp, 98% share cut, 0.1863% left).
+  const iag: Signal = {
+    ticker: "IAG", name: "IA FINANCIAL", sector: "Financials", direction: "selling", weightDelta: -8.774, convictionScore: 17.5, funds: ["AVIV"], fundCount: 1, providerCount: 1,
+    fundDetails: [{ fund: "AVIV", activeWeightDelta: -8.774, rawWeightDelta: -0.1779, currentWeight: 0.1863, type: "CHANGED" }],
+  };
+  const real = (ticker: string, d: number): Signal => ({
+    ticker, name: ticker, sector: "", direction: "buying", weightDelta: d, convictionScore: 1, funds: [], fundCount: 1, providerCount: 1,
+    fundDetails: [{ fund: "ARKK", activeWeightDelta: d, rawWeightDelta: d, currentWeight: 3, type: "CHANGED" }],
+  });
+  const resp = (b: Signal[], s: Signal[], changes: SignalsResponse["changes"] = []): SignalsResponse =>
+    ({ asOfDate: "2026-10-15", category: null, stats: {} as never, signals: { buying: b, selling: s }, changes });
+  const iagChange = { fund: "AVIV", ticker: "IAG", name: "IAG", sector: "", activeWeightDelta: -8.774, weightDelta: -0.1779, currentWeight: 0.1863, previousWeight: 0.3642, type: "CHANGED", isOption: false } as const;
+
+  it("rejects AVIV/IAG by previous weight (changes row) and by derived previous weight", () => {
+    expect(isCredibleMove(iag.fundDetails[0], 0.3642)).toBe(false);
+    expect(isCredibleMove(iag.fundDetails[0])).toBe(false);
+  });
+  it("rejects via the raw-delta fallback when no weights exist", () => {
+    expect(isCredibleMove({ fund: "F", activeWeightDelta: -8.774, rawWeightDelta: -0.1779 })).toBe(false);
+    expect(isCredibleMove({ fund: "F", activeWeightDelta: -0.9, rawWeightDelta: -0.01 })).toBe(true); // under the 1.0pp floor
+    expect(isCredibleMove({ fund: "F", activeWeightDelta: -2, rawWeightDelta: -0.5 })).toBe(true); // within 5x raw
+  });
+  it("a real exit (sold the whole position) stays credible", () => {
+    expect(isCredibleMove({ fund: "F", activeWeightDelta: -2.95, rawWeightDelta: -3.0, currentWeight: 0 }, 3.0)).toBe(true);
+  });
+  it("IAG is not the hero; the credible story wins", () => {
+    const hero = pickHero([], resp([real("ABX", 0.4)], [iag], [iagChange]));
+    expect(hero?.ticker).toBe("ABX");
+    expect(heroRank(iag, [iagChange])).toMatchObject({ agree: 0, size: 0, credible: 0, eligible: false });
+  });
+  it("only impossible candidates => no hero rather than a fake one", () => {
+    expect(pickHero([], resp([], [iag], [iagChange]))).toBeNull();
+  });
+  it("an impossible fund row does not inflate a mixed signal's size or rows", () => {
+    const mixed: Signal = { ...iag, ticker: "MIX", fundDetails: [...iag.fundDetails, { fund: "AVUV", activeWeightDelta: -0.3, rawWeightDelta: -0.3, currentWeight: 1, type: "CHANGED" }] };
+    expect(heroRank(mixed).size).toBeCloseTo(0.3);
+    const hero = pickHero([], resp([], [mixed]));
+    expect(hero?.reduced).toEqual([{ fund: "AVUV", delta: -0.3 }]);
   });
 });
 
