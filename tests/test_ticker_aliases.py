@@ -104,3 +104,9 @@ def test_implausible_price_ratio_is_neutralised_not_emitted():
     deltas = data._active_weight_deltas(curr, prev)
     assert deltas[("AVIV", "IAG")] == 0.0
     assert abs(deltas[("AVIV", "AAA")]) < 0.2
+
+
+def test_old_aliased_ticker_urls_still_resolve():
+    """Followed/bookmarked SMSN must land on the merged Samsung page, not a 404."""
+    from api import data
+    assert data._clean_ticker("SMSN") == "A005930"
