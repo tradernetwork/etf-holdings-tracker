@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-19T22:29:47.767722+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5334,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "ACVA": "ACV AUCTIONS INC COM CL A",
+        "ATKR": "ATKORE INC COM",
+        "BCAB": "BIOATLA INC COM NEW",
+        "CENN": "CENNTRO INC COM",
+        "CMBMF": "CAMBIUM NETWORKS CORP SHS",
+        "CUE": "CUE BIOPHARMA INC COM",
+        "FSUN": "FIRSTSUN CAP BANCORP COM",
+        "IRLA": "IRULYA THERAPEUTICS INC COM",
+        "KAAPL": "Apple, Inc.",
+        "KBCIT": "Citigroup Inc.",
+        "KCTSL": "Tesla, Inc.",
+        "LFWD": "LIFEWARD LTD SHS",
+        "RVPH": "REVIVA PHARMACEUTCLS HLDGS INC COM NEW"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
