@@ -19,6 +19,7 @@ Env vars (all optional):
 """
 
 import asyncio
+import threading
 import logging
 from pathlib import Path
 import os
@@ -43,6 +44,7 @@ from . import income
 from . import structures
 from . import auth
 from . import visits
+from . import retail_feed
 from .response_schemas import install_response_schemas
 from .mcp_server import mcp
 # Heavy import paid at server startup, not on first request (review #18)
@@ -136,6 +138,8 @@ mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
 async def lifespan(_app: FastAPI):
     auth.init_db()
     usage.counter.start()
+    retail_feed_stop = threading.Event()
+    retail_feed.start(retail_feed_stop)
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
     # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
     prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
@@ -152,6 +156,7 @@ async def lifespan(_app: FastAPI):
             if not stopped:
                 log.warning("prewarm_thread_still_running_after_stop")
         # graceful shutdown — close any pooled connections
+        retail_feed_stop.set()
         await asyncio.to_thread(usage.counter.stop)
         auth.close_all_connections()
     log.info("shutdown_complete")
@@ -225,6 +230,7 @@ async def snapshot_aum_context(request: Request, call_next):
             key = usage.request_key(request.url.path, request.headers.get('X-TickerTrace-Client', ''), request.headers.get('User-Agent', ''))
             if key:
                 usage.counter.add(*key)
+                retail_feed.window.add(key[1], visits._visitor_hash(get_remote_address(request)))
     except Exception:
         pass  # Popularity stats can never turn a successful data request into 500.
     return response
