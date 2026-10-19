@@ -18,20 +18,14 @@ import {
   Search,
   Title,
 } from "@/components/discovery-ui";
-import {
-  Mono,
-  ErrorNote,
-  Hint,
-  Loading,
-  Note,
-  Segmented,
-} from "@/components/ui";
+import { Mono, Hint, Note, Segmented, QueryStatus } from "@/components/ui";
 import { useChanges } from "@/lib/discovery/api";
 import { deltaLabel } from "@/lib/deltaPeriod";
 import {
   emptyChangeFilters,
   filterChanges,
   moveCounts,
+  withoutDrift,
 } from "@/lib/discovery/derive";
 import type { ChangeFilters, Period } from "@/lib/discovery/types";
 import { useFunds } from "@/lib/queries";
@@ -50,6 +44,7 @@ export default function Changes() {
     [sheet, setSheet] = useState(false),
     [grouped, setGrouped] = useState(true),
     [byTicker, setByTicker] = useState(false),
+    [showDrift, setShowDrift] = useState(false),
     [expanded, setExpanded] = useState<string | null>(null);
   const q = useChanges(period),
     funds = useFunds();
@@ -65,12 +60,14 @@ export default function Changes() {
     () => filterChanges(source, f, map),
     [source, f, map],
   );
-  const rows = filtered;
+  // Rows whose share count did not change are weight drift, not trades: hidden unless the user asks.
+  const driftCount = filtered.length - withoutDrift(filtered).length;
+  const rows = showDrift ? filtered : withoutDrift(filtered);
   const sections = useMemo(
     () => changeSections(rows, map, grouped, byTicker, expanded),
     [rows, map, grouped, byTicker, expanded],
   );
-  const counts = moveCounts(filtered);
+  const counts = moveCounts(rows);
   const values = (key: "sector" | "fund") =>
     [...new Set(source.map((r) => r[key]).filter(Boolean))].sort();
   const providers = [
@@ -87,6 +84,11 @@ export default function Changes() {
         {scopeLabel(category, new Set(source.map((r) => r.fund)).size)} ·{" "}
         {rows.length} shown · {counts.added} added / {counts.reduced} reduced
       </Hint>
+      {!showDrift && driftCount > 0 ? (
+        <Hint>
+          {driftCount} {driftCount === 1 ? "row" : "rows"} hidden: share count unchanged, so the weight moved with price, not a trade.
+        </Hint>
+      ) : null}
       {deltaLabel("Δ weight and shares", q.data ?? {}) ? <Hint>{deltaLabel("Δ weight and shares", q.data ?? {})}</Hint> : null}
       <Segmented
         options={CATEGORY_OPTIONS}
@@ -110,6 +112,11 @@ export default function Changes() {
         <Action onPress={() => setByTicker(!byTicker)}>
           {byTicker ? "Fund rows" : "By ticker"}
         </Action>
+        {driftCount > 0 && (
+          <Action onPress={() => setShowDrift(!showDrift)}>
+            {showDrift ? "Hide weight drift" : `Show weight drift (${driftCount})`}
+          </Action>
+        )}
         <Action onPress={() => router.push(`/activity?period=${period}`)}>
           Activity matrix →
         </Action>
@@ -151,13 +158,7 @@ export default function Changes() {
           Further changes may be omitted.
         </Note>
       )}
-      {q.isLoading && <Loading />}
-      {q.isError && (
-        <ErrorNote
-          message="Couldn't load changes."
-          onRetry={() => q.refetch()}
-        />
-      )}{" "}
+      <QueryStatus q={q} />
       {funds.isError && (
         <Note>
           Provider and AUM lookup unavailable; fund symbols and reported dollar
@@ -168,6 +169,7 @@ export default function Changes() {
   );
   return (
     <SectionPage
+      loaded={!!q.data}
       sections={sections}
       showHeaders={grouped || byTicker}
       header={header}

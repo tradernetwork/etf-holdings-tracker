@@ -7,15 +7,18 @@
 
 const MINUS = "−"; // typographic minus, so it lines up with "+" in tabular figures
 
-/** -0.0104 -> "−0.01 pp"; +0.5959 -> "+0.60 pp". Tiny non-zero values show "<0.01". */
+/**
+ * -0.0104 -> "−0.01 pp"; +0.5959 -> "+0.60 pp". Non-zero values under half a hundredth render as a
+ * bare "<0.01 pp": a sign on "<0.01" reads as a typo ("+<0.01"), and direction is carried by colour/arrow.
+ */
 export function formatPp(value: number | null | undefined, opts: { sign?: boolean } = {}): string {
   if (value == null || Number.isNaN(value)) return "—";
   const sign = opts.sign ?? true;
   const abs = Math.abs(value);
-  const prefix = value < 0 ? MINUS : sign && value > 0 ? "+" : "";
   if (abs === 0) return "0.00 pp";
-  const body = abs < 0.005 ? "<0.01" : abs.toFixed(2);
-  return `${prefix}${body} pp`;
+  if (abs < 0.005) return "<0.01 pp";
+  const prefix = value < 0 ? MINUS : sign && value > 0 ? "+" : "";
+  return `${prefix}${abs.toFixed(2)} pp`;
 }
 
 /** A plain weight percentage (share of a fund's book): 1.7794 -> "1.78%". */
@@ -190,4 +193,22 @@ export function formatShareMove(previous: number | null | undefined, current: nu
   if (previous == null && current == null) return null;
   const f = (v: number | null | undefined) => (v == null ? "—" : Math.round(v).toLocaleString("en-US"));
   return `${f(previous)} → ${f(current)} sh`;
+}
+
+/** A position size (static, not a change): no "+" on longs, a minus on shorts. 1440947 -> "1,440,947", -50 -> "−50". */
+export function formatQty(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  const body = Math.abs(Math.round(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${value < 0 ? MINUS : ""}${body}`;
+}
+
+/** Word only: plural(1, "fund") -> "fund", plural(2, "fund") -> "funds", plural(2, "family", "families") -> "families". */
+export function plural(n: number | null | undefined, singular: string, pluralForm: string = `${singular}s`): string {
+  return n === 1 ? singular : pluralForm;
+}
+
+/** Count plus word: pluralize(1, "fund") -> "1 fund", pluralize(1234, "fund") -> "1,234 funds". */
+export function pluralize(n: number | null | undefined, singular: string, pluralForm?: string): string {
+  if (n == null || Number.isNaN(n)) return `— ${plural(2, singular, pluralForm)}`;
+  return `${formatCount(n)} ${plural(n, singular, pluralForm)}`;
 }

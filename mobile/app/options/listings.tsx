@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { ListingScanCard } from "@/components/options/ListingScanCard";
 import { Chip, ShowMore, TotalTile } from "@/components/options/parts";
-import { Card, ErrorNote, Hint, Loading, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
+import { Card, Hint, Note, Screen, SectionHeader, Tappable, QueryStatus } from "@/components/ui";
 import { CAT_OPTIONS, visibleScans, type CatFilter } from "@/lib/options/logic";
 import { useOptionListings } from "@/lib/options/queries";
 import { display, fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
@@ -31,8 +31,7 @@ export default function ListingsScreen() {
       <Text style={styles.title}>CBOE options scanner</Text>
       <Hint>A daily diff of CBOE's published option universe: stocks gaining options for the first time, and weekly-options promotions or demotions. Refreshed each weekday morning. Standalone CBOE market data, the same for everyone.</Hint>
 
-      {q.isLoading && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load the CBOE scan data." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
 
       {latest && (
         <View style={styles.tiles}>

@@ -55,9 +55,12 @@ import csv
 import os
 import glob
 import math
+import logging
 import datetime
 from collections import defaultdict
 from typing import Optional
+
+_log = logging.getLogger(__name__)
 
 from api import data as _fund_categories
 
@@ -790,8 +793,14 @@ def compute_dte_management(options: list[dict], fund: str = '') -> dict:
         }
 
     total_notional = sum(notionals)
-    # Notional-weighted average DTE (combined — for display)
-    avg_dte = sum(d * n for d, n in zip(dtes, notionals)) / total_notional
+    # Notional-weighted average DTE (combined — for display). When no leg
+    # carries a usable notional (missing underlying price / share quantity on
+    # a bad scrape) weighting is meaningless: fall back to equal weighting
+    # rather than dividing by zero and 500ing the whole endpoint.
+    if total_notional > 0:
+        avg_dte = sum(d * n for d, n in zip(dtes, notionals)) / total_notional
+    else:
+        avg_dte = sum(dtes) / len(dtes)
 
     # Use fund-specific DTE target from prospectus profile
     profile = _get_profile(fund)
@@ -1659,7 +1668,13 @@ def analyze_all_funds() -> list[dict]:
     """Analyze all option-income funds and return summary comparison data."""
     results = []
     for fund in sorted(OPTION_FUNDS):
-        result = analyze_fund(fund)
+        # One bad fund (odd scrape, zero notional, missing column) must never
+        # take the whole comparison endpoint down. Log it and skip it.
+        try:
+            result = analyze_fund(fund)
+        except Exception:
+            _log.exception('effectiveness: analyze_fund(%s) failed; skipping', fund)
+            continue
         if result:
             results.append(result)
     # Sort by composite score descending (best first)

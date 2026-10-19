@@ -401,6 +401,24 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 15, 2026"
+            tag="bugfix"
+            title="T-bill funds no longer say 0 holdings"
+            desc="TSLP, Kurv's Tesla income fund, holds only T-bills, cash and custom FLEX options, and we were counting zero holdings because none of that is a stock. We were wrong. The fund count and total weight now cover the whole book, and I checked all 148 funds: every row in every fund is accounted for."
+          />
+          <ChangelogEntry
+            date="October 15, 2026"
+            tag="feature"
+            title="TSLA, NVDA and COIN income funds, covered"
+            desc="We went through every issuer for funds that sell options on Tesla, Nvidia and Coinbase. Two were missing: YieldMax's NVIT and Kurv's TSLP. Both are on the board now, so we're at 148 funds. TSLP only holds the custom FLEX options, so you won't find listed contracts in it. GraniteShares' YieldBOOST funds write options on leveraged ETFs, not on the stocks themselves, so we left them out."
+          />
+          <ChangelogEntry
+            date="October 15, 2026"
+            tag="feature"
+            title="MSST joins the MSTR income crowd"
+            desc="You asked for every MSTR income ETF, so we went through the issuers. Only one was missing: YieldMax's MSST, a small one at about $5M that sells MSTR calls. It's on the board now, bringing us to 146 funds. The rest were either already here (MSTY, WNTR, MSTW) or gone, like REX's MSII and Bitwise's IMST. The leveraged MSTX and MSTU aren't income funds, so we left them out."
+          />
+          <ChangelogEntry
             date="October 14, 2026"
             tag="feature"
             title="Global X covered-call funds join the board"

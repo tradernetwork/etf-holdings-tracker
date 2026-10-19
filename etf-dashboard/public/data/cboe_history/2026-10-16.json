@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-16T21:20:30.400005+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5347,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "KAAPL": "Apple, Inc.",
+        "KBCIT": "Citigroup Inc.",
+        "KCTSL": "Tesla, Inc."
+      },
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

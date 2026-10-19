@@ -171,9 +171,11 @@ option-income fund work.
 
 ## Covered Funds
 
-145 funds across 15 providers (October 2026). The authoritative list is `FUNDS` in
+148 funds across 15 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
-the README table whenever `FUNDS` changes.
+the README table whenever `FUNDS` changes. `fundsTracked` and the length of
+`/api/v1/funds` are the same number by construction (`data.tracked_funds`: funds
+with rows in the latest file, minus `EXCLUDED_FUNDS`).
 
 - **Avantis**: AVUV, AVLV, AVMV, AVUS, AVEM, AVDE, AVDV, AVIV, AVSC, AVES
   (systematic value/profitability/size tilts; AVEM/AVDE/AVDV/AVIV are the only
@@ -199,9 +201,9 @@ the README table whenever `FUNDS` changes.
 - **First Trust**: FTLS, WCME, WCMG, WCMI, CRPT, MMSC, EMLP (actively managed —
   long/short equity, multi-manager small cap, sub-advised international
   equity, energy infrastructure, crypto-adjacent equity)
-- **Kurv**: KYLD, KQQQ (options-based income)
+- **Kurv**: KYLD, KQQQ, TSLP (options-based income). TSLP (added 2026-10-15) holds only FLEX `2TSLA` legs plus T-bills. Kurv NVDP and COIP do not exist: the host answers 403 for any missing ticker (ZZZZ too), and kurvinvest.com lists no such funds, so the earlier census guess was wrong, not a blocked feed
 - **YieldMax**: ULTY, SLTY, MSTY, NVDY, CONY, TSLY, HOOY, PLTY, CHPY, YMAX,
-  AMDY, AMZY, GOOY, GDXY, plus 25 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) (options income). CHPY is a real stock-picking
+  AMDY, AMZY, GOOY, GDXY, plus 25 single-stock and portfolio income funds added 2026-10-14 (AIYY, BABO, BIGY, CRSH, CVNY, DIPS, FBY, FIAT, GPTY, LFGY, MARO, MRNY, MSFO, NFLY, OARK, PYPY, RDTY, SDTY, SMCY, SNOY, SOXY, TSMY, WNTR, XOMO, YQQQ) plus NVIT (NVDA, ~$14M, listed calls + FLEX pair) and MSST (added 2026-10-15; MSTR Performance & Distribution Target 25, ~$5M, listed MSTR calls + a FLEX 2MSTR pair) (options income). CHPY is a real stock-picking
   semiconductor book that also writes calls; YMAX holds other YieldMax funds,
   so its deltas are an allocation call across the complex.
 - **Neos**: SPYI, QQQI, IWMI, BTCI, CSHI, IAUI (options income; added 2026-10-14). The
@@ -217,6 +219,13 @@ the README table whenever `FUNDS` changes.
 - **NicholasX**: BLOX (blockchain/crypto equity)
 - **NestYield**: EGGQ, EGGY, EGGS (active equity + options overlay)
 - **Sprott**: GBUG
+
+## HTTP behaviour
+
+The REST API gzips responses over 1000 bytes (`GZipMiddleware`, skipped for `/mcp`) and sends
+`Cache-Control: public, max-age=300` on the daily-static read endpoints only (signals, changes,
+funds, fund/ticker/options detail, sectors, divergences, stats, fund-effectiveness). Never add it
+to `/health`, `/auth*` or `/mcp`.
 
 ## Dashboard Tiers
 

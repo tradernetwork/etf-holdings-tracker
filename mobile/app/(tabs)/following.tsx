@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { Badge, Card, FreshnessLabel, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
+import { Badge, Card, ErrorNote, FreshnessLabel, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { catchUpOf, fundFollowMoves, tickerFollowMoves, type FollowMove } from "@/lib/derive";
 import { type Follow } from "@/lib/follows";
@@ -93,7 +93,7 @@ function TickerFollow({ symbol }: { symbol: string }) {
   const { moves, more } = q.data ? tickerFollowMoves(q.data.changes) : { moves: [], more: 0 };
   return (
     <Shell symbol={symbol} kind="ticker">
-      {q.isLoading ? <Loading /> : q.isError ? <Note>Couldn&apos;t load {symbol} right now.</Note> : moves.length > 0 ? <MoveLines moves={moves} more={more} kind="ticker" symbol={symbol} /> : <Note>Nothing meaningful in the latest file.</Note>}
+      {q.isLoading ? <Loading /> : q.isError && !q.data ? <ErrorNote message={`Couldn't load ${symbol}. Check your connection and try again.`} onRetry={() => q.refetch()} /> : moves.length > 0 ? <MoveLines moves={moves} more={more} kind="ticker" symbol={symbol} /> : <Note>Nothing meaningful in the latest file.</Note>}
     </Shell>
   );
 }
@@ -108,8 +108,8 @@ function FundFollow({ symbol }: { symbol: string }) {
     <Shell symbol={symbol} kind="fund" right={fresh ? <FreshnessLabel freshness={fresh} /> : undefined}>
       {q.isLoading ? (
         <Loading />
-      ) : q.isError || !f ? (
-        <Note>Couldn&apos;t load {symbol} right now.</Note>
+      ) : !f ? (
+        <ErrorNote message={`Couldn't load ${symbol}. Check your connection and try again.`} onRetry={() => q.refetch()} />
       ) : catchUp?.active ? (
         <Note>{catchUp.since ? `Catch-up since ${formatShortDate(catchUp.since)}` : "Catch-up"}: this isn&apos;t a one-day change, so no moves are shown.</Note>
       ) : f.stale ? (

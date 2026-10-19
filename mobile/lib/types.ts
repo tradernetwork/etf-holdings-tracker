@@ -16,6 +16,8 @@ export interface FundDetailRow {
   fund: string;
   activeWeightDelta: number;
   currentWeight?: number;
+  /** Raw (price-drift-inclusive) weight change, pp. Used only for plausibility checks. */
+  rawWeightDelta?: number | null;
   type?: ChangeType;
   aum?: number | null; // billions
   aumUsd?: number | null;

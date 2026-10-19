@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { FundOptionBookCard } from "@/components/options/StructureViews";
-import { Badge, Card, ErrorNote, Hint, Loading, Note, Screen, StatTile, Tappable } from "@/components/ui";
+import { Badge, Card, Hint, Note, QueryStatus, Screen, StatTile, Tappable } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useOptionStructures } from "@/lib/options/queries";
 import { display, fonts, spacing, type Palette } from "@/lib/theme";
@@ -22,9 +22,8 @@ export default function OptionStructuresScreen() {
         <Text style={styles.symbol}>{symbol}</Text>
         <Text style={styles.sub}>option structures</Text>
       </View>
-      {q.isLoading && <Loading />}
+      <QueryStatus q={q} ignoreError={notFound} />
       {notFound && <Card><Note>No tracked fund holds options on {symbol}.</Note></Card>}
-      {q.isError && !notFound && <ErrorNote message="Couldn't load option structures." onRetry={() => q.refetch()} />}
       {q.data && (
         <>
           <View style={{ flexDirection: "row", gap: spacing.sm }}>

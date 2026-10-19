@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { pluralize } from "@/lib/format";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Card, Hint, Mono, Tappable } from "@/components/ui";
@@ -64,7 +65,7 @@ export function FundCard({ f }: { f: IncomeDirectoryFund }) {
             {f.fund} <Text style={styles.provider}>{f.provider}</Text>
             {aum ? <Text style={styles.provider}>  {aum}</Text> : null}
           </Text>
-          <Hint>{f.counts.underlyings} {f.counts.underlyings === 1 ? "underlying" : "underlyings"} · {f.counts.optionLegs} legs</Hint>
+          <Hint>{f.counts.underlyings} {f.counts.underlyings === 1 ? "underlying" : "underlyings"} · {pluralize(f.counts.optionLegs, "leg")}</Hint>
         </View>
         {f.incomeLegVisible ? (
           <View style={styles.grid}>

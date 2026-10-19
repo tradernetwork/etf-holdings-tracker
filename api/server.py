@@ -23,6 +23,7 @@ import threading
 import logging
 from pathlib import Path
 import os
+import threading
 import re
 import time
 import uuid
@@ -38,6 +39,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from . import data, usage
 from . import income
@@ -128,6 +130,13 @@ limiter = Limiter(
 )
 
 
+def _safe_prewarm_effectiveness() -> None:
+    try:
+        _all_effectiveness()
+    except Exception as e:  # never block or kill startup over a warm-up
+        log.warning("effectiveness_prewarm_error", error=str(e))
+
+
 # ─── Lifespan: one-time startup work ─────────────────────────────
 # Remote MCP endpoint (streamable HTTP) at /mcp. Stateless because uvicorn runs
 # 2 workers and MCP sessions would otherwise live in one worker's memory.
@@ -141,6 +150,8 @@ async def lifespan(_app: FastAPI):
     retail_feed_stop = threading.Event()
     retail_feed.start(retail_feed_stop)
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
+    if os.environ.get("TT_PREWARM", "1") != "0":
+        threading.Thread(target=lambda: _safe_prewarm_effectiveness(), name="effectiveness-prewarm", daemon=True).start()
     # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
     prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
     if prewarmer:
@@ -220,11 +231,51 @@ app.add_middleware(
 app.add_middleware(RequestIdMiddleware)
 
 
+class _GZipSkipMCP(GZipMiddleware):
+    """GZip for the REST API, but never for the /mcp streamable-HTTP mount.
+
+    MCP responses can be SSE streams; buffering them behind a compressor
+    breaks incremental delivery, so /mcp is passed through untouched.
+    """
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope.get("path", "").startswith("/mcp"):
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
+# Daily-static read-only data: holdings refresh once a day, so 5 minutes of
+# client/CDN caching is safe. /health, /auth*, /mcp and everything else are
+# deliberately absent.
+_CACHEABLE_EXACT = frozenset({
+    "/api/v1/signals", "/api/v1/changes", "/api/v1/funds", "/api/v1/sectors",
+    "/api/v1/divergences", "/api/v1/stats", "/api/v1/fund-effectiveness",
+})
+_CACHEABLE_PREFIXES = (
+    "/api/v1/fund/", "/api/v1/ticker/", "/api/v1/options/",
+    "/api/v1/fund-effectiveness/",
+)
+_CACHE_CONTROL = "public, max-age=300"
+
+
+def _is_cacheable_path(path: str) -> bool:
+    return path in _CACHEABLE_EXACT or path.startswith(_CACHEABLE_PREFIXES)
+
+
+# Outermost, so it compresses the final bytes (CORS/request-id headers already set).
+app.add_middleware(_GZipSkipMCP, minimum_size=1000)
+
+
 @app.middleware("http")
 async def snapshot_aum_context(request: Request, call_next):
     # One existing middleware hop; aggregate tracking adds no I/O or waiting.
     with data.aum_snapshot_scope():
         response = await call_next(request)
+    if (request.method == 'GET' and response.status_code == 200
+            and 'cache-control' not in response.headers
+            and _is_cacheable_path(request.url.path)):
+        response.headers['Cache-Control'] = _CACHE_CONTROL
     try:
         if request.method == 'GET' and response.status_code == 200:
             key = usage.request_key(request.url.path, request.headers.get('X-TickerTrace-Client', ''), request.headers.get('User-Agent', ''))
@@ -434,6 +485,25 @@ def get_fund(request: Request, fund: str):
     return detail
 
 
+# analyze_all_funds() takes ~30s (reads every option fund's full history), far
+# past what a phone will wait. Holdings change once a day, so memoise per
+# as-of date and share one computation between concurrent requests.
+_EFF_LOCK = threading.Lock()
+_EFF_CACHE: dict = {"key": None, "value": None}
+
+
+def _all_effectiveness() -> list[dict]:
+    key = data.get_as_of_date()
+    if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
+        return _EFF_CACHE["value"]
+    with _EFF_LOCK:
+        if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
+            return _EFF_CACHE["value"]
+        value = analyze_all_funds()
+        _EFF_CACHE["key"], _EFF_CACHE["value"] = key, value
+        return value
+
+
 @app.get("/api/v1/fund-effectiveness", tags=["public"])
 @limiter.limit("30/minute")
 def get_all_fund_effectiveness(request: Request):
@@ -441,7 +511,7 @@ def get_all_fund_effectiveness(request: Request):
     Compare all option-income funds side-by-side. Returns effectiveness
     analysis for every fund with options data, sorted by composite score.
     """
-    results = analyze_all_funds()
+    results = _all_effectiveness()
     return {"funds": results, "count": len(results)}
 
 
@@ -467,7 +537,7 @@ def get_ticker(request: Request, ticker: str):
     """Cross-fund ticker detail — who's buying/selling this?"""
     if not _TICKER_PATTERN.match(ticker):
         raise HTTPException(status_code=400, detail="Invalid ticker format")
-    detail = data.get_ticker_detail(ticker.upper())
+    detail = data.get_ticker_detail(data._clean_ticker(ticker.upper()))
     if not detail:
         raise HTTPException(status_code=404, detail=f"Ticker '{ticker.upper()}' not found")
     return detail
@@ -479,7 +549,7 @@ def get_stock(request: Request, ticker: str):
     """Per-stock page payload — holders + the institutional A/D trend & history."""
     if not _TICKER_PATTERN.match(ticker):
         raise HTTPException(status_code=400, detail="Invalid ticker format")
-    detail = data.get_stock_detail(ticker.upper())
+    detail = data.get_stock_detail(data._clean_ticker(ticker.upper()))
     if not detail:
         raise HTTPException(status_code=404, detail=f"Ticker '{ticker.upper()}' not found")
     return detail

@@ -23,17 +23,20 @@ import {
   formatPp,
   formatWeight,
   formatUsdValue,
-  resolveUsd,
   freshnessLabel,
 } from "@/lib/format";
-import { moveType } from "@/lib/discovery/derive";
+import { moveLabel, moveType } from "@/lib/discovery/derive";
+import { changeFlowUsd } from "@/lib/tickerView";
 import type { Change, FundSummary } from "@/lib/types";
 export function Action({
   children,
   onPress,
+  fill = false,
 }: {
   children: ReactNode;
   onPress: () => void;
+  /** Stretch to the parent's width and centre the label (used in equal-width grids). */
+  fill?: boolean;
 }) {
   const c = useTheme();
   return (
@@ -47,10 +50,12 @@ export function Action({
         borderWidth: 1,
         borderColor: c.border,
         borderRadius: 16,
+        ...(fill ? { width: "100%", alignItems: "center" } : null),
       }}
     >
       <Text
         style={{ color: c.accent, fontFamily: fonts.bodyBold, fontSize: 13 }}
+        numberOfLines={1}
       >
         {children}
       </Text>
@@ -107,6 +112,7 @@ export function ListPage<T>({
   children,
   empty = "No rows match these filters.",
   dense = false,
+  loaded = true,
 }: {
   data: T[];
   header: ReactNode;
@@ -117,6 +123,8 @@ export function ListPage<T>({
   children?: ReactNode;
   empty?: string;
   dense?: boolean;
+  /** False while loading or after a failed first load: the empty-state copy is withheld (a skeleton/error shows instead). */
+  loaded?: boolean;
 }) {
   const c = useTheme(),
     insets = useSafeAreaInsets(),
@@ -143,9 +151,11 @@ export function ListPage<T>({
           <View style={{ gap: 12, marginBottom: 10 }}>{header}</View>
         }
         ListEmptyComponent={
-          <Card>
-            <Note>{empty}</Note>
-          </Card>
+          loaded ? (
+            <Card>
+              <Note>{empty}</Note>
+            </Card>
+          ) : null
         }
       />
       {children}
@@ -164,11 +174,8 @@ function ChangeDetails({
   const c = useTheme(),
     kind = moveType(row);
   const shareMove = formatShareMove(row.previousShares, row.currentShares);
-  const money = resolveUsd({
-    apiUsd: row.activeFlowUsd,
-    weightPercent: row.activeWeightDelta,
-    aumBillions: fund?.aum,
-  });
+  const flowUsd = changeFlowUsd(row);
+  const money = { usd: flowUsd, estimated: true };
   return (
     <Card>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -182,9 +189,9 @@ function ChangeDetails({
           <Hint>{cleanName(row.name)}</Hint>
         </Tappable>
         <Badge
-          label={kind}
+          label={moveLabel(kind)}
           color={
-            kind === "NEW" ? c.isNew : deltaColor(row.activeWeightDelta, c)
+            kind === "NEW" ? c.isNew : kind === "DRIFT" ? c.textMuted : deltaColor(row.activeWeightDelta, c)
           }
         />
       </View>
@@ -210,7 +217,7 @@ function ChangeDetails({
         <Mono bold style={{ color: deltaColor(row.activeWeightDelta, c) }}>
           {formatPp(row.activeWeightDelta)}
         </Mono>
-        <Hint>{formatUsdValue(money)} flow</Hint>
+        {flowUsd != null ? <Hint>{formatUsdValue(money)} flow</Hint> : <Hint>No dollar flow</Hint>}
       </View>
       {fund?.stale && (
         <FreshnessLabel
@@ -326,15 +333,12 @@ export function ChangeCard({
   const c = useTheme(),
     [expanded, setExpanded] = useState(false),
     kind = moveType(row);
-  const money = resolveUsd({
-    apiUsd: row.activeFlowUsd,
-    weightPercent: row.activeWeightDelta,
-    aumBillions: fund?.aum,
-  });
+  const flowUsd = changeFlowUsd(row);
+  const money = { usd: flowUsd, estimated: true };
   const provider = fund?.provider ?? "Provider unknown";
   return (
     <DenseRow
-      label={`${row.ticker}, ${kind}, ${formatPp(row.activeWeightDelta)}, ${row.fund}, ${provider}, ${formatWeight(row.previousWeight)} to ${formatWeight(row.currentWeight)}, ${formatUsdValue(money)} flow${fund?.stale ? ", older disclosure" : ""}. ${expanded ? "Collapse" : "Expand"} details`}
+      label={`${row.ticker}, ${moveLabel(kind)}, ${formatPp(row.activeWeightDelta)}, ${row.fund}, ${provider}, ${formatWeight(row.previousWeight)} to ${formatWeight(row.currentWeight)}, ${flowUsd != null ? `${formatUsdValue(money)} flow` : "no dollar flow"}${fund?.stale ? ", older disclosure" : ""}. ${expanded ? "Collapse" : "Expand"} details`}
       expanded={expanded}
       onPress={() => setExpanded(!expanded)}
       top={
@@ -343,9 +347,9 @@ export function ChangeCard({
             {row.ticker}
           </Mono>
           <RowBadge
-            label={kind}
+            label={moveLabel(kind)}
             color={
-              kind === "NEW" ? c.isNew : deltaColor(row.activeWeightDelta, c)
+              kind === "NEW" ? c.isNew : kind === "DRIFT" ? c.textMuted : deltaColor(row.activeWeightDelta, c)
             }
           />
           {fund?.stale && <RowBadge label="STALE" color={c.stale} />}
@@ -388,7 +392,7 @@ export function ChangeCard({
         <Text
           style={{ fontSize: 11, fontFamily: fonts.mono, color: c.textMuted }}
         >
-          {formatUsdValue(money)} flow
+          {flowUsd != null ? `${formatUsdValue(money)} flow` : "no flow est."}
         </Text>
       }
     >
@@ -404,6 +408,7 @@ export function SectionPage<T extends { id: string }>({
   onRefresh,
   children,
   showHeaders = true,
+  loaded = true,
 }: {
   sections: SectionListData<T, { title: string }>[];
   header: ReactNode;
@@ -412,6 +417,8 @@ export function SectionPage<T extends { id: string }>({
   onRefresh?: () => void;
   children?: ReactNode;
   showHeaders?: boolean;
+  /** False while loading or after a failed first load: the empty-state copy is withheld. */
+  loaded?: boolean;
 }) {
   const c = useTheme(),
     insets = useSafeAreaInsets(),
@@ -461,7 +468,7 @@ export function SectionPage<T extends { id: string }>({
             </View>
           ) : null
         }
-        ListEmptyComponent={<Note>No rows match these filters.</Note>}
+        ListEmptyComponent={loaded ? <Note>No rows match these filters.</Note> : null}
       />
       {children}
     </View>

@@ -1,4 +1,5 @@
 import { Action } from "@/components/discovery-ui";
+import { pluralize } from "@/lib/format";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
@@ -13,7 +14,7 @@ import { ChangeRow, StreakRow } from "@/components/fund/changes-rows";
 import { FactsCard, GradeHeader, MetricBlock, PeerCard } from "@/components/fund/effectiveness-view";
 import { ExpiryHeader, FundHasOptions, IncomeSummary, LegRow, NoticeCard, OtherPositionRow, PositionCard, SnapshotDate, optionKeyOf } from "@/components/fund/income-rows";
 import { RotationView } from "@/components/fund/rotation-view";
-import { Card, ErrorNote, Hint, Loading, Mono, Note, Segmented } from "@/components/ui";
+import { Card, ErrorNote, Hint, Loading, Mono, Note, QueryStatus, Segmented } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useAppState } from "@/lib/app-state";
 import {
@@ -219,7 +220,7 @@ export default function FundScreen() {
 
     if (activeTab === "changes") {
       if (changesQ.isLoading) return [{ key: "load", title: "", data: [{ t: "node", id: "l", node: <Loading /> }] }];
-      if (changesQ.isError || !changesQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote message="Couldn't load changes." onRetry={() => changesQ.refetch()} /> }] }];
+      if (changesQ.isError || !changesQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote onRetry={() => changesQ.refetch()} /> }] }];
       const sp = splitPeriod(changesQ.data.changes);
       const windowLabel = deltaLabel("Changes", { previousDate: changesQ.data.previousDate, comparisonTradingDays: changesQ.data.comparisonTradingDays, catchUp: catchUpOf(f).active, catchUpSince: catchUpOf(f).since });
       if (windowLabel) out.push({ key: "window", title: "", data: [{ t: "node", id: "window", node: <Hint>{windowLabel}</Hint> }] });
@@ -288,7 +289,7 @@ export default function FundScreen() {
       if (rotQ.isLoading) return [{ key: "load", title: "", data: [{ t: "node", id: "l", node: <Loading /> }] }];
       // A 404 means the API has no rotation report for this fund (it lists the ones that do): say so, don't offer a retry.
       if (rotQ.error instanceof ApiError && rotQ.error.status === 404) return [{ key: "none", title: "", data: [{ t: "node", id: "n", node: <Note>No rotation report for {symbol}. Reports exist for {Array.from(ROTATION_FUNDS).join(" and ")}.</Note> }] }];
-      if (rotQ.isError || !rotQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote message="Couldn't load the rotation report." onRetry={() => rotQ.refetch()} /> }] }];
+      if (rotQ.isError || !rotQ.data) return [{ key: "err", title: "", data: [{ t: "node", id: "e", node: <ErrorNote onRetry={() => rotQ.refetch()} /> }] }];
       return [{ key: "rot", title: "", data: [{ t: "node", id: "rot", node: <RotationView d={rotQ.data} /> }] }];
     }
     return out;
@@ -296,11 +297,11 @@ export default function FundScreen() {
   }, [f, book, activeTab, incomeBook, group, filtered, posRows, inc, equityChanges, stockSort, optionSort, showAllStocks, openBuckets, changesQ.data, changesQ.isLoading, changesQ.isError, span, hasOptions, effQ.data, effQ.isLoading, effQ.isError, peersQ.data, rotQ.data, rotQ.isLoading, rotQ.isError, expanded, incomeQ.isLoading, symbol]);
 
   if (q.isLoading) return <View style={styles.root}><Loading /></View>;
-  if (q.isError || !f || !book) {
+  if (!f || !book) {
     const notFound = q.error instanceof ApiError && q.error.status === 404;
     return (
       <View style={[styles.root, { padding: spacing.lg }]}>
-        {notFound ? <Card><Text style={styles.symbol}>{symbol}</Text><Note>{symbol} isn&apos;t a fund we track.</Note></Card> : <ErrorNote message="Couldn't load this fund." onRetry={() => q.refetch()} />}
+        {notFound ? <Card><Text style={styles.symbol}>{symbol}</Text><Note>{symbol} isn&apos;t a fund we track.</Note></Card> : <ErrorNote onRetry={() => q.refetch()} />}
       </View>
     );
   }
@@ -325,6 +326,7 @@ export default function FundScreen() {
 
   const header = (
     <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
+      <QueryStatus q={q} />
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md }}>
         <View style={{ flex: 1 }}>
           <Text style={styles.eyebrow}>{income ? "INCOME & OPTIONS" : "STOCK ACTIVITY"}</Text>
@@ -420,7 +422,7 @@ export default function FundScreen() {
         renderItem={({ item }) => renderItem(item, { opened, toggledPos, defaultOpen: posRows.length <= 5, togglePos: (k) => toggleIn(toggledPos, k, setToggledPos), toggleBucket: (k) => toggleIn(openBuckets, k, setOpenBuckets) })}
         ListEmptyComponent={bookQ.isLoading ? <Loading /> : <Card><Note>No positions reported for this fund.</Note></Card>}
       />
-      <FilterSheet visible={sheet} title="Filters & sort" onClose={() => setSheet(false)} onReset={() => { setFilters(NO_FILTERS); setPosSort("value"); setPosDir("default"); }} applyLabel={`Show ${filtered.length} positions`}>
+      <FilterSheet visible={sheet} title="Filters & sort" onClose={() => setSheet(false)} onReset={() => { setFilters(NO_FILTERS); setPosSort("value"); setPosDir("default"); }} applyLabel={`Show ${pluralize(filtered.length, "position")}`}>
         {hasOptions ? <OptionGroup<Coverage> label="Coverage" value={filters.cov} onChange={(cov) => setFilters({ ...filters, cov })} options={(Object.keys(COVERAGE_LABEL) as Coverage[]).map((k) => ({ value: k, label: COVERAGE_LABEL[k] }))} /> : null}
         <ToggleGroup toggles={filters.toggles} hasOptions={hasOptions} onChange={(toggles) => setFilters({ ...filters, toggles })} />
         <OptionGroup label="Sector" value={filters.sector} onChange={(sector) => setFilters({ ...filters, sector })} options={[{ value: "", label: "All sectors" }, ...sectorsOf(posRows).map((s) => ({ value: s, label: s }))]} />

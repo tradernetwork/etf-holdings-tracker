@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
 import { useState, useMemo } from "react";
 import { ListPage, ChangeCard, Title } from "@/components/discovery-ui";
-import { ErrorNote, Loading, Note, Segmented, Hint } from "@/components/ui";
+import { Note, Segmented, Hint, QueryStatus } from "@/components/ui";
 import { useTicker, useFunds } from "@/lib/queries";
 import { filterChanges, emptyChangeFilters } from "@/lib/discovery/derive";
 import type { Direction } from "@/lib/discovery/types";
@@ -24,6 +24,7 @@ export default function Evidence() {
   return (
     <ListPage
       dense
+      loaded={!!q.data}
       data={rows}
       keyFor={(r) => `${r.fund}:${r.ticker}:${r.type}`}
       refreshing={q.isRefetching}
@@ -52,13 +53,7 @@ export default function Evidence() {
             Active Δ is drift adjusted; dollar flow is estimated. Tap any row for full details, including smaller adjustments.
             Null deltas are unknown; older holdings are not proof of no trades.
           </Note>
-          {q.isLoading && <Loading />}
-          {q.isError && (
-            <ErrorNote
-              message="Couldn't load ticker evidence."
-              onRetry={() => q.refetch()}
-            />
-          )}
+          <QueryStatus q={q} />
         </>
       }
       renderItem={({ item }) => (

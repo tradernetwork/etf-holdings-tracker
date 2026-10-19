@@ -1,0 +1,26 @@
+[
+  {
+    "symbol": "MSTR",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/MSTR?period1=1770768000&period2=1792022400&interval=1d&events=splits%2Cdiv",
+    "downloaded_utc": "2026-10-15T20:08:21.447080+00:00",
+    "sha256": "315b48c59942d8ce518fc7f2bce032667d86dad2e2efaa8cd24ec37d7c43a1f6"
+  },
+  {
+    "symbol": "TSLA",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?period1=1770768000&period2=1792022400&interval=1d&events=splits%2Cdiv",
+    "downloaded_utc": "2026-10-15T20:08:21.637819+00:00",
+    "sha256": "13108e5792042bb96d953bcf1cad629bdba3afe9924c4e23a249d11470bbedba"
+  },
+  {
+    "symbol": "NVDA",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?period1=1770768000&period2=1792022400&interval=1d&events=splits%2Cdiv",
+    "downloaded_utc": "2026-10-15T20:08:21.865988+00:00",
+    "sha256": "90b577092c8b9a0e2fb94d38319736f585400afad273f9b0da27a507f451e5c5"
+  },
+  {
+    "symbol": "COIN",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/COIN?period1=1770768000&period2=1792022400&interval=1d&events=splits%2Cdiv",
+    "downloaded_utc": "2026-10-15T20:08:22.125020+00:00",
+    "sha256": "c872d5ed139962e153033866af25518cbb31aed7cf53a30ace7c56538b01a4d3"
+  }
+]

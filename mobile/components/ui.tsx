@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
-  ActivityIndicator,
+  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLayout } from "@/lib/layout";
+import { LOAD_ERROR_COPY, queryUiState, STALE_COPY, type QueryLike } from "@/lib/query-state";
 import { type Freshness } from "@/lib/format";
 import { fonts, MIN_TAP, radii, spacing, type Palette } from "@/lib/theme";
 import { useStyles, useTheme } from "@/lib/theme-context";
@@ -166,27 +167,115 @@ export function FreshnessLabel({ freshness }: { freshness: Freshness }) {
   );
 }
 
+/**
+ * Fades the right edge of a horizontally scrolling row into the canvas, so a clipped chip reads as "more this way".
+ * Pure JS (stacked translucent strips), no native gradient dependency. Pair the scroller with end padding.
+ */
+export function EdgeFade({ children, width = 28 }: { children: ReactNode; width?: number }) {
+  const c = useTheme();
+  const steps = 7;
+  return (
+    <View>
+      {children}
+      <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, right: 0, width, flexDirection: "row" }}>
+        {Array.from({ length: steps }, (_, i) => (
+          <View key={i} style={{ flex: 1, backgroundColor: c.canvas, opacity: (i + 1) / steps }} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function Note({ children }: { children: ReactNode }) {
   const styles = useStyles(makeStyles);
   return <Text style={styles.note}>{children}</Text>;
 }
 
-export function Loading() {
+/** Pulsing placeholder bar. */
+function SkeletonBar({ width, height = 12 }: { width: `${number}%` | number; height?: number }) {
   const c = useTheme();
-  return <ActivityIndicator color={c.accent} style={{ marginVertical: spacing.xl }} />;
+  const pulse = useRef(new Animated.Value(0.45)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.45, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+  return <Animated.View style={{ width, height, borderRadius: radii.sm, backgroundColor: c.border, opacity: pulse }} />;
 }
 
-export function ErrorNote({ message, onRetry }: { message: string; onRetry: () => void }) {
+/** Loading placeholder: `rows` skeleton rows (default 4). Replaces the bare spinner and any "0 results" copy. */
+export function Loading({ rows = 4 }: { rows?: number }) {
+  const styles = useStyles(makeStyles);
+  return (
+    <View style={{ gap: spacing.sm }} accessibilityRole="progressbar" accessibilityLabel="Loading">
+      {Array.from({ length: rows }, (_, i) => (
+        <View key={i} style={styles.skelRow}>
+          <SkeletonBar width={44} height={44} />
+          <View style={{ flex: 1, gap: spacing.sm }}>
+            <SkeletonBar width={i % 2 ? "55%" : "70%"} />
+            <SkeletonBar width="40%" height={10} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function ErrorNote({ message = LOAD_ERROR_COPY, onRetry }: { message?: string; onRetry: () => void }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   return (
     <Card>
       <Text style={styles.note}>{message}</Text>
       <Pressable onPress={onRetry} accessibilityRole="button" style={styles.retry}>
-        <Text style={{ color: c.accent, fontFamily: fonts.bodyBold }}>Try again</Text>
+        <Text style={{ color: c.accent, fontFamily: fonts.bodyBold }}>Retry</Text>
       </Pressable>
     </Card>
   );
+}
+
+/** Failed refresh with cached data still showing. */
+export function StaleNote({ onRetry }: { onRetry: () => void }) {
+  const c = useTheme();
+  const styles = useStyles(makeStyles);
+  return (
+    <View style={styles.stale}>
+      <Text style={[styles.note, { flex: 1, color: c.stale }]}>{STALE_COPY}</Text>
+      <Pressable onPress={onRetry} accessibilityRole="button" style={styles.retry}>
+        <Text style={{ color: c.accent, fontFamily: fonts.bodyBold }}>Retry</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * Drop-in status block for any react-query result: skeleton while loading, error card + Retry when
+ * nothing is cached, "showing last loaded data" note when a refresh fails over cached data.
+ * Render the data itself separately; it stays visible in the stale case.
+ */
+export function QueryStatus({
+  q,
+  rows,
+  message,
+  ignoreError,
+}: {
+  q: QueryLike & { refetch: () => unknown };
+  rows?: number;
+  message?: string;
+  /** Suppress the error UI (e.g. a 404 the screen explains itself). */
+  ignoreError?: boolean;
+}) {
+  const state = queryUiState(q);
+  if (state === "loading") return <Loading rows={rows} />;
+  if (ignoreError) return null;
+  if (state === "error") return <ErrorNote message={message} onRetry={() => q.refetch()} />;
+  if (state === "stale") return <StaleNote onRetry={() => q.refetch()} />;
+  return null;
 }
 
 /** Row that navigates; min 44dp tall. */
@@ -246,5 +335,10 @@ const makeStyles = (c: Palette) =>
     badge: { borderWidth: 1, borderRadius: radii.sm, paddingHorizontal: 6, paddingVertical: 1 },
     badgeText: { fontFamily: fonts.bodyBold, fontSize: 10, letterSpacing: 0.6 },
     note: { color: c.textSecondary, fontFamily: fonts.body, fontSize: 13, lineHeight: 19 },
+    skelRow: {
+      flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: c.card, borderColor: c.border,
+      borderWidth: 1, borderRadius: radii.card, padding: spacing.md,
+    },
+    stale: { flexDirection: "row", alignItems: "center", gap: spacing.md },
     retry: { minHeight: MIN_TAP, justifyContent: "center", alignSelf: "flex-start" },
   });

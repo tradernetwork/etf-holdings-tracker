@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { pluralize } from "@/lib/format";
 import { StyleSheet, Text, View } from "react-native";
 import { Tile, toneColor } from "@/components/income/DirectoryParts";
 import { Action } from "@/components/discovery-ui";
-import { Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
+import { Card, ErrorNote, Hint, Loading, Mono, Note, QueryStatus, Screen, SectionHeader, Tappable } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { useIncomeFund } from "@/lib/fundQueries";
 import { formatAsOfLong } from "@/lib/incomeDirectory";
@@ -21,12 +22,12 @@ export default function IncomeFundDetail() {
   const q = useIncomeFund(fund, true);
 
   if (q.isLoading) return <Screen topInset={false}><Loading /></Screen>;
-  if (q.isError || !q.data) {
+  if (!q.data) {
     const notFound = q.error instanceof ApiError && q.error.status === 404;
     return (
       <Screen topInset={false}>
         {notFound ? <Card><Text style={styles.title}>{fund}</Text><Note>{fund} isn't an option-income fund we analyse. Open its fund page instead.</Note><Action onPress={() => router.replace(`/fund/${encodeURIComponent(fund)}`)}>Full fund profile →</Action></Card>
-          : <ErrorNote message="Couldn't load this income fund." onRetry={() => q.refetch()} />}
+          : <ErrorNote onRetry={() => q.refetch()} />}
       </Screen>
     );
   }
@@ -42,6 +43,7 @@ export default function IncomeFundDetail() {
 
   return (
     <Screen topInset={false} refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
+      <QueryStatus q={q} />
       <View>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: spacing.sm, flexWrap: "wrap" }}>
           <Text style={styles.title}>{d.fund}</Text>
@@ -72,7 +74,7 @@ export default function IncomeFundDetail() {
       </Card>
 
       <SectionHeader title="The book" />
-      <Hint>{d.book.length} {d.book.length === 1 ? "underlying" : "underlyings"} · {d.counts.optionLegs} contracts collapsed to one row each</Hint>
+      <Hint>{d.book.length} {d.book.length === 1 ? "underlying" : "underlyings"} · {pluralize(d.counts.optionLegs, "contract")} collapsed to one row each</Hint>
       {rows.length === 0 ? (
         <Card><Note>No option positions in the latest snapshot for {d.fund}.</Note></Card>
       ) : (

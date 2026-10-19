@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-14T18:28:29.799034+00:00",
+  "date": "2026-10-14T20:13:28.885277+00:00",
   "isInitial": false,
   "totals": {
     "allOptionable": 5344,
@@ -9,9 +9,7 @@
   "diff": {
     "optionable": {
       "new": {},
-      "removed": {
-        "CCO": "CLEAR CHANNEL OUTDOOR HLDGS IN COM"
-      }
+      "removed": {}
     },
     "weeklyEtfs": {
       "new": {},
@@ -22,5 +20,5 @@
       "removed": {}
     }
   },
-  "hasChanges": true
+  "hasChanges": false
 }

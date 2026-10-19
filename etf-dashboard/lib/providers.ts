@@ -15,7 +15,7 @@ export const FUND_PROVIDERS: Record<string, string> = {
     AVEM: 'Avantis', AVDV: 'Avantis', AVDE: 'Avantis', AVUS: 'Avantis', AVSC: 'Avantis', AVES: 'Avantis', AVIV: 'Avantis',
     ARKK: 'ARK Invest', ARKQ: 'ARK Invest', ARKW: 'ARK Invest',
     ARKG: 'ARK Invest', ARKF: 'ARK Invest', ARKX: 'ARK Invest',
-    KYLD: 'Kurv', KQQQ: 'Kurv',
+    KYLD: 'Kurv', KQQQ: 'Kurv', TSLP: 'Kurv',
     ULTY: 'YieldMax', SLTY: 'YieldMax',
     ULTI: 'REX Shares',
     BLOX: 'Tidal / NicholasX',
@@ -36,6 +36,8 @@ export const FUND_PROVIDERS: Record<string, string> = {
     WNTR: 'YieldMax', XOMO: 'YieldMax', YQQQ: 'YieldMax',
     NVII: 'REX Shares', TSII: 'REX Shares',
     YMAG: 'YieldMax',
+    MSST: 'YieldMax',
+    NVIT: 'YieldMax',
     AMDW: 'Roundhill', TOPW: 'Roundhill', XPAY: 'Roundhill', WEEK: 'Roundhill',
     FEPI: 'REX Shares', AIPI: 'REX Shares', CEPI: 'REX Shares',
     // Neos Funds — covered-call / put-write income ETFs
@@ -154,7 +156,7 @@ const OPTION_INCOME_PROVIDERS = new Set<string>([
 
 // Per-fund overrides for providers shipping BOTH product lines. Mirrors
 // _OPTION_INCOME_FUNDS in api/data.py — keep the two in lockstep.
-const OPTION_INCOME_FUNDS = new Set<string>(['DIVO', 'QDVO', 'IDVO']);
+const OPTION_INCOME_FUNDS = new Set<string>(['DIVO', 'QDVO', 'IDVO', 'YYY']);
 
 // Mirror image: Roundhill is an income provider, but DRAM and CHAT are active
 // stock-pickers. Mirrors _ACTIVE_EQUITY_FUNDS in api/data.py; checked first.

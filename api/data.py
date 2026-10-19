@@ -104,9 +104,49 @@ def _is_junk_ticker(ticker: str) -> bool:
 # Bloomberg exchange suffixes (ARK funds use these: "RKLB UQ", "NU UN", etc.)
 _BLOOMBERG_SUFFIX_RE = re.compile(r'\s+(?:UQ|UN|UW|UP|UA|FP|LN|GY|SJ|AU|CT|CN|JP|HK|SW|SS|IT|SM|NA|BB|PL|DC|NO|AV|ID|MK|TB|PM|IJ)$')
 
+# Same company, two lines in the data. Providers disagree on how to ticker a
+# Korean stock: Avantis AVEM ships Samsung as the London GDR "SMSN", Capital
+# Group / Roundhill ship the KRX code "A005930", First Trust ships "005930.KS".
+# Left alone, one stock's buying and selling is split across entries (SMSN on
+# the Today screen, A005930 on Institutional trend).
+#
+# Folded into the A-prefixed KRX code because that is the convention the data
+# already uses for every other Korean name (A000660, A009150 ...; see
+# _prepare_roundhill_active_book in scrape_avantis.py), it is the line the
+# majority of funds carry, and it passes the ticker-shape filter that hides
+# digit-leading codes like "005930.KS". Only pairs where BOTH lines exist in the
+# history files and the names clearly match are listed; never infer one. Not
+# aliased on purpose: A005935 (Samsung PREFERRED, a different security), the
+# ADRs of Korean banks (KB), and 2330 (TSMC's local line collides with an
+# unrelated Saudi 2330 in AVEM).
+#
+# Applied once at read time (_read_csv_uncached), so every endpoint, diff and
+# aggregate sees one ticker. Where a single fund holds both lines (CGGR/CGXU
+# hold SK Hynix as both the ADR and the KRX line) the rows are merged there.
+_TICKER_ALIASES: dict[str, str] = {
+    'SMSN': 'A005930',        # Samsung Electronics GDR (AVEM)
+    '005930.KS': 'A005930',   # Samsung Electronics (WCME)
+    'SKHY': 'A000660',        # SK Hynix ADR (CGGR, CGXU)
+    '000660.KS': 'A000660',   # SK Hynix (WCME)
+    '105560.KS': 'A105560',   # KB Financial Group, KRX line (WCME, WCMI)
+    '021240.KS': 'A021240',   # Coway (WCME)
+}
+
+# Provider names are truncated or noisy ("SAMSUNG ELECTR GDR REG S GDR",
+# "SK HYNIX INC COMMON STOCK KRW5000.0"). One clean full name per aliased company.
+_ALIAS_DISPLAY_NAMES: dict[str, str] = {
+    'A005930': 'Samsung Electronics Co Ltd',
+    'A000660': 'SK Hynix Inc',
+    'A105560': 'KB Financial Group Inc',
+    'A021240': 'Coway Co Ltd',
+}
+
+
 def _clean_ticker(ticker: str) -> str:
-    """Strip Bloomberg exchange suffixes and whitespace from ticker strings."""
-    return _BLOOMBERG_SUFFIX_RE.sub('', ticker.strip())
+    """Strip Bloomberg exchange suffixes and whitespace from ticker strings,
+    then fold known same-company aliases (see _TICKER_ALIASES)."""
+    t = _BLOOMBERG_SUFFIX_RE.sub('', ticker.strip())
+    return _TICKER_ALIASES.get(t, t)
 
 
 # ─── Sector canonicalization ─────────────────────────────────────────────────
@@ -336,7 +376,7 @@ FUND_PROVIDERS = {
     'AVEM': 'Avantis', 'AVDV': 'Avantis', 'AVDE': 'Avantis', 'AVUS': 'Avantis', 'AVSC': 'Avantis', 'AVES': 'Avantis', 'AVIV': 'Avantis',
     'ARKK': 'ARK Invest', 'ARKQ': 'ARK Invest', 'ARKW': 'ARK Invest',
     'ARKG': 'ARK Invest', 'ARKF': 'ARK Invest', 'ARKX': 'ARK Invest',
-    'KYLD': 'Kurv', 'KQQQ': 'Kurv',
+    'KYLD': 'Kurv', 'KQQQ': 'Kurv', 'TSLP': 'Kurv',
     'ULTY': 'YieldMax',
     'SLTY': 'YieldMax',
     'ULTI': 'REX Shares',
@@ -361,6 +401,8 @@ FUND_PROVIDERS = {
     'WNTR': 'YieldMax', 'XOMO': 'YieldMax', 'YQQQ': 'YieldMax',
     'NVII': 'REX Shares', 'TSII': 'REX Shares',
     'YMAG': 'YieldMax',
+    'MSST': 'YieldMax',
+    'NVIT': 'YieldMax',
     'AMDW': 'Roundhill', 'TOPW': 'Roundhill', 'XPAY': 'Roundhill', 'WEEK': 'Roundhill',
     'FEPI': 'REX Shares', 'AIPI': 'REX Shares', 'CEPI': 'REX Shares',
     # Neos Funds — covered-call / put-write income ETFs
@@ -576,11 +618,15 @@ _OPTION_INCOME_PROVIDERS = frozenset({
 # rows is written (short). Before this override DIVO drove the #1 sell signal
 # on the board as an "active-equity" fund.
 #
+# YYY (Amplify High Income) holds closed-end funds and is an income vehicle: its
+# turnover is allocation noise across CEFs, not stock-picking conviction, so it
+# stays out of Active Equity even though it writes no options.
+#
 # INVARIANT: any fund holding written option rows must land in 'option-income'.
 # tests/test_categories.py asserts this against the latest snapshot, so a new
 # overlay fund from a mixed provider fails CI instead of silently polluting
 # the equity signals.
-_OPTION_INCOME_FUNDS = frozenset({'DIVO', 'QDVO', 'IDVO'})
+_OPTION_INCOME_FUNDS = frozenset({'DIVO', 'QDVO', 'IDVO', 'YYY'})
 
 # The mirror image: Roundhill is an option-income provider (WeeklyPay, 0DTE
 # overlays), but DRAM and CHAT are actively managed stock-pickers with no
@@ -679,11 +725,42 @@ def _read_csv_uncached(path: str) -> list[dict]:
         # Empty / missing dates sort last, so a real date beats nothing.
         if r.get('holding_date', '') > existing.get('holding_date', ''):
             seen[key] = r
+    _apply_ticker_aliases(seen)
     # Only curated labels are safe: symbols collide across exchanges and funds.
     for r in seen.values():
         if not r.get('Sector') and not r.get('Option_Type'):
             r['Sector'] = _SECTOR_FALLBACK.get(_clean_ticker(r.get('Ticker', '')), '')
     return list(seen.values())
+
+
+def _apply_ticker_aliases(seen: dict[tuple[str, str], dict]) -> None:
+    """Fold _TICKER_ALIASES into the (fund, ticker) -> row map, in place.
+
+    Active-weight math is zero-sum within a fund, so a fund must never end up
+    with two rows for one ticker (the later would silently overwrite the
+    earlier in _build_map and its weight would vanish). When a fund holds both
+    lines, weight and market value are summed and the share count / price stay
+    those of the canonical (KRX) line: ADR and GDR share counts are in
+    depositary units, not comparable to ordinary shares, and mixing them would
+    fake a share delta. Option rows are never touched.
+    """
+    for key in [k for k in seen if k[1].strip() in _TICKER_ALIASES]:
+        row = seen[key]
+        if row.get('Option_Type'):
+            continue
+        fund = key[0]
+        canon = _TICKER_ALIASES[key[1].strip()]
+        del seen[key]
+        target = seen.get((fund, canon))
+        if target is None:
+            row['Ticker'] = canon
+            seen[(fund, canon)] = row
+        else:
+            target['Weight'] = repr(_safe_float(target.get('Weight')) + _safe_float(row.get('Weight')))
+            target['Market Value'] = repr(_safe_float(target.get('Market Value')) + _safe_float(row.get('Market Value')))
+    for (fund, t), row in seen.items():
+        if t in _ALIAS_DISPLAY_NAMES and not row.get('Option_Type'):
+            row['Name'] = _ALIAS_DISPLAY_NAMES[t]
 
 
 def _safe_float(v: str, default: float = 0.0) -> float:
@@ -1064,6 +1141,12 @@ def _split_factor(prev_shares: float, curr_shares: float,
     return 1.0
 
 
+# Day-over-day implied price ratios outside this band, with no recognisable
+# split, mean the share/value columns can't be trusted for that position.
+_MIN_PLAUSIBLE_PRICE_RATIO = 0.2
+_MAX_PLAUSIBLE_PRICE_RATIO = 5.0
+
+
 def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float]:
     """Weight change attributable to the MANAGER, with price drift removed.
 
@@ -1112,6 +1195,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
         prev_by_fund[key[0]].append(key)
 
     active: dict[tuple[str, str], float] = {}
+    unreliable: set[tuple[str, str]] = set()
     for _fund, keys in prev_by_fund.items():
         prev_sum = sum(prev[k]['weight'] for k in keys)
         if prev_sum <= 0:
@@ -1130,7 +1214,16 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
                 # k * price_ratio, not price_ratio. Without this the split
                 # reads as a massive discretionary buy.
                 split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
-                ratio = (c['price'] / p['price']) * split
+                price_ratio = c['price'] / p['price']
+                if split == 1.0 and not (_MIN_PLAUSIBLE_PRICE_RATIO <= price_ratio <= _MAX_PLAUSIBLE_PRICE_RATIO):
+                    # Implied price (value / shares) moved >5x overnight and it
+                    # is not a recognised split: a corporate action or provider
+                    # restatement we can't model (AVIV IAG: shares 1,333,518 ->
+                    # 25,381, implied price ~26x, came out as a fake -8.77pp
+                    # "active" sell). Treat as no drift and report 0 below.
+                    unreliable.add(k)
+                else:
+                    ratio = price_ratio * split
             ratios[k] = ratio
             denom += p['weight'] * ratio
         if denom <= 0:
@@ -1138,7 +1231,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
         for k in keys:
             drift = prev[k]['weight'] * ratios[k] / denom * prev_sum
             curr_weight = curr[k]['weight'] if k in curr else 0.0
-            active[k] = curr_weight - drift
+            active[k] = 0.0 if k in unreliable else curr_weight - drift
 
     # A position with no previous snapshot has no drift to subtract — all of it
     # is a decision the manager made today.
@@ -1504,16 +1597,24 @@ def _compute_institutional_trend(limit: int = 15) -> dict:
     }
 
 
+def tracked_funds(latest: list[dict]) -> set[str]:
+    """Funds with at least one row in the latest file, minus EXCLUDED_FUNDS.
+
+    The single definition behind both /stats `fundsTracked` and the length of
+    the /funds list, so the two can never disagree.
+    """
+    return {r.get('ETF Ticker', '') for r in latest} - EXCLUDED_FUNDS - {''}
+
+
 def get_global_stats(changes: list[dict] | None = None) -> dict:
     latest = get_latest_holdings()
-    funds = set()
+    funds = tracked_funds(latest)
     tickers = set()
     options = 0
     puts = 0
     calls = 0
 
     for r in latest:
-        funds.add(r.get('ETF Ticker', ''))
         if r.get('Option_Type', ''):
             options += 1
             if r.get('Option_Type', '') == 'Put':
@@ -2728,9 +2829,12 @@ def get_fund_detail(fund: str) -> dict | None:
 
     equities = []
     options = []
+    others = []  # Treasuries, cash, money-market, swaps: part of the book, not stocks
     for r in fund_rows:
         if r.get('Option_Type', ''):
             options.append(r)
+        elif _is_junk_ticker(r.get('Ticker', '')):
+            others.append(r)
         elif not _is_junk_ticker(r.get('Ticker', '')):
             ticker = _clean_ticker(r.get('Ticker', ''))
             weight = _safe_float(r.get('Weight', '0'))
@@ -2751,6 +2855,19 @@ def get_fund_detail(fund: str) -> dict | None:
             })
 
     equities.sort(key=lambda x: -x['weight'])
+
+    # The rest of the non-option book, so a fund whose stock sleeve is empty
+    # (a FLEX-only book of T-bills + cash) still lists every position.
+    other_holdings = [{
+        'ticker': r.get('Ticker', '').strip(),
+        'name': r.get('Name', ''),
+        'weight': _safe_float(r.get('Weight', '0')),
+        'positionUsd': estimate_position_usd(fund, _safe_float(r.get('Weight', '0'))),
+        'shares': _safe_float(r.get('Share Quantity', '0')),
+        'assetClass': holding_asset_class(r),
+        'marketValue': _nullable_float(r.get('Market Value')),
+    } for r in others]
+    other_holdings.sort(key=lambda x: -x['weight'])
 
     # Current option book — the fund's live option positions (type/strike/
     # expiry/underlying). Used by the income-fund Portfolio section.
@@ -2892,10 +3009,14 @@ def get_fund_detail(fund: str) -> dict | None:
         'aumUsd': get_fund_aum_usd(fund),
         'asOfDate': get_as_of_date(),
         **comparison_info('daily'),
-        'holdingsCount': len(equities),
+        # Every non-option position (stocks + Treasuries + cash + swaps), so a
+        # FLEX-only / T-bill book never reads "0 holdings". Option legs are
+        # counted separately in optionsCount.
+        'holdingsCount': len(equities) + len(other_holdings),
         'optionsCount': len(options),
-        'totalWeight': round(sum(e['weight'] for e in equities), 2),
+        'totalWeight': round(sum(e['weight'] for e in equities) + sum(o['weight'] for o in other_holdings), 2),
         'topHoldings': equities[:20],
+        'otherHoldings': other_holdings,
         'optionHoldings': option_holdings,
         'recentChanges': recent_changes,
         'streaks': fund_streaks,
@@ -3178,9 +3299,9 @@ def get_funds_index(*, category: str | None = None) -> list[dict]:
             d['options'] += 1
             continue
         ticker = _clean_ticker(r.get('Ticker', ''))
+        d['holdings'] += 1
         if _is_junk_ticker(ticker):
             continue
-        d['holdings'] += 1
         w = _safe_float(r.get('Weight', '0'))
         if d['top'] is None or w > d['top']['weight']:
             d['top'] = {'ticker': ticker, 'weight': round(w, 4)}

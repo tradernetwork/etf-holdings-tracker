@@ -44,3 +44,32 @@ test("parseOptIn tolerates junk", () => {
   expect(parseOptIn("{bad")).toEqual(initialOptIn);
   expect(parseOptIn('{"asked":true,"enabled":true,"token":5}')).toMatchObject({ asked: true, enabled: true, token: null });
 });
+
+describe("permission-sync", () => {
+  it("clears a stale blocked flag when the OS says granted", () => {
+    const blocked = reduceOptIn(initialOptIn, { type: "enable-result", permission: "denied" });
+    const s = reduceOptIn(blocked, { type: "permission-sync", granted: true });
+    expect(s.denied).toBe(false);
+    expect(optInStatus(s)).not.toMatch(/blocked/);
+  });
+  it("is a no-op when nothing changed", () => {
+    expect(reduceOptIn(initialOptIn, { type: "permission-sync", granted: false })).toBe(initialOptIn);
+    const on = reduceOptIn(initialOptIn, { type: "enable-result", permission: "granted", token: "t" });
+    expect(reduceOptIn(on, { type: "permission-sync", granted: true })).toBe(on);
+  });
+  it("turns digests off and flags blocked if permission was revoked outside the app", () => {
+    const on = reduceOptIn(initialOptIn, { type: "enable-result", permission: "granted", token: "t" });
+    expect(reduceOptIn(on, { type: "permission-sync", granted: false })).toMatchObject({ enabled: false, denied: true });
+  });
+});
+
+describe("optInStatus with zero follows", () => {
+  const on = reduceOptIn(initialOptIn, { type: "enable-result", permission: "granted", token: "t" });
+  it("allows the digest but says to follow something first", () => {
+    expect(optInStatus(on, 0)).toBe("Follow a stock or fund to get your first digest.");
+  });
+  it("keeps the normal line once something is followed", () => {
+    expect(optInStatus(on, 2)).toMatch(/daily digest/);
+    expect(optInStatus(on)).toMatch(/daily digest/);
+  });
+});

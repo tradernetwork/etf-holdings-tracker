@@ -1,10 +1,11 @@
 import { snapshotSpan } from "@/lib/deltaPeriod";
+import { plural } from "@/lib/format";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { DivergenceCard, KpiGrid, SignalDetailCard, StaleBanner, StreakRow } from "@/components/today/Parts";
 import { Chip } from "@/components/options/parts";
-import { Card, ErrorNote, Hint, Loading, Mono, Note, Screen, SectionHeader, Tappable } from "@/components/ui";
+import { Card, Hint, Mono, Note, Screen, SectionHeader, Tappable, QueryStatus } from "@/components/ui";
 import { useAppState } from "@/lib/app-state";
 import { formatPp, formatShortDate, sectorShort } from "@/lib/format";
 import { allSectorFlow, coverageText, FULL_LIMIT, kpis, listState, PAGE_STEP, staleMessage } from "@/lib/today/logic";
@@ -53,8 +54,7 @@ export default function TodayInFull() {
       {catchUp.length > 0 && (
         <Note>Catching up from stale data, so their daily moves are withheld: {catchUp.map(([f, s]) => `${f}${s ? ` (since ${formatShortDate(s)})` : ""}`).join(", ")}.</Note>
       )}
-      {q.isLoading && <Loading />}
-      {q.isError && <ErrorNote message="Couldn't load today's full lists." onRetry={() => q.refetch()} />}
+      <QueryStatus q={q} />
       {d && <KpiGrid items={kpis(d.stats)} />}
 
       {d && (
@@ -130,7 +130,7 @@ export default function TodayInFull() {
           })()}
           {tab === "divergences" && (
             <>
-              <Hint>{d.divergences.length} stocks where one side of the book is buying and another selling.</Hint>
+              <Hint>{d.divergences.length} {plural(d.divergences.length, "stock")} where one side of the book is buying and another selling.</Hint>
               {d.divergences.length === 0 && <Card><Note>No divergences in this category.</Note></Card>}
               {d.divergences.map((x) => <DivergenceCard key={x.ticker} d={x} />)}
             </>

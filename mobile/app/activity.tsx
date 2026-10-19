@@ -1,25 +1,17 @@
 import { useState, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Pressable, Text, Modal } from "react-native";
-import {
-  Screen,
-  Hint,
-  Note,
-  Mono,
-  Segmented,
-  ErrorNote,
-  Loading,
-} from "@/components/ui";
+import { Screen, Hint, Note, Mono, Segmented, QueryStatus } from "@/components/ui";
 import { Action, ChangeCard, Title } from "@/components/discovery-ui";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { useActivity } from "@/lib/discovery/api";
-import { matrixRows, moveType } from "@/lib/discovery/derive";
+import { matrixRows, moveLabel, moveType } from "@/lib/discovery/derive";
 import { useFunds } from "@/lib/queries";
 import type { Change } from "@/lib/types";
 import type { Direction, Period } from "@/lib/discovery/types";
 import { useTheme } from "@/lib/theme-context";
 import { deltaColor } from "@/lib/theme";
-import { formatPp } from "@/lib/format";
+import { formatPp, pluralize } from "@/lib/format";
 export default function Activity() {
   const c = useTheme(),
     params = useLocalSearchParams<{ period?: string }>(),
@@ -65,7 +57,7 @@ export default function Activity() {
     >
       <Title>Activity matrix</Title>
       <Hint>
-        {rows.length} tickers × {columns.length} funds · significant equity
+        {pluralize(rows.length, "ticker")} × {pluralize(columns.length, "fund")} · significant equity
         moves
       </Hint>
       <Segmented
@@ -94,14 +86,8 @@ export default function Activity() {
         change. NEW / EXIT are position identities; ADD / TRIM are active-weight
         direction. Empty means no significant move, not zero exposure.
       </Note>
-      {q.isLoading && <Loading />}
-      {q.isError && (
-        <ErrorNote
-          message="Couldn't load activity."
-          onRetry={() => q.refetch()}
-        />
-      )}{" "}
-      {rows.length === 0 && !q.isLoading && (
+      <QueryStatus q={q} />
+      {q.data && rows.length === 0 && (
         <Note>No significant equity activity matches.</Note>
       )}
       <View style={{ flexDirection: "row" }}>
@@ -181,7 +167,7 @@ export default function Activity() {
                               fontSize: 11,
                             }}
                           >
-                            {moveType(v)}
+                            {moveLabel(moveType(v))}
                           </Text>
                           <Mono style={{ fontSize: 12 }}>
                             {formatPp(v.activeWeightDelta)}
@@ -203,7 +189,7 @@ export default function Activity() {
         title="Matrix provider"
         onClose={() => setSheet(false)}
         onReset={() => setProvider("")}
-        applyLabel={`Show ${rows.length} tickers`}
+        applyLabel={`Show ${pluralize(rows.length, "ticker")}`}
       >
         <OptionGroup
           label="Provider"

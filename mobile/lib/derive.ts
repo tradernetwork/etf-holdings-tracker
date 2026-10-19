@@ -10,6 +10,7 @@ import type {
   Category,
   CategoryChoice,
   Divergence,
+  FundDetailRow,
   FundSummary,
   LayeringPattern,
   SectorFlowRow,
@@ -157,6 +158,8 @@ export interface HeroStory {
   ticker: string;
   name: string;
   sector: string;
+  /** Direction of the signal that won the hero slot. */
+  direction: "buying" | "selling";
   /** True when funds trade this name in opposite directions. */
   countercase: boolean;
   added: HeroSide[];
@@ -165,46 +168,113 @@ export interface HeroStory {
   streak: { days: number; direction: "buying" | "selling" } | null;
 }
 
+/** A hero candidate must move at least this much in total active weight (pp), or it is noise, not a headline. */
+export const HERO_MIN_TOTAL_PP = 0.1;
+
+/** Fallback plausibility floor (pp) when a fund row has no previous weight to bound the move against. */
+export const HERO_IMPLAUSIBLE_FLOOR_PP = 1.0;
+/** Fallback: an active move this many times larger than the raw weight move (and over the floor) is a data artifact. */
+export const HERO_IMPLAUSIBLE_RAW_MULT = 5;
+
 /**
- * The top story for the Home hero: the strongest divergence if there is one
- * (a name one fund added while another reduced it), otherwise the top buy.
+ * Plausibility guard for one fund move. A position cannot be cut by more than it was, nor grown by more than it
+ * now is, so |activeWeightDelta| must fit inside max(previous, current) weight (+0.01pp slack). Previous weight comes
+ * from the matching `changes` row, else current - raw delta. With no weights at all, fall back to
+ * |active| <= max(1.0pp, 5 x |raw weight delta|); with no raw delta either, the move is given the benefit of the doubt.
+ * Real case: IAG/AVIV active -8.774pp on a 0.364% position (raw -0.178pp) is rejected.
+ */
+export function isCredibleMove(f: FundDetailRow, prevWeight?: number | null): boolean {
+  const a = Math.abs(f.activeWeightDelta);
+  const raw = f.rawWeightDelta;
+  const cur = f.currentWeight;
+  let prev = prevWeight;
+  if (prev == null && cur != null && raw != null) prev = cur - raw;
+  if (prev != null && prev >= 0) return a <= Math.max(prev, cur ?? 0) + 0.01;
+  if (raw != null) return a <= Math.max(HERO_IMPLAUSIBLE_FLOOR_PP, HERO_IMPLAUSIBLE_RAW_MULT * Math.abs(raw));
+  return true;
+}
+
+type PrevWeights = Map<string, number>;
+const prevKey = (fund: string, ticker: string) => `${fund}|${ticker}`;
+function prevWeights(changes: Change[] | undefined): PrevWeights {
+  const m: PrevWeights = new Map();
+  for (const c of changes ?? []) if (c.previousWeight != null) m.set(prevKey(c.fund, c.ticker), c.previousWeight);
+  return m;
+}
+/** The signal's fund rows that pass the plausibility guard. */
+export function credibleFunds(s: Signal, changes?: Change[]): FundDetailRow[] {
+  const pw = prevWeights(changes);
+  return s.fundDetails.filter((f) => isCredibleMove(f, pw.get(prevKey(f.fund, s.ticker))));
+}
+
+/**
+ * Hero sort key (documented here, tested in __tests__/hero.test.ts). Candidates are every buying AND selling
+ * signal, counting only CREDIBLE fund moves (see `isCredibleMove`; impossible numbers never headline or add to size).
+ * Highest conviction wins, compared in this order:
+ *   1. agreement: number of funds that moved in the signal's direction by a significant, credible amount (more first);
+ *   2. size: |sum of credible active weight deltas| in pp (bigger first);
+ *   3. ticker, A-Z, so the pick is deterministic.
+ * Candidates under HERO_MIN_TOTAL_PP (|sum|) or with no significant fund are dropped, so a tiny single-fund move
+ * can not outrank a big one; if nothing clears the bar the biggest |sum| is used rather than an empty hero.
+ * A signal with no credible fund rows at all is never a candidate.
+ */
+export function heroRank(s: Signal, changes?: Change[]): { agree: number; size: number; eligible: boolean; credible: number } {
+  const sign = s.direction === "buying" ? 1 : -1;
+  const rows = credibleFunds(s, changes);
+  const agree = rows.filter((f) => Math.sign(f.activeWeightDelta) === sign && isSignificant(f.fund, f.activeWeightDelta)).length;
+  const size = Math.abs(rows.reduce((a, d) => a + d.activeWeightDelta, 0));
+  return { agree, size, credible: rows.length, eligible: agree > 0 && size >= HERO_MIN_TOTAL_PP };
+}
+
+function pickHeroSignal(signals: SignalsResponse | undefined): Signal | null {
+  const all = [...(signals?.signals.buying ?? []), ...(signals?.signals.selling ?? [])];
+  const ranked = all.map((s) => ({ s, ...heroRank(s, signals?.changes) })).filter((r) => r.credible > 0);
+  if (ranked.length === 0) return null;
+  const pool = ranked.some((r) => r.eligible) ? ranked.filter((r) => r.eligible) : ranked;
+  pool.sort((a, b) => b.agree - a.agree || b.size - a.size || a.s.ticker.localeCompare(b.s.ticker));
+  return pool[0].s;
+}
+
+/**
+ * The top story for the Home hero: the highest-conviction signal (see `heroRank`), buy or sell. If funds also
+ * trade that name the other way (a divergence with significant moves on both sides) the story carries the countercase.
  * Everything shown is taken from the payloads; nothing is invented.
  */
 export function pickHero(divergences: Divergence[] | undefined, signals: SignalsResponse | undefined): HeroStory | null {
-  const all = [...(signals?.signals.buying ?? []), ...(signals?.signals.selling ?? [])];
-  const sig = (t: string) => all.find((s) => s.ticker === t);
-  const sectorFor = (t: string) =>
-    sig(t)?.sector || signals?.changes.find((c) => c.ticker === t && c.sector)?.sector || "";
-
+  const top = pickHeroSignal(signals);
+  if (!top) return null;
   // A countercase only counts when BOTH sides pass the API's significance rule;
   // a -0.00x pp "reduction" is price drift, not opposition.
   const sigSides = (fs: { fund: string; weightDelta: number }[]) => fs.filter((f) => isSignificant(f.fund, f.weightDelta));
-  const d = divergences?.find((x) => sigSides(x.buyingFunds).length > 0 && sigSides(x.sellingFunds).length > 0);
+  const d = divergences?.find((x) => x.ticker === top.ticker && sigSides(x.buyingFunds).length > 0 && sigSides(x.sellingFunds).length > 0);
+  const streak = top.streak ? { days: top.streak, direction: top.direction } : null;
   if (d) {
-    const s = sig(d.ticker);
     return {
-      ticker: d.ticker,
-      name: d.name,
-      sector: sectorFor(d.ticker),
+      ticker: top.ticker,
+      name: top.name || d.name,
+      sector: top.sector,
+      direction: top.direction,
       countercase: true,
-      added: sigSides(d.buyingFunds).slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
-      reduced: sigSides(d.sellingFunds).slice(0, 1).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
-      streak: s?.streak ? { days: s.streak, direction: s.direction } : null,
+      added: sigSides(d.buyingFunds).slice(0, 2).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      reduced: sigSides(d.sellingFunds).slice(0, 2).map((f) => ({ fund: f.fund, delta: f.weightDelta })),
+      streak,
     };
   }
-  const top = signals?.signals.buying[0];
-  if (!top) return null;
-  const rows = top.fundDetails
+  const rows = credibleFunds(top, signals?.changes)
     .filter((f) => isSignificant(f.fund, f.activeWeightDelta))
     .map((f) => ({ fund: f.fund, delta: f.activeWeightDelta }));
+  const up = rows.filter((r) => r.delta > 0).sort((a, b) => b.delta - a.delta);
+  const down = rows.filter((r) => r.delta < 0).sort((a, b) => a.delta - b.delta);
   return {
     ticker: top.ticker,
     name: top.name,
     sector: top.sector,
+    direction: top.direction,
     countercase: false,
-    added: rows.filter((r) => r.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 2),
-    reduced: rows.filter((r) => r.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 1),
-    streak: top.streak ? { days: top.streak, direction: top.direction } : null,
+    // The headline direction gets two rows, the other side one.
+    added: up.slice(0, top.direction === "buying" ? 2 : 1),
+    reduced: down.slice(0, top.direction === "selling" ? 2 : 1),
+    streak,
   };
 }
 

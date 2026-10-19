@@ -33,6 +33,7 @@ done
 
 # 3) Shell syntax for the deploy script.
 bash -n sync_data.sh 2>/dev/null || { echo "❌ pre-push: sync_data.sh has a syntax error"; fail=1; }
+bash -n scripts/push_holdings.sh 2>/dev/null || { echo "❌ pre-push: scripts/push_holdings.sh has a syntax error"; fail=1; }
 
 if [ "$fail" -ne 0 ]; then
   echo ""

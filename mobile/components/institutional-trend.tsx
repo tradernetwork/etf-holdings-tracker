@@ -10,6 +10,7 @@ import {
   ErrorNote,
   SectionHeader,
   Note,
+  QueryStatus,
 } from "./ui";
 import { useTheme } from "@/lib/theme-context";
 import { deltaColor } from "@/lib/theme";
@@ -18,6 +19,7 @@ import {
   formatWeight,
   cleanName,
   formatShortDate,
+  pluralize,
 } from "@/lib/format";
 import { useTrend } from "@/lib/discovery/api";
 import { trendLabels } from "@/lib/discovery/derive";
@@ -39,7 +41,7 @@ export function TrendCard({
       <Card>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Mono bold>{row.ticker} →</Mono>
-          <Hint>{row.fundCount} funds</Hint>
+          <Hint>{pluralize(row.fundCount, "fund")}</Hint>
         </View>
         <Hint>
           {cleanName(row.name)} · {row.sector || "Sector not reported"}
@@ -75,13 +77,7 @@ export function TrendPreview() {
         }
       />
       <Hint>Stock-picking funds · {formatShortDate(q.data?.asOfDate)}</Hint>
-      {q.isLoading && <Loading />}
-      {q.isError && (
-        <ErrorNote
-          message="Couldn't load the trend."
-          onRetry={() => q.refetch()}
-        />
-      )}{" "}
+      <QueryStatus q={q} />
       {(q.data?.tickers ?? []).slice(0, 3).map((row) => (
         <TrendCard key={row.ticker} row={row} />
       ))}

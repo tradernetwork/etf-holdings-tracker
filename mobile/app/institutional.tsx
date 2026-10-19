@@ -2,17 +2,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { View } from "react-native";
 import { ListPage, Title, Action } from "@/components/discovery-ui";
-import {
-  Card,
-  Hint,
-  Mono,
-  Note,
-  Segmented,
-  Tappable,
-  ErrorNote,
-  Loading,
-  SectionHeader,
-} from "@/components/ui";
+import { Card, Hint, Mono, Note, Segmented, Tappable, SectionHeader, QueryStatus } from "@/components/ui";
 import { useInstitutional } from "@/lib/discovery/api";
 import type { Period } from "@/lib/discovery/types";
 import { useTheme } from "@/lib/theme-context";
@@ -22,6 +12,7 @@ import {
   formatUsd,
   formatWeight,
   formatShortDate,
+  pluralize,
 } from "@/lib/format";
 export default function Institutional() {
   const c = useTheme(),
@@ -31,6 +22,7 @@ export default function Institutional() {
     rows = [...(q.data?.buying ?? []), ...(q.data?.selling ?? [])];
   return (
     <ListPage
+      loaded={!!q.data}
       data={rows}
       keyFor={(r) => `${r.direction}:${r.ticker}`}
       refreshing={q.isRefetching}
@@ -39,8 +31,8 @@ export default function Institutional() {
         <>
           <Title>Combined book</Title>
           <Hint>
-            {formatShortDate(q.data?.asOfDate)} · {q.data?.fundCount ?? "—"}{" "}
-            stock-picking funds ·{" "}
+            {formatShortDate(q.data?.asOfDate)} ·{" "}
+            {q.data ? pluralize(q.data.fundCount, "stock-picking fund") : "—"} ·{" "}
             {q.data?.totalAum == null
               ? "AUM unknown"
               : formatUsd(q.data.totalAum * 1e9)}{" "}
@@ -60,13 +52,7 @@ export default function Institutional() {
             excluded. This measures aggregate allocations, distinct from manager
             active-flow changes.
           </Note>
-          {q.isLoading && <Loading />}
-          {q.isError && (
-            <ErrorNote
-              message="Couldn't load institutional flow."
-              onRetry={() => q.refetch()}
-            />
-          )}{" "}
+          <QueryStatus q={q} />
           {(q.data?.buying.length === 100 ||
             q.data?.selling.length === 100) && (
             <Note>Top 100 per direction, the API's supported limit.</Note>
@@ -101,7 +87,7 @@ export default function Institutional() {
             <Hint>
               {formatWeight(r.previousBlendedWeight)} →{" "}
               {formatWeight(r.blendedWeight)} blended weight ·{" "}
-              {r.fundCount === 0 ? "Fully exited" : `${r.fundCount} funds`}
+              {r.fundCount === 0 ? "Fully exited" : pluralize(r.fundCount, "fund")}
             </Hint>
             <Action
               onPress={() =>

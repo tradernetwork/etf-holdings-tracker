@@ -12,6 +12,14 @@ export function dayWord(asOf: string | null | undefined, now?: Date): string {
   return isToday(asOf, now) ? "today" : shortDay(asOf) || "the latest file";
 }
 
+/** For "...in {fileRef(d)}": "the latest file" / "today's file" / "the Oct 9 file". Never doubles "the" or "file". */
+export function fileRef(asOf: string | null | undefined, now?: Date): string {
+  if (!asOf) return "the latest file";
+  if (isToday(asOf, now)) return "today's file";
+  const d = shortDay(asOf);
+  return d ? `the ${d} file` : "the latest file";
+}
+
 /** "changed today" / "changed in the Oct 9 file" / "changed in the latest file". */
 export function inFile(asOf: string | null | undefined, now?: Date): string {
   if (!asOf) return "in the latest file";

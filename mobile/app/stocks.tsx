@@ -9,15 +9,7 @@ import {
   DenseRow,
   RowBadge,
 } from "@/components/discovery-ui";
-import {
-  Hint,
-  Mono,
-  Badge,
-  ErrorNote,
-  Loading,
-  Tappable,
-  Note,
-} from "@/components/ui";
+import { Hint, Mono, Badge, Tappable, Note, QueryStatus } from "@/components/ui";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { useStocks } from "@/lib/discovery/api";
 import { emptyStockFilters, filterStocks } from "@/lib/discovery/derive";
@@ -32,6 +24,7 @@ import {
   formatPp,
   formatWeight,
   formatShortDate,
+  pluralize,
 } from "@/lib/format";
 import { useTheme } from "@/lib/theme-context";
 import { deltaColor } from "@/lib/theme";
@@ -67,6 +60,7 @@ export default function Stocks() {
   return (
     <ListPage
       dense
+      loaded={!!q.data}
       data={rows}
       keyFor={(r) => r.ticker}
       refreshing={q.isRefetching}
@@ -77,10 +71,12 @@ export default function Stocks() {
       header={
         <>
           <Title>Stocks</Title>
-          <Hint>
-            {formatShortDate(q.data?.asOfDate)} · {rows.length} of{" "}
-            {source.length} ranked underlyings
-          </Hint>
+          {q.data && (
+            <Hint>
+              {formatShortDate(q.data.asOfDate)} · {rows.length} of{" "}
+              {source.length} ranked underlyings
+            </Hint>
+          )}
           <Search
             value={f.search}
             onChange={(search) => patch({ search })}
@@ -112,13 +108,7 @@ export default function Stocks() {
               Search filters this returned universe.
             </Note>
           )}
-          {q.isLoading && <Loading />}
-          {q.isError && (
-            <ErrorNote
-              message="Couldn't load stocks."
-              onRetry={() => q.refetch()}
-            />
-          )}{" "}
+          <QueryStatus q={q} />
           {funds.isError && (
             <Note>
               Provider lookup unavailable. Retry Explore to restore provider
@@ -129,7 +119,7 @@ export default function Stocks() {
       }
       renderItem={({ item: r, index }) => (
         <DenseRow
-          label={`${r.ticker}, ${r.fundCount} funds, ${formatPp(r.netChange)}, ${formatWeight(r.totalWeight)} total weight, ${r.distinctProviders ?? "unknown"} families, ${r.newEntryFunds.length} new fund entries, ${r.exitFunds?.length ?? 0} exits, ${r.streak ?? "unknown"} day streak. ${expanded === r.ticker ? "Collapse" : "Expand"} stock details`}
+          label={`${r.ticker}, ${pluralize(r.fundCount, "fund")}, ${formatPp(r.netChange)}, ${formatWeight(r.totalWeight)} total weight, ${r.distinctProviders ?? "unknown"} families, ${r.newEntryFunds.length} new fund entries, ${r.exitFunds?.length ?? 0} exits, ${r.streak ?? "unknown"} day streak. ${expanded === r.ticker ? "Collapse" : "Expand"} stock details`}
           expanded={expanded === r.ticker}
           onPress={() => setExpanded(expanded === r.ticker ? null : r.ticker)}
           top={
@@ -164,7 +154,7 @@ export default function Stocks() {
           }
           bottom={
             <Hint>
-              {r.fundCount} funds · {formatWeight(r.totalWeight)} total weight
+              {pluralize(r.fundCount, "fund")} · {formatWeight(r.totalWeight)} total weight
             </Hint>
           }
           rightBottom={<Hint>Details {expanded === r.ticker ? "−" : "+"}</Hint>}
@@ -188,8 +178,8 @@ export default function Stocks() {
               {cleanName(r.name)} · {r.sector || "Sector not reported"}
             </Hint>
             <Hint>
-              {r.fundCount} funds · {formatWeight(r.totalWeight)} total weight ·{" "}
-              {r.distinctProviders ?? "—"} families
+              {pluralize(r.fundCount, "fund")} · {formatWeight(r.totalWeight)} total weight ·{" "}
+              {r.distinctProviders == null ? "—" : pluralize(r.distinctProviders, "family", "families")}
             </Hint>
           </Tappable>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -244,7 +234,7 @@ export default function Stocks() {
         title="Stock filters"
         onClose={() => setSheet(false)}
         onReset={() => setF(emptyStockFilters)}
-        applyLabel={`Show ${rows.length} stocks`}
+        applyLabel={`Show ${pluralize(rows.length, "stock")}`}
       >
         <OptionGroup
           label="Sort"

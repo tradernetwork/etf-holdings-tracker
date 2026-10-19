@@ -9,7 +9,7 @@ import { cellDetail, cellLabel, churnPercent } from "../lib/rotation";
 import { fundFlowUsd, signalFlowUsd } from "../lib/today/logic";
 import type { FullSignal } from "../lib/today/types";
 import type { Change } from "../lib/types";
-import { activityTitle, dayWord, inFile, isToday, latestFileDate } from "../lib/when";
+import { activityTitle, dayWord, fileRef, inFile, isToday, latestFileDate } from "../lib/when";
 import { metricCards } from "../lib/effectiveness";
 import kqqqEff from "./fixtures/kqqq-effectiveness.json";
 
@@ -128,5 +128,17 @@ describe("fund directory", () => {
   it("summarises the visible list", () => {
     expect(directoryHeadline([{ fund: "A", provider: "X", aum: 1.5 }, { fund: "B", provider: "X", aum: 0.25 }] as DirectoryFund[])).toBe("2 funds · 1 provider · $1.8B combined AUM");
     expect(directoryHeadline([{ fund: "A", provider: "X", aum: 0.085 }] as DirectoryFund[])).toBe("1 fund · 1 provider · $85M combined AUM");
+  });
+});
+
+describe("fileRef", () => {
+  it("never doubles the article or the word file", () => {
+    expect(fileRef(null, NOW)).toBe("the latest file");
+    expect(fileRef("2026-10-11", NOW)).toBe("today's file");
+    expect(fileRef("2026-10-09", NOW)).toBe("the Oct 9 file");
+    for (const d of [null, "2026-10-11", "2026-10-09"]) {
+      const sentence = `rolled in ${fileRef(d, NOW)}, by provider.`;
+      expect(sentence).not.toMatch(/the the|file file|today file/);
+    }
   });
 });
