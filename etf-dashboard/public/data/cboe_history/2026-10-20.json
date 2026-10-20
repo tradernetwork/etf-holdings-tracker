@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-20T21:46:43.487120+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5323,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "BLSG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "BZH": "BEAZER HOMES USA INC COM NEW",
+        "CPNX": "Tradr 2X Long CPNG Daily ETF",
+        "GEMG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "GLGG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "HONG": "Leverage Shares 2X Long HON Daily ETF",
+        "NEMG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "NUG": "THEMES ETF TR LEVERAGE SHS 2X",
+        "NXPX": "Tradr 2X Long NXPI Daily ETF",
+        "PONX": "Tradr 2X Long PONY Daily ETF",
+        "SMZ": "Tradr 2X Short SMR Daily ETF"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

@@ -2,8 +2,8 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-10-19",
-  "holdings": 20,
+  "asOf": "2026-10-20",
+  "holdings": 19,
   "dates": [
     "2026-08-07",
     "2026-08-14",
@@ -16,7 +16,7 @@
     "2026-10-02",
     "2026-10-10",
     "2026-10-16",
-    "2026-10-19"
+    "2026-10-20"
   ],
   "themes": [
     "Uncategorized",
@@ -24,15 +24,15 @@
     "Semis/photonics",
     "Healthcare/biotech",
     "Cloud/AI",
-    "Space",
     "Other",
+    "Precious metals",
     "Nuclear/uranium",
     "Bitcoin miners",
-    "Clean energy",
-    "Precious metals",
-    "Fintech",
+    "Rare earth/materials",
     "Quantum",
-    "Rare earth/materials"
+    "Clean energy",
+    "Space",
+    "Fintech"
   ],
   "timeline": [
     {
@@ -155,37 +155,36 @@
       }
     },
     {
-      "date": "2026-10-19",
+      "date": "2026-10-20",
       "weights": {
-        "Semis/photonics": 10.030018746837358,
-        "Uncategorized": 53.18994577632716,
-        "Crypto financials": 24.247796508464813,
-        "Healthcare/biotech": 4.839207350184036,
-        "Cloud/AI": 4.743957543950452
+        "Semis/photonics": 10.226961378559672,
+        "Uncategorized": 47.74758858682304,
+        "Crypto financials": 23.733203262960753,
+        "Healthcare/biotech": 4.755704101767004,
+        "Cloud/AI": 4.660252136669372
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 53.2,
-    "Crypto financials": 24.2,
-    "Semis/photonics": 10.0,
+    "Uncategorized": 47.7,
+    "Crypto financials": 23.7,
+    "Semis/photonics": 10.2,
     "Healthcare/biotech": 4.8,
     "Cloud/AI": 4.7,
-    "Space": 0.0,
     "Other": 0.0,
+    "Precious metals": 0.0,
     "Nuclear/uranium": 0.0,
     "Bitcoin miners": 0.0,
-    "Clean energy": 0.0,
-    "Precious metals": 0.0,
-    "Fintech": 0.0,
+    "Rare earth/materials": 0.0,
     "Quantum": 0.0,
-    "Rare earth/materials": 0.0
+    "Clean energy": 0.0,
+    "Space": 0.0,
+    "Fintech": 0.0
   },
   "churnSincePrior": {
     "added": [
       "ASST.UQ",
       "BMNR",
-      "CLF",
       "COIN",
       "CRCL",
       "GME",
@@ -217,10 +216,9 @@
       "IOVA",
       "TEM"
     ],
-    "rate": 0.85
+    "rate": 0.84
   },
   "unmapped": [
-    "CLF",
     "FIG",
     "GME",
     "IOVA",

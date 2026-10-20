@@ -2,8 +2,8 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-19",
-  "holdings": 27,
+  "asOf": "2026-10-20",
+  "holdings": 28,
   "dates": [
     "2026-08-07",
     "2026-08-14",
@@ -16,7 +16,7 @@
     "2026-10-02",
     "2026-10-10",
     "2026-10-16",
-    "2026-10-19"
+    "2026-10-20"
   ],
   "themes": [
     "Technology",
@@ -185,33 +185,35 @@
       }
     },
     {
-      "date": "2026-10-19",
+      "date": "2026-10-20",
       "weights": {
-        "Technology": 40.93852394661985,
-        "Materials": 8.898832854587193,
-        "Communications": 7.91916551989936,
-        "Consumer": 4.32681476804294,
-        "Healthcare": 3.1487190885268057,
-        "Uncategorized": 15.02946345597224,
-        "Crypto": 2.8947627771146496,
-        "Financials": 3.706184489558099,
-        "Industrials": 9.614604083277477
+        "Technology": 38.40162081752535,
+        "Uncategorized": 17.851970506273382,
+        "Industrials": 9.560478088697526,
+        "Materials": 8.812416786227766,
+        "Crypto": 2.867521580362386,
+        "Healthcare": 3.174012647177254,
+        "Consumer": 4.325068335212646,
+        "Communications": 7.920628509517943,
+        "Financials": 3.605388633246461
       }
     }
   ],
   "currentThemes": {
-    "Technology": 40.9,
-    "Uncategorized": 15.0,
+    "Technology": 38.4,
+    "Uncategorized": 17.9,
     "Industrials": 9.6,
-    "Materials": 8.9,
+    "Materials": 8.8,
     "Communications": 7.9,
     "Consumer": 4.3,
-    "Financials": 3.7,
-    "Healthcare": 3.1,
+    "Financials": 3.6,
+    "Healthcare": 3.2,
     "Crypto": 2.9
   },
   "churnSincePrior": {
-    "added": [],
+    "added": [
+      "TTWO"
+    ],
     "dropped": [],
     "held": [
       "ADI",
@@ -242,12 +244,13 @@
       "SPCX",
       "TMDX"
     ],
-    "rate": 0.0
+    "rate": 0.04
   },
   "unmapped": [
     "BABA",
     "FIGR",
     "MPC",
-    "SPCX"
+    "SPCX",
+    "TTWO"
   ]
 }
