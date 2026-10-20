@@ -89,11 +89,10 @@ def get_changes(provider: str = "", fund: str = "", direction: str = "") -> dict
         changes = [c for c in changes
                    if data.FUND_PROVIDERS.get(c['fund'], c['fund']) == provider]
 
-    # Drift-adjusted: raw weight moves with price even when nobody trades.
-    if direction == 'buying':
-        changes = [c for c in changes if c['activeWeightDelta'] > 0]
-    elif direction == 'selling':
-        changes = [c for c in changes if c['activeWeightDelta'] < 0]
+    # Share-count direction (data.change_direction): a fund that added shares
+    # is 'buying' even where its active tilt vs the book rounds to nothing.
+    if direction in ('buying', 'selling'):
+        changes = [c for c in changes if data.row_direction(c) == direction]
 
     return {
         'asOfDate': data.get_as_of_date(),
@@ -282,11 +281,10 @@ def get_holdings_changes(
         changes = [c for c in changes
                    if data.FUND_PROVIDERS.get(c['fund'], c['fund']) == provider]
 
-    # Drift-adjusted: raw weight moves with price even when nobody trades.
-    if direction == 'buying':
-        changes = [c for c in changes if c['activeWeightDelta'] > 0]
-    elif direction == 'selling':
-        changes = [c for c in changes if c['activeWeightDelta'] < 0]
+    # Share-count direction (data.change_direction): a fund that added shares
+    # is 'buying' even where its active tilt vs the book rounds to nothing.
+    if direction in ('buying', 'selling'):
+        changes = [c for c in changes if data.row_direction(c) == direction]
 
     return {
         'asOfDate': data.get_as_of_date(),

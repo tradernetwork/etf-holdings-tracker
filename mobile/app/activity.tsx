@@ -5,7 +5,7 @@ import { Screen, Hint, Note, Mono, Segmented, QueryStatus } from "@/components/u
 import { Action, ChangeCard, Title } from "@/components/discovery-ui";
 import { FilterSheet, OptionGroup } from "@/components/filter-sheet";
 import { useActivity } from "@/lib/discovery/api";
-import { matrixRows, moveLabel, moveType } from "@/lib/discovery/derive";
+import { matrixRows, moveLabel, moveType, tradeDirection } from "@/lib/discovery/derive";
 import { useFunds } from "@/lib/queries";
 import type { Change } from "@/lib/types";
 import type { Direction, Period } from "@/lib/discovery/types";
@@ -34,11 +34,7 @@ export default function Activity() {
   const filtered = source.filter(
     (r) =>
       (!provider || map.get(r.fund)?.provider === provider) &&
-      (direction === "all" ||
-        (r.activeWeightDelta != null &&
-          (direction === "buying"
-            ? r.activeWeightDelta > 0
-            : r.activeWeightDelta < 0))),
+      (direction === "all" || tradeDirection(r) === direction),
   );
   const rows = matrixRows(filtered),
     columns = [...new Set(filtered.map((r) => r.fund))].sort(
@@ -83,8 +79,8 @@ export default function Activity() {
       </Action>
       <Note>
         Swipe fund columns →. Tickers stay pinned. Tap any cell for the full
-        change. NEW / EXIT are position identities; ADD / TRIM are active-weight
-        direction. Empty means no significant move, not zero exposure.
+        change. NEW / EXIT are position identities; ADD / TRIM follow the share
+        count (split-adjusted). Empty means no significant move, not zero exposure.
       </Note>
       <QueryStatus q={q} />
       {q.data && rows.length === 0 && (
@@ -153,9 +149,11 @@ export default function Activity() {
                         borderColor: c.border,
                         justifyContent: "center",
                         backgroundColor: v
-                          ? v.activeWeightDelta! > 0
+                          ? tradeDirection(v) === "buying"
                             ? c.buy + "15"
-                            : c.sell + "15"
+                            : tradeDirection(v) === "selling"
+                              ? c.sell + "15"
+                              : c.card
                           : c.card,
                       }}
                     >

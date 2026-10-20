@@ -150,9 +150,14 @@ def test_degrades_to_raw_weight_when_price_is_unknown():
              'Share Quantity': '100', 'Weight': '45.0', 'Option_Type': ''}]
 
     changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
-    for t in ('AAA', 'BBB'):
-        assert changes[t]['activeWeightDelta'] == changes[t]['weightDelta'], \
-            f"{t}: no-price fallback must equal the raw delta"
+    assert changes['AAA']['activeWeightDelta'] == changes['AAA']['weightDelta'], \
+        "AAA: no-price fallback must equal the raw delta"
+    assert changes['AAA']['direction'] == 'buying'
+    # BBB's shares did not move: its weight only fell because AAA was bought
+    # with new money. The share-count guard makes that 0, not a -15pp "trim".
+    assert changes['BBB']['weightDelta'] == -15.0
+    assert changes['BBB']['activeWeightDelta'] == 0.0
+    assert changes['BBB']['direction'] == 'unchanged'
 
 
 def test_options_sleeve_included_in_renormalization():
@@ -285,3 +290,119 @@ def test_divergence_surfaces_when_price_masks_it():
     assert 'AAA' in divs, "genuine cross-fund divergence not detected"
     assert 'ARKK' in divs['AAA']['buying']
     assert 'AVUV' in divs['AAA']['selling']
+
+
+# ---------------------------------------------------------------------------
+# The share-count guard (2026-10-20). Measured on the live board that day:
+# 1,123 of 3,381 rows with a real share move carried an active sign opposite
+# to the trade. AVUS added 5,170 AMZN and was badged TRIM; ARKG sold 26,523
+# TXG and read as a +0.21pp buy. A fund that added shares is never selling.
+# ---------------------------------------------------------------------------
+
+
+def test_buy_smaller_than_pro_rata_inflow_is_not_a_trim():
+    """The AVUS/AMZN case: +10% creation units, AMZN only +2%. Shares went UP."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('AMZN', 1000, 10.0, 50.0), ('OTH', 1000, 10.0, 50.0)])
+    # Prices flat. Fund grows 10% in shares overall; AMZN gets +2%, OTH +18%.
+    # AMZN: 1020*10 = 10200; OTH: 1180*10 = 11800; total 22000.
+    curr = _rows('FUND', [('AMZN', 1020, 10.0, 46.364), ('OTH', 1180, 10.0, 53.636)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    amzn = changes['AMZN']
+    assert amzn['sharesDelta'] == 20, "the fund bought shares"
+    assert amzn['weightDelta'] < 0, "raw weight fell (the rest of the book grew faster)"
+    assert amzn['direction'] == 'buying', "shares up is never a trim"
+    assert amzn['activeWeightDelta'] == 0.0, \
+        f"an opposite-sign relative tilt is not a signal: {amzn['activeWeightDelta']}"
+    assert changes['OTH']['direction'] == 'buying'
+    assert changes['OTH']['activeWeightDelta'] > 0
+
+
+def test_sale_smaller_than_redemption_is_not_an_add():
+    """The ARKK/AMZN case: fund shrinks 10%, AMZN only -2%. Shares went DOWN."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('AMZN', 1000, 10.0, 50.0), ('OTH', 1000, 10.0, 50.0)])
+    curr = _rows('FUND', [('AMZN', 980, 10.0, 54.444), ('OTH', 820, 10.0, 45.556)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    amzn = changes['AMZN']
+    assert amzn['sharesDelta'] == -20
+    assert amzn['weightDelta'] > 0
+    assert amzn['direction'] == 'selling', "shares down is never an add"
+    assert amzn['activeWeightDelta'] == 0.0
+    assert changes['OTH']['direction'] == 'selling'
+    assert changes['OTH']['activeWeightDelta'] < 0
+
+
+def test_direction_follows_shares_and_sign_never_disagrees():
+    """Every record: NEW buys, REMOVED sells, otherwise the share count rules,
+    and activeWeightDelta's sign is a subset of direction."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('AAA', 100, 10.0, 25.0), ('BBB', 100, 10.0, 25.0),
+                          ('CCC', 100, 10.0, 25.0), ('GONE', 100, 10.0, 25.0)])
+    # AAA bought, BBB sold, CCC untouched (price doubled), GONE closed, NEW opened.
+    curr = _rows('FUND', [('AAA', 150, 10.0, 30.0), ('BBB', 50, 10.0, 10.0),
+                          ('CCC', 100, 20.0, 40.0), ('NEW', 100, 10.0, 20.0)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    assert changes['AAA']['direction'] == 'buying'
+    assert changes['BBB']['direction'] == 'selling'
+    assert changes['CCC']['direction'] == 'unchanged'
+    assert changes['CCC']['activeWeightDelta'] == 0.0, "a rally is not a trade"
+    assert changes['GONE']['direction'] == 'selling'
+    assert changes['NEW']['direction'] == 'buying'
+    for c in changes.values():
+        a = c['activeWeightDelta']
+        if a > 0:
+            assert c['direction'] == 'buying', c
+        elif a < 0:
+            assert c['direction'] == 'selling', c
+
+
+def test_split_adjusted_shares_decide_direction():
+    """4:1 split plus a small real trim: 100 -> 390 shares is a sale, not a 4x buy."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('SPL', 100, 400.0, 50.0), ('OTH', 1000, 40.0, 50.0)])
+    # 400 post-split shares would be flat; 395 means 5 were sold.
+    # SPL: 395*100 = 39500; OTH: 40000 (cash from the sale sits outside). 79500.
+    curr = _rows('FUND', [('SPL', 395, 100.0, 49.686), ('OTH', 1000, 40.0, 50.314)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    spl = changes['SPL']
+    assert spl['splitFactor'] == 4.0
+    assert spl['sharesDelta'] == 295, "raw share move still reported for transparency"
+    assert spl['direction'] == 'selling'
+    assert spl['activeWeightDelta'] <= 0
+
+
+def test_unknown_share_counts_keep_the_drift_figure():
+    """A weight-only provider (shares 0) has no count to check against."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('AAA', 0, 0.0, 50.0), ('BBB', 0, 0.0, 50.0)])
+    curr = _rows('FUND', [('AAA', 0, 0.0, 60.0), ('BBB', 0, 0.0, 40.0)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    assert changes['AAA']['activeWeightDelta'] == 10.0
+    assert changes['AAA']['direction'] == 'buying'
+    assert changes['BBB']['activeWeightDelta'] == -10.0
+    assert changes['BBB']['direction'] == 'selling'
+
+
+def test_changes_direction_filter_uses_share_count():
+    """`/changes?direction=buying` returns the fund that added shares even when
+    its active tilt rounds to 0 — and never a fund whose count fell."""
+    from api import data as _data
+
+    prev = _rows('FUND', [('AMZN', 1000, 10.0, 50.0), ('OTH', 1000, 10.0, 50.0)])
+    curr = _rows('FUND', [('AMZN', 1020, 10.0, 46.364), ('OTH', 1180, 10.0, 53.636)])
+    changes = _data._changes_between(curr, prev)
+    buying = [c['ticker'] for c in changes if c['direction'] == 'buying']
+    selling = [c['ticker'] for c in changes if c['direction'] == 'selling']
+    assert sorted(buying) == ['AMZN', 'OTH']
+    assert selling == []

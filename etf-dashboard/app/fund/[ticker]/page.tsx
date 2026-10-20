@@ -38,6 +38,7 @@ import { RotationPanel } from '@/components/rotation-panel';
 import { FundHoldings } from '@/components/fund-holdings';
 import { FundPositions } from '@/components/fund-positions';
 import { catchUpLabel } from '@/lib/catch-up';
+import { changeDirection } from '@/lib/direction';
 import { OptionActivity } from '@/components/option-activity';
 
 // The page reads searchParams (the Daily/Weekly/Monthly toggle), so it MUST
@@ -220,10 +221,10 @@ async function ActiveEquityBody({ detail, fund, period }: {
     const entrances = changes.filter(c => c.type === 'NEW');
     const exits = changes.filter(c => c.type === 'REMOVED');
     const increased = changes
-        .filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) > 0)
+        .filter(c => c.type === 'CHANGED' && changeDirection(c) === 'buying')
         .sort((a, b) => (b.activeWeightDelta ?? b.weightDelta) - (a.activeWeightDelta ?? a.weightDelta));
     const trimmed = changes
-        .filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) < 0)
+        .filter(c => c.type === 'CHANGED' && changeDirection(c) === 'selling')
         .sort((a, b) => (a.activeWeightDelta ?? a.weightDelta) - (b.activeWeightDelta ?? b.weightDelta));
 
     const streaks = detail.streaks ?? [];
@@ -300,8 +301,8 @@ async function OptionIncomeBody({ detail, fund }: { detail: ApiFundDetail; fund:
     // line), so these per-type lists only render as the fallback.
     const newPositions = equityChanges.filter(c => c.type === 'NEW');
     const closedPositions = equityChanges.filter(c => c.type === 'REMOVED');
-    const increased = equityChanges.filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) > 0);
-    const trimmed = equityChanges.filter(c => c.type === 'CHANGED' && (c.activeWeightDelta ?? c.weightDelta) < 0);
+    const increased = equityChanges.filter(c => c.type === 'CHANGED' && changeDirection(c) === 'buying');
+    const trimmed = equityChanges.filter(c => c.type === 'CHANGED' && changeDirection(c) === 'selling');
     const shownEquityChanges = hasPositions ? [] : equityChanges;
     const hasChanges = shownEquityChanges.length > 0 || optionChanges.length > 0;
 
@@ -744,9 +745,9 @@ function ChangeSection({ title, icon, records, color }: {
                                     </span>
                                 )}
                             </div>
-                            <span className={`font-mono text-sm shrink-0 font-semibold flex items-center gap-0.5 ${(r.activeWeightDelta ?? r.weightDelta) > 0 ? 'text-buy' : (r.activeWeightDelta ?? r.weightDelta) < 0 ? 'text-sell' : 'text-slate-400'
+                            <span className={`font-mono text-sm shrink-0 font-semibold flex items-center gap-0.5 ${changeDirection(r) === 'buying' ? 'text-buy' : changeDirection(r) === 'selling' ? 'text-sell' : 'text-slate-400'
                                 }`}>
-                                {(r.activeWeightDelta ?? r.weightDelta) > 0 ? <ArrowUpRight className="h-3 w-3" /> : (r.activeWeightDelta ?? r.weightDelta) < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
+                                {changeDirection(r) === 'buying' ? <ArrowUpRight className="h-3 w-3" /> : changeDirection(r) === 'selling' ? <ArrowDownRight className="h-3 w-3" /> : null}
                                 {(r.activeWeightDelta ?? r.weightDelta) > 0 ? '+' : ''}{(r.activeWeightDelta ?? r.weightDelta).toFixed(2)}%
                             </span>
                         </div>

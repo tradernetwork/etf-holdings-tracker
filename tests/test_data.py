@@ -484,14 +484,16 @@ def test_fund_detail_includes_streaks(tmp_path, monkeypatch):
     from api import data as _data
 
     header = "ETF Ticker,Ticker,Name,Share Quantity,Weight\n"
-    # TSLA weight climbs every day -> a multi-day accumulation streak.
-    for d, w in [
-        ("2026-05-21", "9.3"),
-        ("2026-05-20", "9.2"),
-        ("2026-05-19", "9.1"),
-        ("2026-05-18", "9.0"),
+    # TSLA shares AND weight climb every day -> a multi-day accumulation
+    # streak. (Weight alone rising on a flat share count is a rally, not a
+    # trade, and no longer counts — see _share_sign_guard.)
+    for d, sh, w in [
+        ("2026-05-21", "103", "9.3"),
+        ("2026-05-20", "102", "9.2"),
+        ("2026-05-19", "101", "9.1"),
+        ("2026-05-18", "100", "9.0"),
     ]:
-        (tmp_path / f"holdings_{d}.csv").write_text(header + f"ARKK,TSLA,Tesla,100,{w}\n")
+        (tmp_path / f"holdings_{d}.csv").write_text(header + f"ARKK,TSLA,Tesla,{sh},{w}\n")
     monkeypatch.setattr(_data, "HISTORY_DIR", str(tmp_path))
 
     detail = _data.get_fund_detail("ARKK")

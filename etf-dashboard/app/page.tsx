@@ -401,6 +401,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 20, 2026"
+            tag="bugfix"
+            title="If the share count went up, it's not a trim"
+            desc="Someone sent me a screenshot of AVUS going from 1,971,900 to 1,977,070 shares of Amazon with a red TRIM badge on it. Fair. Our price-adjusted math nets each trade against the fund's inflows, so a buy that was smaller than the day's creation units came out a hair negative, and we called it a sale. Same thing in reverse: ARKK sold 4,608 AMZN into redemptions and showed as a buyer. About a third of the rows with a real share move had this. Now the share count decides the badge and the buy/sell filters, on the site, the app and the API, and the active-weight number can only agree with it or read 0.00. Shares up is an ADD, shares down is a TRIM, no shares moved is nothing. The ranking still uses active weight, so a fund that just bought its pro-rata slice doesn't jump the signals list."
+          />
+          <ChangelogEntry
             date="October 15, 2026"
             tag="bugfix"
             title="T-bill funds no longer say 0 holdings"

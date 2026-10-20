@@ -71,6 +71,18 @@ describe("4. weight drift is not a trade", () => {
     expect(moveType({ ...aod, type: "REMOVED", sharesDelta: 0 })).toBe("EXIT");
     expect(sharesUnchanged({ ...aod, sharesDelta: undefined, currentShares: null, previousShares: null })).toBe(false);
   });
+  it("the API direction (share count) wins over the active sign: shares up is never TRIM", () => {
+    // AVUS added 5,170 AMZN on 2026-10-20; the drift figure rounded to -0.0005 and the app said TRIM.
+    const avus = ch({ ticker: "AMZN", fund: "AVUS", direction: "buying", activeWeightDelta: 0, previousShares: 1_971_900, currentShares: 1_977_070, sharesDelta: 5_170 });
+    expect(moveType(avus)).toBe("ADD");
+    const arkk = ch({ ticker: "AMZN", fund: "ARKK", direction: "selling", activeWeightDelta: 0, previousShares: 578_142, currentShares: 573_534, sharesDelta: -4_608 });
+    expect(moveType(arkk)).toBe("TRIM");
+    expect(moveCounts([avus, arkk])).toEqual({ added: 1, reduced: 1 });
+    expect(filterChanges([avus, arkk], { ...emptyChangeFilters, direction: "buying" }, new Map()).map((r) => r.fund)).toEqual(["AVUS"]);
+    expect(filterChanges([avus, arkk], { ...emptyChangeFilters, direction: "selling" }, new Map()).map((r) => r.fund)).toEqual(["ARKK"]);
+    // No field (older payload): the guarded active sign still decides.
+    expect(moveType({ ...avus, direction: undefined, activeWeightDelta: 0.1 })).toBe("ADD");
+  });
   it("Changes list hides drift rows by default helper and counts them neither as add nor cut", () => {
     const rows = [aod, ch({ ticker: "B", sharesDelta: 10 }), ch({ ticker: "C", activeWeightDelta: -0.3, sharesDelta: -4 })];
     expect(withoutDrift(rows).map((r) => r.ticker)).toEqual(["B", "C"]);

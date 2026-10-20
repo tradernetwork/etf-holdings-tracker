@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { FUND_PROVIDERS, FUND_AUM } from '@/lib/providers';
 import { FlowChip } from '@/components/flow-chip';
+import { changeDirection } from '@/lib/direction';
 
 interface Change {
     fund: string;
@@ -136,8 +137,8 @@ export function ChangesClient({ changes, providers }: {
     // this button?" given the current provider/fund/sector selection.
     const typeCounts = useMemo(() => ({
         all: sectorFiltered.length,
-        buys: sectorFiltered.filter(c => (c.activeWeightDelta ?? c.weightDelta) > 0 && c.type !== 'NEW').length,
-        sells: sectorFiltered.filter(c => (c.activeWeightDelta ?? c.weightDelta) < 0 && c.type !== 'REMOVED').length,
+        buys: sectorFiltered.filter(c => changeDirection(c) === 'buying' && c.type !== 'NEW').length,
+        sells: sectorFiltered.filter(c => changeDirection(c) === 'selling' && c.type !== 'REMOVED').length,
         new: sectorFiltered.filter(c => c.type === 'NEW').length,
         exit: sectorFiltered.filter(c => c.type === 'REMOVED').length,
     }), [sectorFiltered]);
@@ -147,8 +148,8 @@ export function ChangesClient({ changes, providers }: {
     // then handles per-column sort + the global text search + pagination.
     const preFiltered = useMemo(() => {
         let rows = sectorFiltered;
-        if (showType === 'buys') rows = rows.filter(c => (c.activeWeightDelta ?? c.weightDelta) > 0 && c.type !== 'NEW');
-        else if (showType === 'sells') rows = rows.filter(c => (c.activeWeightDelta ?? c.weightDelta) < 0 && c.type !== 'REMOVED');
+        if (showType === 'buys') rows = rows.filter(c => changeDirection(c) === 'buying' && c.type !== 'NEW');
+        else if (showType === 'sells') rows = rows.filter(c => changeDirection(c) === 'selling' && c.type !== 'REMOVED');
         else if (showType === 'new') rows = rows.filter(c => c.type === 'NEW');
         else if (showType === 'exit') rows = rows.filter(c => c.type === 'REMOVED');
         return rows;
@@ -240,27 +241,29 @@ export function ChangesClient({ changes, providers }: {
         },
         {
             id: 'type',
-            // Sort by the user-visible bucket (NEW / EXIT / ADD / TRIM).
-            // Direction keyed off activeWeightDelta (price-drift removed) so a
-            // position that only grew because the stock rallied isn't called an ADD.
+            // Sort by the user-visible bucket (NEW / EXIT / ADD / TRIM / HELD).
+            // Direction keyed off the share count (API `direction`): a fund that
+            // added shares is never a TRIM, however its active tilt rounds; a
+            // position whose share count did not move is HELD, not a trade.
             accessorFn: row => {
-                const dir = row.activeWeightDelta ?? row.weightDelta;
+                const dir = changeDirection(row);
                 return row.type === 'NEW' ? 'NEW'
                     : row.type === 'REMOVED' ? 'EXIT'
-                        : dir > 0 ? 'ADD' : 'TRIM';
+                        : dir === 'buying' ? 'ADD' : dir === 'selling' ? 'TRIM' : 'HELD';
             },
             header: () => <div className="text-center">Type</div>,
             cell: ({ row }) => {
                 const c = row.original;
-                const dir = c.activeWeightDelta ?? c.weightDelta;
+                const dir = changeDirection(c);
                 return (
                     <div className="text-center">
                         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${c.type === 'NEW' ? 'text-equity border-equity/30'
                             : c.type === 'REMOVED' ? 'text-warning border-warning/30'
-                                : dir > 0 ? 'text-buy border-buy/30'
-                                    : 'text-sell border-sell/30'
+                                : dir === 'buying' ? 'text-buy border-buy/30'
+                                    : dir === 'selling' ? 'text-sell border-sell/30'
+                                        : 'text-slate-400 border-slate-600/40'
                             }`}>
-                            {c.type === 'NEW' ? '★ NEW' : c.type === 'REMOVED' ? '✕ EXIT' : dir > 0 ? 'ADD' : 'TRIM'}
+                            {c.type === 'NEW' ? '★ NEW' : c.type === 'REMOVED' ? '✕ EXIT' : dir === 'buying' ? 'ADD' : dir === 'selling' ? 'TRIM' : 'HELD'}
                         </Badge>
                     </div>
                 );
@@ -336,8 +339,8 @@ export function ChangesClient({ changes, providers }: {
     // the chip counts match what's actually flowing into the table.
     // Exclude NEW from buys and REMOVED from sells — same logic as the type
     // filter tabs — so "↑ N buys" matches exactly what clicking BUYS shows.
-    const buys = preFiltered.filter(c => (c.activeWeightDelta ?? c.weightDelta) > 0 && c.type !== 'NEW').length;
-    const sells = preFiltered.filter(c => (c.activeWeightDelta ?? c.weightDelta) < 0 && c.type !== 'REMOVED').length;
+    const buys = preFiltered.filter(c => changeDirection(c) === 'buying' && c.type !== 'NEW').length;
+    const sells = preFiltered.filter(c => changeDirection(c) === 'selling' && c.type !== 'REMOVED').length;
     const newPos = preFiltered.filter(c => c.type === 'NEW').length;
     const exits = preFiltered.filter(c => c.type === 'REMOVED').length;
 

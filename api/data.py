@@ -1147,6 +1147,67 @@ _MIN_PLAUSIBLE_PRICE_RATIO = 0.2
 _MAX_PLAUSIBLE_PRICE_RATIO = 5.0
 
 
+def _shares_traded(prev_shares: float, curr_shares: float, split: float = 1.0) -> float | None:
+    """Split-adjusted share change, or None when either side has no usable count.
+
+    A 4:1 split turns 100 shares into 400 with nothing bought; the trade is
+    `curr - prev * split`. Written options carry negative counts and funds that
+    report only weights carry 0 — both read as "unknown", never as a trade.
+    """
+    if prev_shares <= 0 or curr_shares <= 0:
+        return None
+    traded = curr_shares - prev_shares * split
+    return 0.0 if abs(traded) < 1e-6 else traded
+
+
+def _share_sign_guard(active: float, prev_shares: float, curr_shares: float,
+                      split: float = 1.0) -> float:
+    """Active weight that never contradicts the share count (see
+    `_active_weight_deltas`): 0 when no shares moved, 0 when the drift figure
+    points the other way from the trade, unchanged when shares are unknown."""
+    traded = _shares_traded(prev_shares, curr_shares, split)
+    if traded is None:
+        return active
+    if traded == 0.0 or (traded > 0) != (active > 0):
+        return 0.0
+    return active
+
+
+def change_direction(kind: str, active: float, prev_shares: float = 0.0,
+                     curr_shares: float = 0.0, split: float = 1.0) -> str:
+    """'buying' / 'selling' / 'unchanged' for a change record.
+
+    The share count is the ground truth of what was traded: a position whose
+    count rose is never 'selling', one whose count fell is never 'buying'. NEW
+    is always buying and REMOVED always selling. Only when no share count is
+    usable does the (already guarded) active figure decide.
+    """
+    if kind == 'NEW':
+        return 'buying'
+    if kind == 'REMOVED':
+        return 'selling'
+    traded = _shares_traded(prev_shares, curr_shares, split)
+    if traded is None:
+        traded = active
+    if traded > 0:
+        return 'buying'
+    if traded < 0:
+        return 'selling'
+    return 'unchanged'
+
+
+def row_direction(r: dict) -> str | None:
+    """A change record's `direction`, or the sign of its (guarded) active delta
+    for rows that predate the field. None when the delta is unknown (catch-up)."""
+    d = r.get('direction')
+    if d in ('buying', 'selling', 'unchanged'):
+        return d
+    a = r.get('activeWeightDelta')
+    if a is None:
+        return None
+    return 'buying' if a > 0 else 'selling' if a < 0 else 'unchanged'
+
+
 def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float]:
     """Weight change attributable to the MANAGER, with price drift removed.
 
@@ -1189,6 +1250,19 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
 
     Keys whose fund cannot be normalized (no usable previous weights) are
     omitted; callers fall back to the raw delta for those.
+
+    THE SHARE-COUNT GUARD
+    ---------------------
+    Because the drift is renormalized over the whole book, a position the
+    manager bought *less than pro-rata* on an inflow day comes out slightly
+    negative, and one sold less than pro-rata on a redemption day comes out
+    positive. Measured 2026-10-20: 1,123 of 3,381 rows with a real share move
+    carried the opposite sign (AVUS added 5,170 AMZN and was badged TRIM; ARKG
+    sold 26,523 TXG and read as a +0.21pp buy). A relative-to-the-book tilt
+    against the direction of the actual trade is not a signal anyone can act
+    on, so `_share_sign_guard` zeroes it: the active figure never contradicts
+    the split-adjusted share change, and is exactly 0 when no shares moved.
+    Rows with no usable share count on either side keep the drift figure.
     """
     prev_by_fund: dict[str, list] = defaultdict(list)
     for key in prev:
@@ -1201,6 +1275,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
         if prev_sum <= 0:
             continue  # nothing to renormalize against — caller uses raw delta
         ratios: dict[tuple[str, str], float] = {}
+        splits: dict[tuple[str, str], float] = {}
         denom = 0.0
         for k in keys:
             p = prev[k]
@@ -1208,6 +1283,7 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
             # Price unknown on either side (or a REMOVED row with no current
             # price) => assume no drift rather than fabricate a return.
             ratio = 1.0
+            split = 1.0
             if c is not None and p['price'] > 0 and c['price'] > 0:
                 # An untouched position through a k:1 split is worth
                 # (k * shares) * (price / k) — so its value grows by
@@ -1225,13 +1301,21 @@ def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float
                 else:
                     ratio = price_ratio * split
             ratios[k] = ratio
+            splits[k] = split
             denom += p['weight'] * ratio
         if denom <= 0:
             continue
         for k in keys:
             drift = prev[k]['weight'] * ratios[k] / denom * prev_sum
-            curr_weight = curr[k]['weight'] if k in curr else 0.0
-            active[k] = 0.0 if k in unreliable else curr_weight - drift
+            c = curr.get(k)
+            curr_weight = c['weight'] if c is not None else 0.0
+            if k in unreliable:
+                active[k] = 0.0
+            elif c is None:
+                active[k] = curr_weight - drift      # REMOVED: fully unwound
+            else:
+                active[k] = _share_sign_guard(curr_weight - drift, prev[k]['shares'],
+                                              c['shares'], splits[k])
 
     # A position with no previous snapshot has no drift to subtract — all of it
     # is a decision the manager made today.
@@ -1251,9 +1335,15 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
 
     Every record carries both `weightDelta` (raw, price-contaminated, kept for
     backwards compatibility) and `activeWeightDelta` (price-drift removed —
-    see `_active_weight_deltas`). Direction and conviction downstream key off
+    see `_active_weight_deltas`). Conviction and ranking downstream key off
     the active figure; the raw one is retained so existing consumers and the
     fund-level "how did this position's weight actually move" view still work.
+
+    `direction` ('buying' / 'selling' / 'unchanged') follows the split-adjusted
+    share change (`change_direction`) and is what every ADD/TRIM badge and
+    buying/selling filter must use. `activeWeightDelta` is guarded so its sign
+    never disagrees with it (it is 0 where the drift figure pointed the other
+    way), so sign(activeWeightDelta) ⊆ direction, never the reverse.
     """
     curr = _build_map(curr_rows)
     prev = _build_map(prev_rows)
@@ -1271,7 +1361,7 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
 
     def _record(c: dict, kind: str, weight_delta: float, shares_delta: float,
                 active_delta: float, prev_weight: float = 0.0,
-                prev_shares: float = 0.0) -> dict:
+                prev_shares: float = 0.0, split: float = 1.0) -> dict:
         is_option = bool(c.get('option_type'))
         rec: dict = {
             'fund': c['fund'],
@@ -1279,7 +1369,8 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             'name': c['name'],
             'sector': c['sector'],
             'weightDelta': round(weight_delta, 4),
-            'activeWeightDelta': round(active_delta, 4),
+            'activeWeightDelta': round(active_delta, 4) or 0.0,   # never -0.0 on the wire
+            'direction': change_direction(kind, active_delta, prev_shares, c['shares'], split),
             'sharesDelta': round(shares_delta, 2),
             'currentWeight': round(c['weight'], 4),
             'previousWeight': round(prev_weight, 4),
@@ -1318,12 +1409,15 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             wd = c['weight'] - p['weight']
             sd = c['shares'] - p['shares']
             if abs(wd) > 0.0001 or abs(sd) > 0:
-                rec = _record(c, 'CHANGED', wd, sd, active.get(key, wd),
-                              prev_weight=p['weight'], prev_shares=p['shares'])
+                split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
+                # The raw fallback (fund with no usable previous weights) gets
+                # the same guard, so the sign can never contradict the count.
+                rec = _record(c, 'CHANGED', wd, sd,
+                              _share_sign_guard(active.get(key, wd), p['shares'], c['shares'], split),
+                              prev_weight=p['weight'], prev_shares=p['shares'], split=split)
                 # A 4:1 split shows sharesDelta=+13,185 while nothing was
                 # bought. Flag it so consumers don't read the raw share move as
-                # a purchase; activeWeightDelta already accounts for it.
-                split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
+                # a purchase; activeWeightDelta and direction already account for it.
                 if split != 1.0:
                     rec['splitFactor'] = round(split, 4)
                 changes.append(rec)
@@ -1825,10 +1919,10 @@ def query_changes(*, period: str = 'daily', fund: str | None = None,
         rows = [r for r in rows if r['fund'] == fund.upper()]
     elif provider:
         rows = [r for r in rows if FUND_PROVIDERS.get(r['fund'], r['fund']) == provider]
-    if direction == 'buying':
-        rows = [r for r in rows if r.get('activeWeightDelta') is not None and r['activeWeightDelta'] > 0]
-    elif direction == 'selling':
-        rows = [r for r in rows if r.get('activeWeightDelta') is not None and r['activeWeightDelta'] < 0]
+    # Share-count direction (see change_direction): a fund that added shares is
+    # 'buying' even where its active tilt vs the book rounds to nothing.
+    if direction in ('buying', 'selling'):
+        rows = [r for r in rows if row_direction(r) == direction]
     if sector:
         rows = [r for r in rows if r.get('sector') == sector]
     if q:

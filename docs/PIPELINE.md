@@ -50,9 +50,12 @@ last 30 days, and commits to `main`. The Vultr box pulls `main` every 15 min
 manual deploy.
 
 > **Note on signal math:** the pipeline described here produces *holdings*. The
-> *signal* direction/conviction is computed downstream in `api/data.py` off
-> **active weight** (`_active_weight_deltas`), not raw weight delta. See the
-> "Signal methodology" callout in `CLAUDE.md` — do not confuse the two.
+> *signal* conviction/ranking is computed downstream in `api/data.py` off
+> **active weight** (`_active_weight_deltas`), not raw weight delta, and the
+> buy/sell *direction* of a record follows the split-adjusted share count
+> (`change_direction` → the `direction` field; the active figure is guarded so
+> it never contradicts it). See the "Signal methodology" callout in
+> `CLAUDE.md` — do not confuse the three.
 
 ---
 
