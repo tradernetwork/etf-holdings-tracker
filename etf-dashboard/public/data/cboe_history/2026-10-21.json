@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-21T21:51:41.131500+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5322,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 578
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "BTF": "COINSHARES ETF TR COINSHARES BITCN"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
