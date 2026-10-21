@@ -73,9 +73,9 @@ describe("4. weight drift is not a trade", () => {
   });
   it("the API direction (share count) wins over the active sign: shares up is never TRIM", () => {
     // AVUS added 5,170 AMZN on 2026-10-20; the drift figure rounded to -0.0005 and the app said TRIM.
-    const avus = ch({ ticker: "AMZN", fund: "AVUS", direction: "buying", activeWeightDelta: 0, previousShares: 1_971_900, currentShares: 1_977_070, sharesDelta: 5_170 });
+    const avus = ch({ ticker: "AMZN", fund: "AVUS", direction: "buying", activeWeightDelta: -0.0005, previousShares: 1_971_900, currentShares: 1_977_070, sharesDelta: 5_170 });
     expect(moveType(avus)).toBe("ADD");
-    const arkk = ch({ ticker: "AMZN", fund: "ARKK", direction: "selling", activeWeightDelta: 0, previousShares: 578_142, currentShares: 573_534, sharesDelta: -4_608 });
+    const arkk = ch({ ticker: "AMZN", fund: "ARKK", direction: "selling", activeWeightDelta: 0.04, previousShares: 578_142, currentShares: 573_534, sharesDelta: -4_608 });
     expect(moveType(arkk)).toBe("TRIM");
     expect(moveCounts([avus, arkk])).toEqual({ added: 1, reduced: 1 });
     expect(filterChanges([avus, arkk], { ...emptyChangeFilters, direction: "buying" }, new Map()).map((r) => r.fund)).toEqual(["AVUS"]);

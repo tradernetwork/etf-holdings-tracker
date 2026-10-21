@@ -38,7 +38,7 @@ HOLDINGS_ROW = obj(
     dte=amount('Days to expiry as written in the issuer snapshot (options only; null otherwise). Not recomputed from today.'),
 )
 DIRECTION = {'type': 'string', 'enum': ['buying', 'selling', 'unchanged'],
-             'description': 'Which way the position was traded, from the split-adjusted share count: a fund whose share count rose is buying, one whose count fell is selling, no share move is unchanged (NEW is buying, REMOVED is selling; the active delta decides only when no share count is usable). Use this for ADD/TRIM labels and buy/sell filters. The sign of activeWeightDelta never contradicts it: the active figure is 0 where the drift-removed tilt pointed the other way from the trade.'}
+             'description': 'Which way the position was traded, from the split-adjusted share count: a fund whose share count rose is buying, one whose count fell is selling, no share move is unchanged (NEW is buying, REMOVED is selling; the active delta decides only when no share count is usable). Use this for ADD/TRIM labels. It can legitimately disagree with the sign of activeWeightDelta, which nets the trade against the fund\'s pro-rata flow (a buy smaller than the day\'s inflow is buying with a slightly negative active tilt). The direction= query filter keys off the activeWeightDelta sign.'}
 CHANGE = obj(positionUsd=P['positionUsd'], activeFlowUsd=P['activeFlowUsd'], direction=DIRECTION)
 # What the deltas in a response are measured against. A catch-up fund's own span is catchUpSince -> asOfDate (its deltas are null).
 COMPARISON = dict(

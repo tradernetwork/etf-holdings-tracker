@@ -30,10 +30,7 @@
  * removed) is what /holdings' Δ Weight column renders — `activeWeightDeltas`/
  * `splitFactor`/`rowPrice` below are a faithful port of api/data.py's
  * `_active_weight_deltas`/`_split_factor`/`_row_price`, verified
- * position-for-position against it (tests/test_holdings_query.py golden).
- * `shareSignGuard` mirrors `_share_sign_guard`: the active figure never
- * contradicts the split-adjusted share count and is 0 when no shares moved
- * (2026-10-20: AVUS added AMZN shares and was badged TRIM). Raw `weightDelta` is retained on every
+ * position-for-position against it. Raw `weightDelta` is retained on every
  * record for transparency but must NOT be substituted for the active value —
  * see api/data.py's methodology note. Keep the two implementations in
  * lockstep if you touch either.
@@ -260,27 +257,6 @@ function splitFactor(prevShares: number, currShares: number, prevPrice: number, 
  * position is 100% a decision). Funds with no usable previous weights are
  * omitted, and callers fall back to the raw delta for those keys.
  */
-/** Split-adjusted share change, or null when either side has no usable count
- *  (written options carry negative counts, weight-only providers carry 0).
- *  Mirrors api/data.py `_shares_traded`. */
-function sharesTraded(prevShares: number, currShares: number, split: number): number | null {
-    if (prevShares <= 0 || currShares <= 0) return null;
-    const traded = currShares - prevShares * split;
-    return Math.abs(traded) < 1e-6 ? 0 : traded;
-}
-
-/** The share-count guard, mirroring api/data.py `_share_sign_guard`: the active
- *  figure is 0 when no shares moved and 0 when the renormalized drift points the
- *  other way from the actual trade (a buy smaller than the fund's pro-rata
- *  inflow came out slightly negative and was badged TRIM). Never contradicts
- *  the share count; unknown share counts keep the drift figure. */
-function shareSignGuard(active: number, prevShares: number, currShares: number, split: number): number {
-    const traded = sharesTraded(prevShares, currShares, split);
-    if (traded == null) return active;
-    if (traded === 0 || (traded > 0) !== (active > 0)) return 0;
-    return active;
-}
-
 function activeWeightDeltas(current: Holding[], previous: Holding[]): Map<string, number> {
     const currMap = new Map<string, Holding>();
     const prevMap = new Map<string, Holding>();
@@ -300,33 +276,28 @@ function activeWeightDeltas(current: Holding[], previous: Holding[]): Map<string
         const prevSum = keys.reduce((s, k) => s + (prevMap.get(k)!.Weight || 0), 0);
         if (prevSum <= 0) return; // nothing to renormalize against — use raw delta
         const ratios = new Map<string, number>();
-        const splits = new Map<string, number>();
         let denom = 0;
         for (const k of keys) {
             const p = prevMap.get(k)!;
             const c = currMap.get(k);
             // Price unknown on either side (or a removed row) → assume no drift.
             let ratio = 1;
-            let split = 1;
             const pPrice = rowPrice(p);
             if (c) {
                 const cPrice = rowPrice(c);
                 if (pPrice > 0 && cPrice > 0) {
-                    split = splitFactor(p['Share Quantity'] || 0, c['Share Quantity'] || 0, pPrice, cPrice);
+                    const split = splitFactor(p['Share Quantity'] || 0, c['Share Quantity'] || 0, pPrice, cPrice);
                     ratio = (cPrice / pPrice) * split;
                 }
             }
             ratios.set(k, ratio);
-            splits.set(k, split);
             denom += (p.Weight || 0) * ratio;
         }
         if (denom <= 0) return;
         for (const k of keys) {
-            const p = prevMap.get(k)!;
-            const drift = (p.Weight || 0) * ratios.get(k)! / denom * prevSum;
-            const c = currMap.get(k);
-            if (!c) { active.set(k, -drift); continue; }   // removed: fully unwound
-            active.set(k, shareSignGuard((c.Weight ?? 0) - drift, p['Share Quantity'] || 0, c['Share Quantity'] || 0, splits.get(k)!));
+            const drift = (prevMap.get(k)!.Weight || 0) * ratios.get(k)! / denom * prevSum;
+            const currWeight = currMap.get(k)?.Weight ?? 0;
+            active.set(k, currWeight - drift);
         }
     });
 

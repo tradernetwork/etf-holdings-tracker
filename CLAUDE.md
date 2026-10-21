@@ -141,19 +141,19 @@ option-income fund work.
 > so it cancels price moves **and** creation/redemption flows at once. On real
 > trades it lifts direction accuracy from ~59% to ~81%.
 >
-> **The share count is the ground truth of direction (2026-10-20).** Because the
-> drift is renormalized over the whole book, a buy smaller than the fund's pro-rata
-> inflow came out slightly *negative* and a sale smaller than a redemption came out
-> *positive*: 1,123 of 3,381 rows with a real share move carried the wrong sign
-> (AVUS added 5,170 AMZN and was badged TRIM; ARKG sold 26,523 TXG and read as a
-> +0.21pp buy). `_share_sign_guard` now zeroes an active figure whose sign disagrees
-> with the split-adjusted share change, and zeroes it when no shares moved. Every
-> change record carries `direction` (`buying` / `selling` / `unchanged`, from
-> `change_direction`, share count first) — **all ADD/TRIM badges and buying/selling
-> filters key off `direction`, never off the sign of `activeWeightDelta`**, which is
-> only the magnitude/ranking. A position whose share count rose is never a trim.
-> `shareSignGuard` in `holdings.ts`, `tradeDirection` in `mobile/lib/discovery/derive.ts`
-> and `changeDirection` in `etf-dashboard/lib/direction.ts` are the mirrors.
+> **The badge is not the signal (2026-10-20).** Because the drift is renormalized
+> over the whole book, a buy smaller than the fund's pro-rata inflow comes out
+> slightly *negative* and a sale smaller than a redemption comes out *positive*
+> (1,123 of 3,381 rows with a real share move that day; AVUS added 5,170 AMZN and
+> the app said TRIM). That tilt is a legitimate signal input — leave
+> `activeWeightDelta` alone; zeroing it deleted 188 of 331 significant rows. Every
+> change record instead carries `direction` (`buying` / `selling` / `unchanged`,
+> from `change_direction`): the split-adjusted share-count direction, NEW = buying,
+> REMOVED = selling. **ADD/TRIM badges and the web/mobile buys/sells tabs key off
+> `direction`** (`changeDirection` in `etf-dashboard/lib/direction.ts`,
+> `tradeDirection` in `mobile/lib/discovery/derive.ts`); significance, conviction,
+> ranking, streaks, divergences and the REST/MCP `direction=` filter stay on the
+> active figure. A position whose share count rose is never badged a trim.
 >
 > Raw `weightDelta`, `sharesDelta`, and (on splits) `splitFactor` remain in every
 > record for transparency. `_split_factor` divides out stock splits — a 4:1 split
