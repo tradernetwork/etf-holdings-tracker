@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-22T21:46:17.887338+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5322,
+    "weeklyEtfs": 112,
+    "weeklyEquities": 584
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "GETYQ": "GETTY IMAGES HOLDINGS INC CL A COM"
+      },
+      "removed": {
+        "GETY": "GETTY IMAGES HOLDINGS INC CL A COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {
+        "SPYM": "SPDR SERIES TRUST ST STR P500ETF"
+      },
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {
+        "DFDV": "DEFI DEVELOPMENT CORP COM",
+        "FICO": "FAIR ISAAC CORP COM",
+        "FLG": "FLAGSTAR BANK NATIONAL ASSOCIA COM NEW",
+        "FPS": "FORGENT POWER SOLUTIONS INC COM SHS CL A",
+        "GPRO": "GOPRO INC CL A",
+        "JCI": "JOHNSON CONTROLS INTERNATION SHS"
+      },
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
