@@ -416,7 +416,7 @@ export default async function LandingPage() {
             date="October 23, 2026"
             tag="feature"
             title="Big new positions get their own line"
-            desc="Capital Group's CGGO opened a $124M Moderna position yesterday, a 1% slug from zero, and the briefing ranked it eighth because the conviction score rewards several funds moving together. A manager going from nothing to a real position is the clearest call on the board, so it now gets its own strip at the top of the briefing: every new position opened today, biggest dollar bet first, with the weight and the price the fund marked it at on the close. That mark is the fund's end-of-day valuation, not what they paid; we never see fills. The same list ships as notableEntries on the API and the MCP briefing, and every change row now carries the fund's own per-share price."
+            desc="Capital Group's CGGO opened a $124M Moderna position yesterday, a 1% slug from zero, and the briefing ranked it eighth because the conviction score rewards several funds moving together. A manager going from nothing to a real position is the clearest call on the board, so it now gets its own strip at the top of the briefing: every new position opened today, biggest dollar bet first, with the weight and the estimated dollars. No entry price, because we don't have one: issuer files carry an end-of-day mark, not fills, and I'm not putting a number on a 'they bought' card that reads like what they paid. The same list ships as notableEntries on the API and the MCP briefing; the per-share mark is on each API row as price, labelled for what it is."
           />
           <ChangelogEntry
             date="October 23, 2026"
