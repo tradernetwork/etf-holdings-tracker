@@ -853,7 +853,7 @@ function BriefingContent({ briefing }: { briefing: ApiBriefing }) {
                 <Link
                   key={`${e.fund}-${e.ticker}`}
                   href={`/stocks/${e.ticker}`}
-                  title={`${e.fund} opened ${e.ticker} at ${e.currentWeight.toFixed(2)}% of the book${usd ? ` (${usd})` : ''}${e.price ? `, marked at $${e.price.toFixed(2)} on the close` : ''}`}
+                  title={`${e.fund} opened ${e.ticker} at ${e.currentWeight.toFixed(2)}% of the book${usd ? ` (${usd})` : ''}`}
                   className="inline-flex items-center gap-2 min-h-11 rounded-md border border-buy/30 bg-canvas/60 px-3 py-1.5 hover:border-buy hover:bg-buy/10 transition-colors"
                 >
                   <FundBadge fund={e.fund} />
@@ -861,7 +861,6 @@ function BriefingContent({ briefing }: { briefing: ApiBriefing }) {
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-buy border-buy/40 bg-buy/10 font-semibold">NEW</Badge>
                   <span className="font-mono text-xs text-slate-300">{e.currentWeight.toFixed(2)}%</span>
                   {usd && <span className="font-mono text-xs text-slate-500">{usd}</span>}
-                  {e.price != null && e.price > 0 && <span className="font-mono text-xs text-slate-500">@ ${e.price >= 100 ? e.price.toFixed(0) : e.price.toFixed(2)}</span>}
                 </Link>
               );
             })}
