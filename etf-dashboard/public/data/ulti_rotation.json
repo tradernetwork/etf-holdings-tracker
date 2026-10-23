@@ -2,8 +2,8 @@
   "fund": "ULTI",
   "groupBy": "theme",
   "blurb": "ULTI rebuilds its speculative basket aggressively \u2014 this tracks how its theme weights drift and which names rotate in and out, week over week.",
-  "asOf": "2026-10-22",
-  "holdings": 12,
+  "asOf": "2026-10-23",
+  "holdings": 11,
   "dates": [
     "2026-08-07",
     "2026-08-14",
@@ -16,23 +16,23 @@
     "2026-10-02",
     "2026-10-10",
     "2026-10-16",
-    "2026-10-22"
+    "2026-10-23"
   ],
   "themes": [
     "Uncategorized",
     "Semis/photonics",
     "Crypto financials",
     "Healthcare/biotech",
-    "Cloud/AI",
-    "Fintech",
-    "Clean energy",
-    "Bitcoin miners",
-    "Rare earth/materials",
     "Quantum",
-    "Space",
-    "Other",
+    "Rare earth/materials",
+    "Clean energy",
     "Precious metals",
-    "Nuclear/uranium"
+    "Bitcoin miners",
+    "Nuclear/uranium",
+    "Fintech",
+    "Cloud/AI",
+    "Other",
+    "Space"
   ],
   "timeline": [
     {
@@ -155,31 +155,30 @@
       }
     },
     {
-      "date": "2026-10-22",
+      "date": "2026-10-23",
       "weights": {
-        "Semis/photonics": 10.057812069497135,
-        "Uncategorized": 28.101192562777122,
-        "Healthcare/biotech": 4.817084099618713,
-        "Crypto financials": 9.584391783789814,
-        "Cloud/AI": 4.671549121258099
+        "Semis/photonics": 9.496167346490232,
+        "Healthcare/biotech": 4.945467186545889,
+        "Uncategorized": 27.620037128831292,
+        "Crypto financials": 9.385304706281621
       }
     }
   ],
   "currentThemes": {
-    "Uncategorized": 28.1,
-    "Semis/photonics": 10.1,
-    "Crypto financials": 9.6,
-    "Healthcare/biotech": 4.8,
-    "Cloud/AI": 4.7,
-    "Fintech": 0.0,
-    "Clean energy": 0.0,
-    "Bitcoin miners": 0.0,
-    "Rare earth/materials": 0.0,
+    "Uncategorized": 27.6,
+    "Semis/photonics": 9.5,
+    "Crypto financials": 9.4,
+    "Healthcare/biotech": 4.9,
     "Quantum": 0.0,
-    "Space": 0.0,
-    "Other": 0.0,
+    "Rare earth/materials": 0.0,
+    "Clean energy": 0.0,
     "Precious metals": 0.0,
-    "Nuclear/uranium": 0.0
+    "Bitcoin miners": 0.0,
+    "Nuclear/uranium": 0.0,
+    "Fintech": 0.0,
+    "Cloud/AI": 0.0,
+    "Other": 0.0,
+    "Space": 0.0
   },
   "churnSincePrior": {
     "added": [
@@ -191,7 +190,6 @@
       "NVAX",
       "RDDT",
       "SNDK",
-      "TTD",
       "XP"
     ],
     "dropped": [
@@ -210,7 +208,7 @@
       "IOVA",
       "TEM"
     ],
-    "rate": 0.83
+    "rate": 0.82
   },
   "unmapped": [
     "GME",

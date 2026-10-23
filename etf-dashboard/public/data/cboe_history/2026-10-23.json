@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-23T21:34:00.887896+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5327,
+    "weeklyEtfs": 112,
+    "weeklyEquities": 584
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "AVLN": "AVALYN PHARMACEUTICALS INC COM SHS",
+        "KLRA": "KAILERA THERAPEUTICS INC COMMON STOCK",
+        "LAZR": "TEMA ETF TRUST PHOTONICS & OPTI",
+        "TBBK": "BANCORP INC DEL COM",
+        "USLV": "DIREXION SHARES ETF TRUST DAILY SILVER BUL",
+        "VTS": "VITESSE ENERGY INC COMMON STOCK"
+      },
+      "removed": {
+        "ACA": "ARCOSA INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
