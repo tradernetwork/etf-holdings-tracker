@@ -1147,6 +1147,47 @@ _MIN_PLAUSIBLE_PRICE_RATIO = 0.2
 _MAX_PLAUSIBLE_PRICE_RATIO = 5.0
 
 
+def _shares_traded(prev_shares: float, curr_shares: float, split: float = 1.0) -> float | None:
+    """Split-adjusted share change, or None when either side has no usable count.
+
+    A 4:1 split turns 100 shares into 400 with nothing bought; the trade is
+    `curr - prev * split`. Written options carry negative counts and funds that
+    report only weights carry 0 — both read as "unknown", never as a trade.
+    """
+    if prev_shares <= 0 or curr_shares <= 0:
+        return None
+    traded = curr_shares - prev_shares * split
+    return 0.0 if abs(traded) < 1e-6 else traded
+
+
+def change_direction(kind: str, active: float, prev_shares: float = 0.0,
+                     curr_shares: float = 0.0, split: float = 1.0) -> str:
+    """'buying' / 'selling' / 'unchanged': which way the position was TRADED.
+
+    The badge truth, not the signal. `activeWeightDelta` nets each trade against
+    the fund's pro-rata flow, so a buy smaller than the day's creation units
+    comes out slightly negative (2026-10-20: AVUS added 5,170 AMZN and the app
+    said TRIM; 1,123 of 3,381 rows with a real share move carried the opposite
+    sign). The share count is what the fund actually did: a position whose
+    count rose is never 'selling', one whose count fell is never 'buying'. NEW
+    is buying and REMOVED is selling. Only when no share count is usable does
+    the active figure decide. Significance, conviction, ranking, streaks and
+    divergences still key off `activeWeightDelta` — this field only labels.
+    """
+    if kind == 'NEW':
+        return 'buying'
+    if kind == 'REMOVED':
+        return 'selling'
+    traded = _shares_traded(prev_shares, curr_shares, split)
+    if traded is None:
+        traded = active
+    if traded > 0:
+        return 'buying'
+    if traded < 0:
+        return 'selling'
+    return 'unchanged'
+
+
 def _active_weight_deltas(curr: dict, prev: dict) -> dict[tuple[str, str], float]:
     """Weight change attributable to the MANAGER, with price drift removed.
 
@@ -1254,6 +1295,12 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
     see `_active_weight_deltas`). Direction and conviction downstream key off
     the active figure; the raw one is retained so existing consumers and the
     fund-level "how did this position's weight actually move" view still work.
+
+    `direction` ('buying' / 'selling' / 'unchanged') is the split-adjusted
+    share-count direction (`change_direction`): what the ADD/TRIM badge shows.
+    It can disagree with the sign of `activeWeightDelta` (a buy smaller than
+    the fund's inflow is 'buying' with a slightly negative active tilt) — that
+    is the point. Filters on `direction=` keep the active-sign (signal) meaning.
     """
     curr = _build_map(curr_rows)
     prev = _build_map(prev_rows)
@@ -1271,7 +1318,7 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
 
     def _record(c: dict, kind: str, weight_delta: float, shares_delta: float,
                 active_delta: float, prev_weight: float = 0.0,
-                prev_shares: float = 0.0) -> dict:
+                prev_shares: float = 0.0, split: float = 1.0) -> dict:
         is_option = bool(c.get('option_type'))
         rec: dict = {
             'fund': c['fund'],
@@ -1280,6 +1327,7 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             'sector': c['sector'],
             'weightDelta': round(weight_delta, 4),
             'activeWeightDelta': round(active_delta, 4),
+            'direction': change_direction(kind, active_delta, prev_shares, c['shares'], split),
             'sharesDelta': round(shares_delta, 2),
             'currentWeight': round(c['weight'], 4),
             'previousWeight': round(prev_weight, 4),
@@ -1318,12 +1366,12 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             wd = c['weight'] - p['weight']
             sd = c['shares'] - p['shares']
             if abs(wd) > 0.0001 or abs(sd) > 0:
+                split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
                 rec = _record(c, 'CHANGED', wd, sd, active.get(key, wd),
-                              prev_weight=p['weight'], prev_shares=p['shares'])
+                              prev_weight=p['weight'], prev_shares=p['shares'], split=split)
                 # A 4:1 split shows sharesDelta=+13,185 while nothing was
                 # bought. Flag it so consumers don't read the raw share move as
-                # a purchase; activeWeightDelta already accounts for it.
-                split = _split_factor(p['shares'], c['shares'], p['price'], c['price'])
+                # a purchase; activeWeightDelta and direction already account for it.
                 if split != 1.0:
                     rec['splitFactor'] = round(split, 4)
                 changes.append(rec)

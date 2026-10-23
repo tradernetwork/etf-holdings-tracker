@@ -33,17 +33,32 @@ export const trendLabels = {
   distributing: "Distributing",
   bottoming: "Bottoming",
 };
+/**
+ * Which way the position was traded. The API's `direction` follows the
+ * split-adjusted share count: a fund whose count rose is never TRIM and one
+ * whose count fell is never ADD, whatever its active tilt vs the book rounds
+ * to (AVUS added 5,170 AMZN and was badged TRIM, 2026-10-20). Payloads without
+ * the field fall back to the sign of the active delta. null = unknown.
+ */
+export function tradeDirection(row: Change): "buying" | "selling" | "unchanged" | null {
+  if (row.activeWeightDelta == null) return null;
+  if (row.type === "NEW") return "buying";
+  if (row.type === "REMOVED") return "selling";
+  if (row.direction === "buying" || row.direction === "selling" || row.direction === "unchanged") return row.direction;
+  if (sharesUnchanged(row)) return "unchanged";
+  return row.activeWeightDelta > 0 ? "buying" : row.activeWeightDelta < 0 ? "selling" : "unchanged";
+}
+export const isBuying = (row: Change): boolean => tradeDirection(row) === "buying";
+export const isSelling = (row: Change): boolean => tradeDirection(row) === "selling";
+
 export function moveType(row: Change): string {
   if (row.activeWeightDelta == null) return "UNKNOWN";
   if (row.type === "NEW") return "NEW";
   if (row.type === "REMOVED") return "EXIT";
   // Shares did not move: the weight change is drift, not a trade. Never label it ADD/TRIM.
   if (sharesUnchanged(row)) return "DRIFT";
-  return row.activeWeightDelta > 0
-    ? "ADD"
-    : row.activeWeightDelta < 0
-      ? "TRIM"
-      : "UNCHANGED";
+  const dir = tradeDirection(row);
+  return dir === "buying" ? "ADD" : dir === "selling" ? "TRIM" : "UNCHANGED";
 }
 /** Label for a move kind: DRIFT reads "Weight drift", the rest are their own name. */
 export const moveLabel = (kind: string): string => (kind === "DRIFT" ? "Weight drift" : kind);
@@ -65,11 +80,7 @@ export function filterChanges(
         (!f.provider || funds.get(r.fund)?.provider === f.provider) &&
         (!f.sector || r.sector === f.sector) &&
         (f.type === "all" || moveType(r) === f.type) &&
-        (f.direction === "all" ||
-          (r.activeWeightDelta != null &&
-            (f.direction === "buying"
-              ? r.activeWeightDelta > 0
-              : r.activeWeightDelta < 0))) &&
+        (f.direction === "all" || tradeDirection(r) === f.direction) &&
         (!q || `${r.ticker} ${r.name} ${r.fund}`.toLowerCase().includes(q)),
     )
     .sort((a, b) => {
@@ -101,8 +112,8 @@ export function moveCounts(rows: Change[]): { added: number; reduced: number } {
   // Weight drift (shares unchanged) is not a trade, so it is neither an add nor a cut.
   const moved = rows.filter((r) => !r.isOption && r.activeWeightDelta != null && moveType(r) !== "DRIFT");
   return {
-    added: moved.filter((r) => r.activeWeightDelta! > 0).length,
-    reduced: moved.filter((r) => r.activeWeightDelta! < 0).length,
+    added: moved.filter(isBuying).length,
+    reduced: moved.filter(isSelling).length,
   };
 }
 export function filterStocks(
@@ -213,16 +224,8 @@ export function aggregateChanges(
       return {
         ticker,
         rows: group,
-        buying: [
-          ...new Set(
-            known.filter((r) => r.activeWeightDelta! > 0).map((r) => r.fund),
-          ),
-        ],
-        selling: [
-          ...new Set(
-            known.filter((r) => r.activeWeightDelta! < 0).map((r) => r.fund),
-          ),
-        ],
+        buying: [...new Set(known.filter(isBuying).map((r) => r.fund))],
+        selling: [...new Set(known.filter(isSelling).map((r) => r.fund))],
         netDelta: known.length
           ? known.reduce((v, r) => v + r.activeWeightDelta!, 0)
           : null,

@@ -46,8 +46,11 @@ export interface ApiChangeRecord {
     sector: string;
     weightDelta: number;
     /** Price-drift-removed weight delta — the part the manager actually chose.
-     *  Use this for direction/conviction; falls back to weightDelta when absent. */
+     *  Use this for conviction/ranking; falls back to weightDelta when absent. */
     activeWeightDelta?: number;
+    /** Split-adjusted share-count direction: what was traded, the ADD/TRIM badge truth.
+     *  Can legitimately disagree with the sign of activeWeightDelta. See lib/direction.ts. */
+    direction?: 'buying' | 'selling' | 'unchanged';
     sharesDelta: number;
     currentWeight: number;
     previousWeight: number;

@@ -51,6 +51,7 @@ import { TMMark } from '@/components/tm-mark';
 import { TMLink } from '@/components/tm-link';
 import { EmailCapture } from '@/components/email-capture';
 import Image from 'next/image';
+import { changeDirection } from '@/lib/direction';
 // Auth UI was removed when TickerTrace went fully open. ProGate was a no-op
 // pass-through and got inlined out — if/when we ever paywall something again,
 // reach for a fresh wrapper component rather than reviving the old surface.
@@ -697,7 +698,7 @@ function TickerDetailCard({ detail, query }: { detail: ApiTickerDetail | null; q
                           'text-equity border-equity/30'
                         }`}>{c.type}</Badge>
                     </div>
-                    <span className={`text-xs font-mono ${(c.activeWeightDelta ?? c.weightDelta) > 0 ? 'text-buy' : 'text-sell'}`}>
+                    <span className={`text-xs font-mono ${changeDirection(c) === 'buying' ? 'text-buy' : changeDirection(c) === 'selling' ? 'text-sell' : 'text-slate-400'}`}>
                       {(c.activeWeightDelta ?? c.weightDelta) > 0 ? '+' : ''}{(c.activeWeightDelta ?? c.weightDelta).toFixed(3)}%
                     </span>
                   </div>

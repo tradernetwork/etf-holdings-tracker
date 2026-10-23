@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, Hint, Mono } from "@/components/ui";
 import { describeTrade, dayStatus, formatDay, legChange } from "@/lib/activity";
+import { tradeDirection } from "@/lib/discovery/derive";
 import { formatCount } from "@/lib/format";
 import type { OptionActivityDay, OptionTrade } from "@/lib/fundExtras";
 import { fonts, spacing, type Palette } from "@/lib/theme";
@@ -85,7 +86,9 @@ export function OptionChangeRow({ ch }: { ch: Change }) {
   const c = useTheme();
   const styles = useStyles(makeStyles);
   const d = (ch as Change & { optionDetails?: { type: string; strike: number; expiry: string } }).optionDetails;
-  const label = ch.type === "NEW" ? { t: "OPENED", color: c.accent } : ch.type === "REMOVED" ? { t: "CLOSED", color: c.textMuted } : (ch.weightDelta ?? 0) > 0 ? { t: "ADDED", color: c.buy } : (ch.weightDelta ?? 0) < 0 ? { t: "TRIMMED", color: c.sell } : { t: "CHANGED", color: c.textMuted };
+  // Contracts, not weight: a written leg's count is the trade (API `direction`); raw weight moves with premium.
+  const dir = tradeDirection(ch);
+  const label = ch.type === "NEW" ? { t: "OPENED", color: c.accent } : ch.type === "REMOVED" ? { t: "CLOSED", color: c.textMuted } : dir === "buying" ? { t: "ADDED", color: c.buy } : dir === "selling" ? { t: "TRIMMED", color: c.sell } : { t: "CHANGED", color: c.textMuted };
   const name = d ? `${ch.ticker.split(" ")[0]} ${d.type.toLowerCase().startsWith("c") ? "C" : "P"}${d.strike}` : ch.ticker;
   return (
     <View style={styles.optChange}>

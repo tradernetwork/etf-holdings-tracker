@@ -285,3 +285,72 @@ def test_divergence_surfaces_when_price_masks_it():
     assert 'AAA' in divs, "genuine cross-fund divergence not detected"
     assert 'ARKK' in divs['AAA']['buying']
     assert 'AVUV' in divs['AAA']['selling']
+
+
+# ---------------------------------------------------------------------------
+# `direction` (2026-10-20): the badge follows the share count. activeWeightDelta
+# is NOT touched — it nets the trade against the fund's flow, so a buy smaller
+# than the day's inflow is legitimately a hair negative. It just must never be
+# labelled a TRIM. (AVUS added 5,170 AMZN and the app said TRIM.)
+# ---------------------------------------------------------------------------
+
+
+def test_buy_smaller_than_pro_rata_inflow_is_still_buying():
+    from api import data as _data
+
+    prev = _rows('FUND', [('AMZN', 1000, 10.0, 50.0), ('OTH', 1000, 10.0, 50.0)])
+    # Prices flat. AMZN +2% shares, OTH +18%: AMZN 10200 / OTH 11800 of 22000.
+    curr = _rows('FUND', [('AMZN', 1020, 10.0, 46.364), ('OTH', 1180, 10.0, 53.636)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    amzn = changes['AMZN']
+    assert amzn['sharesDelta'] == 20
+    assert amzn['activeWeightDelta'] < 0, "the active tilt vs the book is negative — unchanged"
+    assert amzn['direction'] == 'buying', "but shares went up: never a trim"
+    assert changes['OTH']['direction'] == 'buying'
+
+
+def test_sale_smaller_than_redemption_is_still_selling():
+    from api import data as _data
+
+    prev = _rows('FUND', [('AMZN', 1000, 10.0, 50.0), ('OTH', 1000, 10.0, 50.0)])
+    curr = _rows('FUND', [('AMZN', 980, 10.0, 54.444), ('OTH', 820, 10.0, 45.556)])
+
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    amzn = changes['AMZN']
+    assert amzn['sharesDelta'] == -20
+    assert amzn['activeWeightDelta'] > 0
+    assert amzn['direction'] == 'selling', "shares went down: never an add"
+
+
+def test_direction_covers_new_removed_unchanged_and_splits():
+    from api import data as _data
+
+    prev = _rows('FUND', [('AAA', 100, 10.0, 25.0), ('BBB', 100, 10.0, 25.0),
+                          ('CCC', 100, 10.0, 25.0), ('GONE', 100, 10.0, 25.0)])
+    # AAA bought, BBB sold, CCC untouched (price doubled), GONE closed, NEW opened.
+    curr = _rows('FUND', [('AAA', 150, 10.0, 30.0), ('BBB', 50, 10.0, 10.0),
+                          ('CCC', 100, 20.0, 40.0), ('NEW', 100, 10.0, 20.0)])
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    assert changes['AAA']['direction'] == 'buying'
+    assert changes['BBB']['direction'] == 'selling'
+    assert changes['CCC']['direction'] == 'unchanged', "a rally is not a trade"
+    assert changes['GONE']['direction'] == 'selling'
+    assert changes['NEW']['direction'] == 'buying'
+
+    # 4:1 split plus a small real trim: 100 -> 395 is a sale, not a 4x buy.
+    prev = _rows('FUND', [('SPL', 100, 400.0, 50.0), ('OTH', 1000, 40.0, 50.0)])
+    curr = _rows('FUND', [('SPL', 395, 100.0, 49.686), ('OTH', 1000, 40.0, 50.314)])
+    spl = {c['ticker']: c for c in _data._changes_between(curr, prev)}['SPL']
+    assert spl['splitFactor'] == 4.0 and spl['sharesDelta'] == 295
+    assert spl['direction'] == 'selling'
+
+
+def test_unknown_share_counts_fall_back_to_the_active_sign():
+    from api import data as _data
+
+    prev = _rows('FUND', [('AAA', 0, 0.0, 50.0), ('BBB', 0, 0.0, 50.0)])
+    curr = _rows('FUND', [('AAA', 0, 0.0, 60.0), ('BBB', 0, 0.0, 40.0)])
+    changes = {c['ticker']: c for c in _data._changes_between(curr, prev)}
+    assert changes['AAA']['direction'] == 'buying'
+    assert changes['BBB']['direction'] == 'selling'

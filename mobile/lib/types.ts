@@ -45,8 +45,11 @@ export interface Change {
   ticker: string;
   name: string;
   sector: string;
-  /** Active-weight change, percentage points. Drives direction and size. null on a catch-up fund (API #144): never significant. */
+  /** Active-weight change, percentage points. Drives size/ranking. null on a catch-up fund (API #144): never significant. */
   activeWeightDelta: number | null;
+  /** Split-adjusted share-count direction (API `change_direction`): what was traded, the ADD/TRIM truth.
+   *  Can legitimately disagree with the sign of activeWeightDelta. Absent on older payloads. */
+  direction?: "buying" | "selling" | "unchanged" | null;
   /** Raw weight change (includes price drift). Transparency only. null on a catch-up fund. */
   weightDelta: number | null;
   /** Reported share-count change. */
