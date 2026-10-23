@@ -824,13 +824,50 @@ function BriefingCard({ briefing }: { briefing: ApiBriefing }) {
   );
 }
 
+function fmtPositionUsd(usd: number | null | undefined): string | null {
+  if (usd == null || usd < 1e6) return null;
+  return usd >= 1e9 ? `~$${(usd / 1e9).toFixed(1)}B` : `~$${Math.round(usd / 1e6)}M`;
+}
+
 function BriefingContent({ briefing }: { briefing: ApiBriefing }) {
   const hasCrossFund = briefing.crossFundConvergence.length > 0;
   const hasStreaks = briefing.activeStreaks.length > 0;
   const hasOptions = briefing.notableOptions.length > 0;
+  const entries = briefing.notableEntries ?? [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Fresh positions: a fund going from 0 to a real position is the clearest
+          call on the board, and conviction scoring buried a $124M MRNA entry at #8.
+          Full-width strip, biggest estimated dollar position first. */}
+      {entries.length > 0 && (
+        <div className="md:col-span-2 lg:col-span-4 rounded-lg border border-buy/30 bg-buy/5 px-3 py-2.5">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-buy flex items-center gap-1 mb-2">
+            <Zap className="h-3 w-3" /> New positions opened today
+            <span className="normal-case tracking-normal font-normal text-slate-500">biggest first</span>
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {entries.map(e => {
+              const usd = fmtPositionUsd(e.positionUsd);
+              return (
+                <Link
+                  key={`${e.fund}-${e.ticker}`}
+                  href={`/stocks/${e.ticker}`}
+                  title={`${e.fund} opened ${e.ticker} at ${e.currentWeight.toFixed(2)}% of the book${usd ? ` (${usd})` : ''}${e.price ? `, marked at $${e.price.toFixed(2)} on the close` : ''}`}
+                  className="inline-flex items-center gap-2 min-h-11 rounded-md border border-buy/30 bg-canvas/60 px-3 py-1.5 hover:border-buy hover:bg-buy/10 transition-colors"
+                >
+                  <FundBadge fund={e.fund} />
+                  <span className="font-mono font-bold text-white">{e.ticker}</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-buy border-buy/40 bg-buy/10 font-semibold">NEW</Badge>
+                  <span className="font-mono text-xs text-slate-300">{e.currentWeight.toFixed(2)}%</span>
+                  {usd && <span className="font-mono text-xs text-slate-500">{usd}</span>}
+                  {e.price != null && e.price > 0 && <span className="font-mono text-xs text-slate-500">@ ${e.price >= 100 ? e.price.toFixed(0) : e.price.toFixed(2)}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* Top Buys */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-buy flex items-center gap-1">

@@ -259,8 +259,33 @@ def test_signals_apply_significance_threshold(data_with_fixtures):
 def test_get_briefing_shape(data_with_fixtures):
     briefing = data_with_fixtures.get_briefing()
     for k in ("topBuys", "topSells", "crossFundConvergence",
-              "activeStreaks", "notableOptions"):
+              "activeStreaks", "notableOptions", "notableEntries"):
         assert k in briefing, f"missing key {k}"
+
+
+def test_briefing_notable_entries_are_new_positions_biggest_dollars_first():
+    """The CGGO/MRNA case: a $124M entry must lead, whatever its conviction rank."""
+    from api import data as _data
+
+    def row(fund, ticker, kind, usd, weight):
+        return {'fund': fund, 'ticker': ticker, 'name': ticker, 'type': kind, 'isOption': False,
+                'activeWeightDelta': weight, 'currentWeight': weight, 'positionUsd': usd}
+
+    activity = {'accumulating': [
+        row('AVUV', 'GM', 'CHANGED', 500_000_000, 0.4),
+        row('MMSC', 'HNGE', 'NEW', 100_000, 0.27),
+        row('CGGO', 'MRNA', 'NEW', 124_000_000, 1.04),
+        row('AVUV', 'INGR', 'NEW', 163_000_000, 0.51),
+        row('AVES', 'SKM', 'NEW', None, 0.37),
+    ], 'reducing': [], 'optionsActivity': []}
+    brief = _data._briefing_from({'buying': [], 'selling': []}, activity, {})
+    # unknown-AUM entries (positionUsd None) sort last, after every priced one
+    assert [e['ticker'] for e in brief['notableEntries']] == ['INGR', 'MRNA', 'HNGE', 'SKM']
+    assert all(e['type'] == 'NEW' for e in brief['notableEntries'])
+    many = {**activity, 'accumulating': activity['accumulating'] + [row('F', f'T{i}', 'NEW', i, 0.1) for i in range(10)]}
+    assert len(_data._briefing_from({'buying': [], 'selling': []}, many, {})['notableEntries']) == 5
+    assert len(_data._briefing_from({'buying': [], 'selling': []}, many, {}, everything=True)['notableEntries']) == 14
+    assert len(_data._slice_briefing(_data._briefing_from({'buying': [], 'selling': []}, many, {}, everything=True), 2)['notableEntries']) == 2
 
 
 def test_briefing_top_buys_capped_at_3(data_with_fixtures):

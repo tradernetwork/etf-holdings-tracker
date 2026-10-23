@@ -39,7 +39,8 @@ HOLDINGS_ROW = obj(
 )
 DIRECTION = {'type': 'string', 'enum': ['buying', 'selling', 'unchanged'],
              'description': 'Which way the position was traded, from the split-adjusted share count: a fund whose share count rose is buying, one whose count fell is selling, no share move is unchanged (NEW is buying, REMOVED is selling; the active delta decides only when no share count is usable). Use this for ADD/TRIM labels. It can legitimately disagree with the sign of activeWeightDelta, which nets the trade against the fund\'s pro-rata flow (a buy smaller than the day\'s inflow is buying with a slightly negative active tilt). The direction= query filter keys off the activeWeightDelta sign.'}
-CHANGE = obj(positionUsd=P['positionUsd'], activeFlowUsd=P['activeFlowUsd'], direction=DIRECTION)
+PRICE = amount("The fund's own per-share mark on the snapshot date (reported market value / shares): an end-of-day valuation, never an execution price. Null when the issuer reports no market value.")
+CHANGE = obj(positionUsd=P['positionUsd'], activeFlowUsd=P['activeFlowUsd'], direction=DIRECTION, price=PRICE)
 # What the deltas in a response are measured against. A catch-up fund's own span is catchUpSince -> asOfDate (its deltas are null).
 COMPARISON = dict(
     previousDate={'type': ['string', 'null'], 'description': 'Date of the earlier snapshot the deltas in this response are measured against (the prior trading-day file for daily deltas; the ~7 / ~30 calendar-day lookback for weekly / monthly changes). Null with fewer than two snapshots. Not the span of a catch-up fund: its deltas are null (see catchUpSince).'},
