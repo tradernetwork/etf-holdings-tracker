@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { GOOGLE_PLAY_URL } from '@/lib/app-links';
 import { ReferralTracker } from '@/components/referral-tracker';
 import { ShareButtons } from '@/components/share-buttons';
 import { DataFreshness } from '@/components/data-freshness';
@@ -129,6 +130,17 @@ export default async function LandingPage() {
 
         <p className="text-xs text-slate-600 mt-6">
           Both products run on the same open API. No signup required to see today&apos;s data.
+        </p>
+        <p className="mt-3">
+          <a
+            href={GOOGLE_PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 min-h-11 px-3 text-xs font-semibold text-slate-300 hover:text-white border border-rule hover:border-equity/60 rounded-full transition-colors"
+            title="TickerTrace for Android on Google Play"
+          >
+            <span aria-hidden="true">▶</span> Now on Android · Get it on Google Play ↗
+          </a>
         </p>
       </section>
 
@@ -400,6 +412,12 @@ export default async function LandingPage() {
         </p>
 
         <div className="max-w-2xl mx-auto space-y-4">
+          <ChangelogEntry
+            date="October 23, 2026"
+            tag="feature"
+            title="The Android app has a link now"
+            desc="We shipped TickerTrace to Google Play and then forgot to tell the website about it, so the only people who found the app were the ones who went looking. Fixed: there's a Google Play link under the hero buttons and one in the footer. Same data as the site, same open API underneath, nothing to sign up for. If you're on Android and the Changes screen still shows AVUS trimming Amazon, that's the old build; the store update with the share-count badges is right behind this."
+          />
           <ChangelogEntry
             date="October 20, 2026"
             tag="bugfix"
@@ -1673,6 +1691,8 @@ export default async function LandingPage() {
           <Link href="/holdings" className="hover:text-white transition-colors">Holdings</Link>
           {' · '}
           <Link href="https://api.tickertrace.pro/docs" target="_blank" className="hover:text-white transition-colors">API Docs</Link>
+          {' · '}
+          <a href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Android app</a>
           {' · '}
           <a href="mailto:mphinance@gmail.com" className="hover:text-white transition-colors">Contact</a>
         </p>
