@@ -51,6 +51,8 @@ export interface ApiChangeRecord {
     /** Split-adjusted share-count direction: what was traded, the ADD/TRIM badge truth.
      *  Can legitimately disagree with the sign of activeWeightDelta. See lib/direction.ts. */
     direction?: 'buying' | 'selling' | 'unchanged';
+    /** The fund's own per-share mark on the snapshot date (market value / shares). An end-of-day valuation, never a fill. */
+    price?: number | null;
     sharesDelta: number;
     currentWeight: number;
     previousWeight: number;
@@ -233,6 +235,8 @@ export interface ApiBriefing {
         record: ApiChangeRecord;
         signal: ApiOptionSignal;
     }[];
+    /** Brand-new equity positions opened today, biggest estimated dollar position first (optional for back-compat). */
+    notableEntries?: (ApiChangeRecord & { positionUsd?: number | null })[];
 }
 
 export interface ApiFundSummary {

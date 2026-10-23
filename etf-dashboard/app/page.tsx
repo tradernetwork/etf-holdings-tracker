@@ -415,6 +415,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="October 23, 2026"
             tag="feature"
+            title="Big new positions get their own line"
+            desc="Capital Group's CGGO opened a $124M Moderna position yesterday, a 1% slug from zero, and the briefing ranked it eighth because the conviction score rewards several funds moving together. A manager going from nothing to a real position is the clearest call on the board, so it now gets its own strip at the top of the briefing: every new position opened today, biggest dollar bet first, with the weight and the price the fund marked it at on the close. That mark is the fund's end-of-day valuation, not what they paid; we never see fills. The same list ships as notableEntries on the API and the MCP briefing, and every change row now carries the fund's own per-share price."
+          />
+          <ChangelogEntry
+            date="October 23, 2026"
+            tag="feature"
             title="The Android app has a link now"
             desc="We shipped TickerTrace to Google Play and then forgot to tell the website about it, so the only people who found the app were the ones who went looking. Fixed: there's a Google Play link under the hero buttons and one in the footer. Same data as the site, same open API underneath, nothing to sign up for. If you're on Android and the Changes screen still shows AVUS trimming Amazon, that's the old build; the store update with the share-count badges is right behind this."
           />

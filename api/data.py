@@ -1333,6 +1333,9 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
             'previousWeight': round(prev_weight, 4),
             'currentShares': round(c['shares'], 2),
             'previousShares': round(prev_shares, 2),
+            # The fund's own per-share mark (market value / shares) on the
+            # snapshot date: an end-of-day valuation, never an execution price.
+            'price': round(c['price'], 4) if c.get('price') else None,
             'type': kind,
             'isOption': is_option,
             'fundCategory': get_fund_category(c['fund']),
@@ -2245,14 +2248,24 @@ def _briefing_from(
     ]
     active_streaks.sort(key=lambda s: -s['days'])
 
+    # Brand-new equity positions, biggest dollar bet first. A $124M MRNA entry
+    # by CGGO ranked 8th on conviction (one fund, mid-sized AUM) and was
+    # invisible on the briefing; a manager going from 0 to a 1% position is the
+    # clearest call on the board and deserves its own line.
+    notable_entries = sorted(
+        [r for r in activity.get('accumulating', []) if r.get('type') == 'NEW'],
+        key=lambda r: (-(r.get('positionUsd') or 0), -r.get('currentWeight', 0)),
+    )
+
     # everything=True keeps the full ranked lists (the `limit` slices are cut from
-    # these); the default keeps today's 3 / 3 / 5 / 10.
+    # these); the default keeps today's 3 / 3 / 5 / 10 / 5.
     return {
         'topBuys': buying if everything else buying[:3],
         'topSells': selling if everything else selling[:3],
         'crossFundConvergence': cross_fund,
         'activeStreaks': active_streaks if everything else active_streaks[:10],
         'notableOptions': notable_options,
+        'notableEntries': notable_entries if everything else notable_entries[:5],
     }
 
 
@@ -2556,7 +2569,8 @@ def _full_payload_everything(*, category: str | None = None) -> dict:
 
 def _slice_briefing(b: dict, limit: int) -> dict:
     return {**b, 'topBuys': b['topBuys'][:limit], 'topSells': b['topSells'][:limit],
-            'crossFundConvergence': b['crossFundConvergence'][:limit], 'activeStreaks': b['activeStreaks'][:limit]}
+            'crossFundConvergence': b['crossFundConvergence'][:limit], 'activeStreaks': b['activeStreaks'][:limit],
+            'notableEntries': b.get('notableEntries', [])[:limit]}
 
 
 def get_full_payload_limited(*, category: str | None = None, limit: int) -> dict:
