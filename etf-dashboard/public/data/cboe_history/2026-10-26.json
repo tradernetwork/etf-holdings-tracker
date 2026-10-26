@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-26T22:48:39.643180+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5326,
+    "weeklyEtfs": 112,
+    "weeklyEquities": 584
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "AETR": "AETHERION TECHNOLOGIES INC COM",
+        "ELMES": "ELME COMMUNITIES SH BEN INT"
+      },
+      "removed": {
+        "ELME": "ELME COMMUNITIES SH BEN INT",
+        "WEAV": "WEAVE COMMUNICATIONS INC COM",
+        "WPRT": "WESTPORT FUEL SYSTEMS INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

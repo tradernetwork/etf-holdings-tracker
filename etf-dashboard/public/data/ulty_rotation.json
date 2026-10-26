@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-23",
+  "asOf": "2026-10-26",
   "holdings": 28,
   "dates": [
-    "2026-08-07",
     "2026-08-14",
     "2026-08-21",
     "2026-08-28",
@@ -16,7 +15,8 @@
     "2026-10-02",
     "2026-10-10",
     "2026-10-16",
-    "2026-10-23"
+    "2026-10-23",
+    "2026-10-26"
   ],
   "themes": [
     "Technology",
@@ -30,20 +30,6 @@
     "Crypto"
   ],
   "timeline": [
-    {
-      "date": "2026-08-07",
-      "weights": {
-        "Materials": 9.082995048027032,
-        "Crypto": 2.796461359667639,
-        "Industrials": 11.68211143040984,
-        "Uncategorized": 10.384535103610304,
-        "Consumer": 4.8700178081377015,
-        "Financials": 4.4550099263755385,
-        "Technology": 45.24618275146554,
-        "Communications": 7.369723302060512,
-        "Healthcare": 2.668197598297302
-      }
-    },
     {
       "date": "2026-08-14",
       "weights": {
@@ -197,23 +183,35 @@
         "Healthcare": 3.3203248949927358,
         "Financials": 3.749839385671129
       }
+    },
+    {
+      "date": "2026-10-26",
+      "weights": {
+        "Technology": 38.30001224877288,
+        "Communications": 7.744651049848538,
+        "Materials": 8.526025583167023,
+        "Healthcare": 3.2965242161687343,
+        "Consumer": 4.473540700043798,
+        "Financials": 3.7331363301692275,
+        "Industrials": 8.724341181886784,
+        "Uncategorized": 17.925394226592356,
+        "Crypto": 3.2358032715866645
+      }
     }
   ],
   "currentThemes": {
-    "Technology": 37.7,
+    "Technology": 38.3,
     "Uncategorized": 17.9,
-    "Industrials": 9.0,
+    "Industrials": 8.7,
     "Materials": 8.5,
-    "Communications": 7.8,
+    "Communications": 7.7,
     "Consumer": 4.5,
     "Financials": 3.7,
     "Healthcare": 3.3,
     "Crypto": 3.2
   },
   "churnSincePrior": {
-    "added": [
-      "TTWO"
-    ],
+    "added": [],
     "dropped": [],
     "held": [
       "ADI",
@@ -242,9 +240,10 @@
       "SHOP",
       "SILJ",
       "SPCX",
-      "TMDX"
+      "TMDX",
+      "TTWO"
     ],
-    "rate": 0.04
+    "rate": 0.0
   },
   "unmapped": [
     "BABA",
