@@ -130,11 +130,15 @@ limiter = Limiter(
 )
 
 
-def _safe_prewarm_effectiveness() -> None:
-    try:
-        _all_effectiveness()
-    except Exception as e:  # never block or kill startup over a warm-up
-        log.warning("effectiveness_prewarm_error", error=str(e))
+def _effectiveness_refresher(interval_s: float = 60.0) -> None:
+    """Warm at startup, then recompute whenever a data-only sync changes the as-of
+    date (no restart happens then). Each uvicorn worker runs its own."""
+    while True:
+        try:
+            _all_effectiveness()
+        except Exception as e:  # never kill the loop over one bad refresh
+            log.warning("effectiveness_prewarm_error", error=str(e))
+        time.sleep(interval_s)
 
 
 # ─── Lifespan: one-time startup work ─────────────────────────────
@@ -151,7 +155,7 @@ async def lifespan(_app: FastAPI):
     retail_feed.start(retail_feed_stop)
     log.info("startup_complete", allowed_origins=ALLOWED_ORIGINS)
     if os.environ.get("TT_PREWARM", "1") != "0":
-        threading.Thread(target=lambda: _safe_prewarm_effectiveness(), name="effectiveness-prewarm", daemon=True).start()
+        threading.Thread(target=_effectiveness_refresher, name="effectiveness-prewarm", daemon=True).start()
     # Warm the signal/briefing memo now and after every data-only sync (see data.SnapshotPrewarmer).
     prewarmer = data.SnapshotPrewarmer(on_error=lambda e: log.warning("prewarm_error", error=str(e))) if os.environ.get("TT_PREWARM", "1") != "0" else None
     if prewarmer:
@@ -492,9 +496,15 @@ _EFF_LOCK = threading.Lock()
 _EFF_CACHE: dict = {"key": None, "value": None}
 
 
-def _all_effectiveness() -> list[dict]:
+def _all_effectiveness(allow_stale: bool = False) -> list[dict]:
+    """Per-as-of-date memo. `allow_stale` (request path) returns yesterday's result
+    while the background refresher recomputes, so a data sync never leaves a phone
+    waiting ~30-50s on a cold worker (Apache 504s carry no CORS headers, which the
+    browser reports as a bare "Failed to fetch")."""
     key = data.get_as_of_date()
     if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
+        return _EFF_CACHE["value"]
+    if allow_stale and _EFF_CACHE["value"] is not None:
         return _EFF_CACHE["value"]
     with _EFF_LOCK:
         if _EFF_CACHE["key"] == key and _EFF_CACHE["value"] is not None:
@@ -511,7 +521,7 @@ def get_all_fund_effectiveness(request: Request):
     Compare all option-income funds side-by-side. Returns effectiveness
     analysis for every fund with options data, sorted by composite score.
     """
-    results = _all_effectiveness()
+    results = _all_effectiveness(allow_stale=True)
     return {"funds": results, "count": len(results)}
 
 

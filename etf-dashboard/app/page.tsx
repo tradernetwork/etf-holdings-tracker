@@ -413,6 +413,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="October 27, 2026"
+            tag="bugfix"
+            title="Strategy Effectiveness stops timing out on your phone"
+            desc="The Scores page was showing 'Failed to fetch' and '0 funds scored' on mobile. Our bad: grading every option-income fund takes 30 to 50 seconds, and every time the nightly data landed the first person through the door paid for the whole recompute while their phone gave up. Now the server recomputes in the background the moment new data arrives and keeps serving yesterday's grades until the fresh ones are ready, so nobody waits. The page also says something useful when it can't load, and has a Retry button instead of a red triangle and a shrug."
+          />
+          <ChangelogEntry
             date="October 23, 2026"
             tag="feature"
             title="Big new positions get their own line"
