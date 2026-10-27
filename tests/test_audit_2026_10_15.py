@@ -142,3 +142,22 @@ def test_effectiveness_endpoint_is_memoised_per_as_of_date(monkeypatch):
     monkeypatch.setattr(server.data, "get_as_of_date", lambda: "2099-01-02")
     server._all_effectiveness()
     assert len(calls) == 2
+
+
+def test_effectiveness_request_path_serves_stale_instead_of_blocking(monkeypatch):
+    """After a data sync the as-of date moves; a request must not eat the ~30-50s
+    recompute (the phone times out and the browser says "Failed to fetch")."""
+    from api import server
+
+    calls = []
+    monkeypatch.setattr(server, "analyze_all_funds", lambda: calls.append(1) or [{"fund": "NEW"}])
+    monkeypatch.setattr(server.data, "get_as_of_date", lambda: "2099-01-03")
+    server._EFF_CACHE.update(key="2099-01-02", value=[{"fund": "OLD"}])
+    assert server._all_effectiveness(allow_stale=True) == [{"fund": "OLD"}]
+    assert calls == []
+    # The background refresher (blocking path) is what brings it current.
+    assert server._all_effectiveness() == [{"fund": "NEW"}]
+    assert len(calls) == 1
+    # Cold worker with nothing cached still has to compute.
+    server._EFF_CACHE.update(key=None, value=None)
+    assert server._all_effectiveness(allow_stale=True) == [{"fund": "NEW"}]

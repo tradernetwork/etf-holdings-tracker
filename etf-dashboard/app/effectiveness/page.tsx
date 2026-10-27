@@ -125,16 +125,22 @@ export default function EffectivenessPage() {
     const [sortBy, setSortBy] = useState<string>('composite');
     const [copied, setCopied] = useState(false);
 
+    const [attempt, setAttempt] = useState(0);
+
     useEffect(() => {
+        setLoading(true);
+        setError(null);
         fetch(`${API_BASE}/api/v1/fund-effectiveness`)
             .then(res => {
                 if (!res.ok) throw new Error('Failed to load');
                 return res.json();
             })
             .then(data => setFunds(data.funds || []))
-            .catch(e => setError(e.message))
+            // A bare "Failed to fetch" means no response reached the browser
+            // (timeout / dropped proxy), so say something a trader can act on.
+            .catch(() => setError('Scores are still being computed. Give it a minute and retry.'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [attempt]);
 
     const sortedFunds = [...funds].sort((a, b) => {
         const getScore = (f: FundSummary, key: string): number => {
@@ -178,7 +184,7 @@ export default function EffectivenessPage() {
                 </div>
                 <p className="text-slate-400 max-w-2xl">
                     How well does each option-income ETF execute its stated strategy?
-                    All {funds.length} funds scored side-by-side using prospectus-calibrated metrics.
+                    {funds.length > 0 ? ` All ${funds.length} funds scored` : ' Funds scored'} side-by-side using prospectus-calibrated metrics.
                 </p>
 
                 {/* Share Bar */}
@@ -239,6 +245,12 @@ export default function EffectivenessPage() {
                 <div className="max-w-7xl mx-auto text-center py-20 text-red-400">
                     <AlertTriangle className="h-8 w-8 mx-auto mb-3" />
                     <p className="text-sm">{error}</p>
+                    <button
+                        onClick={() => setAttempt(a => a + 1)}
+                        className="mt-4 px-4 py-2 rounded-lg border border-rule bg-surface text-slate-300 hover:text-white text-xs"
+                    >
+                        Retry
+                    </button>
                 </div>
             )}
 
