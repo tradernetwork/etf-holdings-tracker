@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-27T22:24:29.569294+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5323,
+    "weeklyEtfs": 112,
+    "weeklyEquities": 584
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "MSGK": "MSG KNICKERBOCKERS CORP CL A"
+      },
+      "removed": {
+        "KHYB": "KRANESHARES TRUST ASIA PACIFIC ETF",
+        "KJD": "KRANESHARES TRUST 2X LO JD DA ETF",
+        "KPDD": "KRANESHARES TRUST 2X LNG PDD ETF",
+        "MSGS": "MADISON SQUARE GRDN SPRT CORP CL A"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

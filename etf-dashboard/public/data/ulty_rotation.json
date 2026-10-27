@@ -2,8 +2,8 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-26",
-  "holdings": 28,
+  "asOf": "2026-10-27",
+  "holdings": 29,
   "dates": [
     "2026-08-14",
     "2026-08-21",
@@ -16,7 +16,7 @@
     "2026-10-10",
     "2026-10-16",
     "2026-10-23",
-    "2026-10-26"
+    "2026-10-27"
   ],
   "themes": [
     "Technology",
@@ -185,33 +185,35 @@
       }
     },
     {
-      "date": "2026-10-26",
+      "date": "2026-10-27",
       "weights": {
-        "Technology": 38.30001224877288,
-        "Communications": 7.744651049848538,
-        "Materials": 8.526025583167023,
-        "Healthcare": 3.2965242161687343,
-        "Consumer": 4.473540700043798,
-        "Financials": 3.7331363301692275,
-        "Industrials": 8.724341181886784,
-        "Uncategorized": 17.925394226592356,
-        "Crypto": 3.2358032715866645
+        "Industrials": 9.017927787159637,
+        "Technology": 37.42953156276181,
+        "Uncategorized": 17.76611255552323,
+        "Consumer": 6.5969211867530575,
+        "Communications": 7.536921351455088,
+        "Materials": 8.555994757310968,
+        "Crypto": 3.0847365838032728,
+        "Financials": 3.629232284148545,
+        "Healthcare": 3.2766473182980502
       }
     }
   ],
   "currentThemes": {
-    "Technology": 38.3,
-    "Uncategorized": 17.9,
-    "Industrials": 8.7,
-    "Materials": 8.5,
-    "Communications": 7.7,
-    "Consumer": 4.5,
-    "Financials": 3.7,
+    "Technology": 37.4,
+    "Uncategorized": 17.8,
+    "Industrials": 9.0,
+    "Materials": 8.6,
+    "Communications": 7.5,
+    "Consumer": 6.6,
+    "Financials": 3.6,
     "Healthcare": 3.3,
-    "Crypto": 3.2
+    "Crypto": 3.1
   },
   "churnSincePrior": {
-    "added": [],
+    "added": [
+      "AMZN"
+    ],
     "dropped": [],
     "held": [
       "ADI",
@@ -243,7 +245,7 @@
       "TMDX",
       "TTWO"
     ],
-    "rate": 0.0
+    "rate": 0.03
   },
   "unmapped": [
     "BABA",
