@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-29T22:55:00.205139+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5323,
+    "weeklyEtfs": 112,
+    "weeklyEquities": 584
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": false
+}

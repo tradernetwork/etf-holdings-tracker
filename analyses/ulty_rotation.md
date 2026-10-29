@@ -1,6 +1,6 @@
 # ULTY — Sector Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-10-28** · 29 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-10-29** · 29 holdings · last 12 weekly samples._
 
 > ⚠️ **Uncategorized tickers** (add to the map in the tracker): BABA, FIGR, MPC, SPCX, TTWO
 
@@ -8,29 +8,29 @@ _Auto-generated from daily holdings. As of **2026-10-28** · 29 holdings · last
 
 | Sector | Weight |
 |------|-------:|
-| Technology | 39.2% |
-| Uncategorized | 17.8% |
-| Industrials | 9.4% |
-| Materials | 8.9% |
+| Technology | 40.0% |
+| Uncategorized | 17.7% |
+| Industrials | 9.7% |
+| Materials | 9.0% |
 | Communications | 7.6% |
 | Consumer | 6.7% |
-| Financials | 3.7% |
-| Healthcare | 3.3% |
-| Crypto | 3.1% |
+| Financials | 3.6% |
+| Crypto | 3.2% |
+| Healthcare | 3.1% |
 
 ## Sector-weight drift (weekly)
 
-| Sector | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-18 | 09-25 | 10-02 | 10-10 | 10-16 | 10-23 | 10-28 |
+| Sector | 08-14 | 08-21 | 08-28 | 09-04 | 09-11 | 09-18 | 09-25 | 10-02 | 10-10 | 10-16 | 10-23 | 10-29 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-| Technology | 44 | 41 | 43 | 39 | 41 | 41 | 44 | 44 | 45 | 42 | 38 | 39 |
+| Technology | 44 | 41 | 43 | 39 | 41 | 41 | 44 | 44 | 45 | 42 | 38 | 40 |
 | Uncategorized | 11 | 12 | 12 | 14 | 14 | 14 | 14 | 14 | 14 | 15 | 18 | 18 |
-| Industrials | 12 | 11 | 11 | 11 | 10 | 10 | 10 | 11 | 10 | 10 | 9 | 9 |
+| Industrials | 12 | 11 | 11 | 11 | 10 | 10 | 10 | 11 | 10 | 10 | 9 | 10 |
 | Materials | 9 | 10 | 11 | 11 | 9 | 9 | 8 | 8 | 9 | 9 | 9 | 9 |
 | Communications | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 8 | 8 | 8 | 8 |
 | Consumer | 5 | 5 | 5 | 5 | 5 | 5 | 4 | 4 | 4 | 4 | 4 | 7 |
 | Financials | 3 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 |
-| Healthcare | 3 | 4 | 3 | 3 | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 |
 | Crypto | 3 | 3 | 4 | 4 | 4 | 4 | 4 | 3 | 3 | 3 | 3 | 3 |
+| Healthcare | 3 | 4 | 3 | 3 | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 |
 
 ## Roster churn (latest week vs prior sample)
 
