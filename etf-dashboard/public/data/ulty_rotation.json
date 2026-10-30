@@ -2,7 +2,7 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-29",
+  "asOf": "2026-10-30",
   "holdings": 29,
   "dates": [
     "2026-08-14",
@@ -16,14 +16,14 @@
     "2026-10-10",
     "2026-10-16",
     "2026-10-23",
-    "2026-10-29"
+    "2026-10-30"
   ],
   "themes": [
     "Technology",
     "Uncategorized",
-    "Industrials",
     "Materials",
     "Communications",
+    "Industrials",
     "Consumer",
     "Financials",
     "Crypto",
@@ -185,42 +185,44 @@
       }
     },
     {
-      "date": "2026-10-29",
+      "date": "2026-10-30",
       "weights": {
-        "Communications": 7.631210971397431,
-        "Technology": 39.97673218900039,
-        "Industrials": 9.65740369287765,
-        "Uncategorized": 17.744073075974605,
-        "Consumer": 6.713073539757205,
-        "Financials": 3.6010907041846,
-        "Materials": 8.977826257936258,
-        "Healthcare": 3.1270319395529005,
-        "Crypto": 3.2267212767757805
+        "Technology": 39.852239322002795,
+        "Uncategorized": 19.723901309420462,
+        "Crypto": 3.1683930916308287,
+        "Communications": 7.319294955805969,
+        "Financials": 3.6307251545890407,
+        "Consumer": 6.61451807333132,
+        "Materials": 8.822283694530542,
+        "Healthcare": 3.1576073301685637,
+        "Industrials": 6.642685895582645
       }
     }
   ],
   "currentThemes": {
-    "Technology": 40.0,
-    "Uncategorized": 17.7,
-    "Industrials": 9.7,
-    "Materials": 9.0,
-    "Communications": 7.6,
-    "Consumer": 6.7,
+    "Technology": 39.9,
+    "Uncategorized": 19.7,
+    "Materials": 8.8,
+    "Communications": 7.3,
+    "Industrials": 6.6,
+    "Consumer": 6.6,
     "Financials": 3.6,
     "Crypto": 3.2,
-    "Healthcare": 3.1
+    "Healthcare": 3.2
   },
   "churnSincePrior": {
     "added": [
-      "AMZN"
+      "AMZN",
+      "META"
     ],
-    "dropped": [],
+    "dropped": [
+      "CAT"
+    ],
     "held": [
       "ADI",
       "ALAB",
       "AMD",
       "BABA",
-      "CAT",
       "CIEN",
       "COHR",
       "DELL",
@@ -245,11 +247,12 @@
       "TMDX",
       "TTWO"
     ],
-    "rate": 0.03
+    "rate": 0.07
   },
   "unmapped": [
     "BABA",
     "FIGR",
+    "META",
     "MPC",
     "SPCX",
     "TTWO"

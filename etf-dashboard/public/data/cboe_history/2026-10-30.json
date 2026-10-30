@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-30T22:30:49.612308+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5322,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 581
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "DYNC": "DYNAMIX CORP SHS CL A"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {
+        "VXUS": "VANGUARD STAR FDS VG TL INTL STK F"
+      }
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "ALDX": "ALDEYRA THERAPEUTICS INC COM",
+        "SVIA": "SILVIA INC COM SHS",
+        "UL": "UNILEVER PLC SPON ADR NEW"
+      }
+    }
+  },
+  "hasChanges": true
+}
