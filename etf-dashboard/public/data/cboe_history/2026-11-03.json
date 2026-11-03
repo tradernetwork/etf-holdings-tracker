@@ -1,24 +1,16 @@
 {
-  "date": "2026-11-03T01:06:50.078366+00:00",
+  "date": "2026-11-03T23:31:37.750127+00:00",
   "isInitial": false,
   "totals": {
-    "allOptionable": 5316,
+    "allOptionable": 5315,
     "weeklyEtfs": 111,
     "weeklyEquities": 580
   },
   "diff": {
     "optionable": {
-      "new": {
-        "CASK": "SEMPREON INC COM"
-      },
+      "new": {},
       "removed": {
-        "CBZ": "CBIZ INC COM",
-        "KVUE": "KENVUE INC COM",
-        "LNAI": "LUNAI BIOWORKS INC COM SHS",
-        "LXP": "LXP INDUSTRIAL TRUST COM",
-        "MGPI": "MGP INGREDIENTS INC NEW COM",
-        "RAMP": "LIVERAMP HLDGS INC COM",
-        "TESL": "SIMPLIFY EXCHANGE TRADED FUNDS VOLT TSLA RE ETF"
+        "INDV": "INDIVIOR PHARMACEUTICALS INC COM"
       }
     },
     "weeklyEtfs": {
@@ -27,9 +19,7 @@
     },
     "weeklyEquities": {
       "new": {},
-      "removed": {
-        "KVUE": "KENVUE INC COM"
-      }
+      "removed": {}
     }
   },
   "hasChanges": true
