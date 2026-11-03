@@ -2,10 +2,9 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-10-30",
+  "asOf": "2026-11-02",
   "holdings": 29,
   "dates": [
-    "2026-08-14",
     "2026-08-21",
     "2026-08-28",
     "2026-09-04",
@@ -16,34 +15,21 @@
     "2026-10-10",
     "2026-10-16",
     "2026-10-23",
-    "2026-10-30"
+    "2026-10-30",
+    "2026-11-02"
   ],
   "themes": [
     "Technology",
     "Uncategorized",
     "Materials",
+    "Consumer",
     "Communications",
     "Industrials",
-    "Consumer",
     "Financials",
-    "Crypto",
-    "Healthcare"
+    "Healthcare",
+    "Crypto"
   ],
   "timeline": [
-    {
-      "date": "2026-08-14",
-      "weights": {
-        "Financials": 3.178249751150977,
-        "Technology": 44.1958610675279,
-        "Materials": 9.345914808126537,
-        "Industrials": 11.595399746155593,
-        "Uncategorized": 11.130524787361267,
-        "Communications": 7.29875120242265,
-        "Crypto": 2.772213899917357,
-        "Healthcare": 3.4024788818458216,
-        "Consumer": 4.810756227865147
-      }
-    },
     {
       "date": "2026-08-21",
       "weights": {
@@ -197,31 +183,41 @@
         "Healthcare": 3.1576073301685637,
         "Industrials": 6.642685895582645
       }
+    },
+    {
+      "date": "2026-11-02",
+      "weights": {
+        "Technology": 38.76820793362078,
+        "Uncategorized": 20.115427380806835,
+        "Communications": 6.777712249818786,
+        "Industrials": 6.65762146578193,
+        "Materials": 8.725005782317485,
+        "Consumer": 6.834250213037059,
+        "Financials": 3.547359250683145,
+        "Healthcare": 3.2687095406737927,
+        "Crypto": 3.074328604036576
+      }
     }
   ],
   "currentThemes": {
-    "Technology": 39.9,
-    "Uncategorized": 19.7,
-    "Materials": 8.8,
-    "Communications": 7.3,
-    "Industrials": 6.6,
-    "Consumer": 6.6,
-    "Financials": 3.6,
-    "Crypto": 3.2,
-    "Healthcare": 3.2
+    "Technology": 38.8,
+    "Uncategorized": 20.1,
+    "Materials": 8.7,
+    "Consumer": 6.8,
+    "Communications": 6.8,
+    "Industrials": 6.7,
+    "Financials": 3.5,
+    "Healthcare": 3.3,
+    "Crypto": 3.1
   },
   "churnSincePrior": {
-    "added": [
-      "AMZN",
-      "META"
-    ],
-    "dropped": [
-      "CAT"
-    ],
+    "added": [],
+    "dropped": [],
     "held": [
       "ADI",
       "ALAB",
       "AMD",
+      "AMZN",
       "BABA",
       "CIEN",
       "COHR",
@@ -234,6 +230,7 @@
       "LITE",
       "LRCX",
       "MELI",
+      "META",
       "MPC",
       "MSTR",
       "NVDA",
@@ -247,7 +244,7 @@
       "TMDX",
       "TTWO"
     ],
-    "rate": 0.07
+    "rate": 0.0
   },
   "unmapped": [
     "BABA",
