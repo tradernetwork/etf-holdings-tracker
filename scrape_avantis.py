@@ -245,6 +245,10 @@ FUNDS = [
     {'ticker': 'QYLG', 'type': 'globalx'},
     {'ticker': 'XYLG', 'type': 'globalx'},
     {'ticker': 'DJIA', 'type': 'globalx'},
+
+    # VanEck / Tuttle Capital — added 2026-11-04 (TraderMatrix #1408).
+    {'ticker': 'WARP', 'type': 'vaneck'},   # VanEck Space ETF (index-tracking)
+    {'ticker': 'FOTO', 'type': 'tuttle'},   # Tuttle Capital Pure Play Photonics (active, swap-heavy)
 ]
 
 AVANTIS_BASE_URL_TEMPLATE = "https://www.avantisinvestors.com/avantis-investments/total-holdings/{id}/?type=etf"
@@ -1179,6 +1183,127 @@ def get_holdings_capitalgroup(fund_config):
     return df
 
 
+_EXCH_CODE_RE = re.compile(r'\s+[A-Z]{2}$')
+VANECK_XLSX_URL = "https://www.vaneck.com/us/en/investments/{slug}/downloads/holdings/"
+VANECK_SLUGS = {'WARP': 'space-etf-warp'}
+
+
+@_RETRY
+def _vaneck_get(url, headers):
+    """Session GET (cookie jar follows VanEck's set-cookie redirect) with the shared retry."""
+    with requests.Session() as sess:
+        return sess.get(url, headers=headers, timeout=30)
+
+
+def get_holdings_vaneck(fund_config):
+    """VanEck's daily holdings XLSX.
+
+    The first hit on the download URL 302s to the homepage while setting session
+    cookies; a requests.Session keeps them and follows the redirect back, so one
+    Session GET lands on the workbook (a cookieless curl never does). The sheet has a title row ("Daily Holdings (%)  11/03/2026"), a blank row, then
+    the header (Number, Ticker, Holding Name, Identifier (FIGI), Shares, Asset
+    Class, Market Value (US$), Notional Value, % of Net Assets), the rows, and a
+    disclaimer. Only 'Stock' rows are kept: cash balances and the 'Other/Cash'
+    plug have no ticker and would otherwise ride along as phantom positions.
+    Foreign lines carry a Bloomberg exchange code ("SESG FP", "9412 JP"); it is
+    stripped so they match the convention used for the other global funds.
+    """
+    fund_ticker = fund_config['ticker']
+    slug = VANECK_SLUGS[fund_ticker]
+    headers = {'User-Agent': USER_AGENT}
+    log(f"Fetching VanEck holdings XLSX for {fund_ticker}...")
+    try:
+        response = _vaneck_get(VANECK_XLSX_URL.format(slug=slug), headers)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        log(f"Error fetching VanEck XLSX for {fund_ticker}: {e}")
+        return None
+    if not response.content.startswith(b'PK'):  # an HTML redirect page, not a workbook
+        log(f"VanEck {fund_ticker}: response is not an XLSX (cookie handshake failed?)")
+        return None
+
+    try:
+        raw = pd.read_excel(io.BytesIO(response.content), header=None)
+    except Exception as e:
+        log(f"Error parsing VanEck XLSX for {fund_ticker}: {e}")
+        return None
+
+    header_idx = next((i for i in range(min(10, len(raw)))
+                       if 'Holding Name' in raw.iloc[i].astype(str).tolist()), None)
+    if header_idx is None:
+        log(f"VanEck {fund_ticker}: header row not found")
+        return None
+    as_of = re.search(r'(\d{1,2}/\d{1,2}/\d{4})', str(raw.iloc[0, 0]))
+
+    df = raw.iloc[header_idx + 1:].copy()
+    df.columns = [str(c).strip() for c in raw.iloc[header_idx]]
+    df = df[df['Asset Class'].astype(str).str.strip() == 'Stock']
+    df = df.rename(columns={'Holding Name': 'Name', 'Identifier (FIGI)': 'FIGI',
+                            'Market Value (US$)': 'Market Value', '% of Net Assets': 'Weight'})
+    df['Ticker'] = df['Ticker'].astype(str).str.strip().str.replace(_EXCH_CODE_RE, '', regex=True)
+    df['Date'] = as_of.group(1) if as_of else datetime.date.today().strftime('%m/%d/%Y')
+    df = df.drop(columns=['Number', 'Notional Value', 'Asset Class'], errors='ignore')
+    log(f"VanEck XLSX returned {len(df)} holdings for {fund_ticker}")
+    return df
+
+
+NAVSTAR_API_URL = "https://jdkfnvgkfwotjlyovbrk.supabase.co/functions/v1/fund-public-api"
+_TUTTLE_RECV_RE = re.compile(r'^RECV \S+ TRS (\S+) EQ$')
+
+
+def get_holdings_tuttle(fund_config):
+    """Tuttle Capital holdings via the Navstar fund-public-api.
+
+    Tuttle has no file download; fotoetf.com renders its table client-side from
+    this public Supabase function (`?ticker=FOTO&view=all`), so we read the same
+    JSON. FOTO is ~94% cash with most of its stock exposure held through
+    total-return swaps, which the feed lists as separate rows:
+
+      - direct stock rows carry `security_ticker` ("LITE", "POET US")
+      - "RECV FOTO TRS LITE EQ" is the long equity leg: real exposure, folded
+        into the direct row for that ticker (shares and market value summed)
+      - "PAYB FOTO TRS LITE EQ" is the financing leg: a negative notional, not a
+        position. Dropped; left in, its sign corrupts clean_data's weight recompute.
+      - "CASH AND CASH EQUIVALENTS" is dropped.
+
+    Same idea as Roundhill's DRAM fold. A RECV leg with no direct row keeps its
+    own row under the ticker parsed from its name.
+    """
+    fund_ticker = fund_config['ticker']
+    log(f"Fetching Tuttle/Navstar holdings JSON for {fund_ticker}...")
+    try:
+        response = _http_get(f"{NAVSTAR_API_URL}?ticker={fund_ticker}&view=all", headers={'User-Agent': USER_AGENT})
+        response.raise_for_status()
+        rows = response.json().get('holdings') or []
+    except (requests.exceptions.RequestException, ValueError) as e:
+        log(f"Error fetching Tuttle holdings for {fund_ticker}: {e}")
+        return None
+    if not rows:
+        log(f"Tuttle {fund_ticker}: feed returned no holdings")
+        return None
+
+    book = {}  # ticker -> row dict, direct rows first so they keep name/price
+    order = sorted(rows, key=lambda r: bool(_TUTTLE_RECV_RE.match(str(r.get('security_name') or ''))))
+    for r in order:
+        name = str(r.get('security_name') or '').strip()
+        m = _TUTTLE_RECV_RE.match(name)
+        raw_t = (r.get('security_ticker') or (m.group(1) if m else '') or '').strip()
+        if not raw_t:
+            continue  # cash and PAYB financing legs
+        t = _EXCH_CODE_RE.sub('', raw_t)
+        qty, mv, wt = (float(r.get(k) or 0) for k in ('quantity', 'market_value', 'weight'))
+        if t in book:
+            book[t]['Share Quantity'] += qty
+            book[t]['Market Value'] += mv
+            book[t]['Weight'] += wt
+        else:
+            book[t] = {'Ticker': t, 'Name': name if not m else t, 'Share Quantity': qty,
+                       'Market Value': mv, 'Weight': wt, 'Date': r.get('as_of_date')}
+    df = pd.DataFrame(list(book.values()))
+    log(f"Tuttle feed: {len(rows)} rows -> {len(df)} after swap fold for {fund_ticker}")
+    return df if not df.empty else None
+
+
 def normalize_columns(df):
     if df is None or df.empty: return df
     df = df.rename(columns=COLUMN_MAPPING)
@@ -1460,6 +1585,10 @@ def fetch_fund(fund):
         return get_holdings_firsttrust(fund)
     if kind == 'globalx':
         return get_holdings_globalx(fund)
+    if kind == 'vaneck':
+        return get_holdings_vaneck(fund)
+    if kind == 'tuttle':
+        return get_holdings_tuttle(fund)
     return get_holdings_csv(fund)
 
 

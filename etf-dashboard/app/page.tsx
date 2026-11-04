@@ -413,6 +413,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="November 4, 2026"
+            tag="feature"
+            title="WARP (space) and FOTO (photonics) join the board"
+            desc="Two requests from the TraderMatrix room: VanEck's WARP, a 20-name space basket where SpaceX and Rocket Lab are a third of the fund, and Tuttle's FOTO, an active photonics fund. FOTO was the annoying one. It's 94% cash with most of its stocks held through total-return swaps, so Lumentum showed up as a 7% position when the fund really holds about 18%. We fold the swaps into the stock they track and drop the financing legs, same trick as DRAM. We're at 150 funds now."
+          />
+          <ChangelogEntry
             date="October 27, 2026"
             tag="bugfix"
             title="Strategy Effectiveness stops timing out on your phone"

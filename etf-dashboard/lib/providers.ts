@@ -53,6 +53,8 @@ export const FUND_PROVIDERS: Record<string, string> = {
     FDRX: 'Corgi Funds',
     // Sprott — actively managed precious metals miners
     GBUG: 'Sprott',
+    // VanEck WARP (space, index-tracking) and Tuttle Capital FOTO (photonics, active, swap-heavy)
+    WARP: 'VanEck', FOTO: 'Tuttle Capital',
     // Amplify ETFs — thematic + dividend/income (Firestore feed)
     BLOK: 'Amplify', AIEQ: 'Amplify', ETHO: 'Amplify', IBUY: 'Amplify',
     HACK: 'Amplify', SILJ: 'Amplify', BATT: 'Amplify', IPAY: 'Amplify',
@@ -69,7 +71,7 @@ export const FUND_PROVIDERS: Record<string, string> = {
 
 export const PROVIDER_ORDER = [
     'Avantis', 'ARK Invest', 'Capital Group', 'Corgi Funds', 'Sprott', 'First Trust', 'Amplify', 'Kurv',
-    'YieldMax', 'REX Shares', 'Roundhill', 'Neos', 'Global X', 'Tidal / NicholasX', 'Tidal / NestYield',
+    'YieldMax', 'REX Shares', 'Roundhill', 'Neos', 'Global X', 'VanEck', 'Tuttle Capital', 'Tidal / NicholasX', 'Tidal / NestYield',
 ];
 
 // Funds removed from scraping — filter any residual data from CSVs.
@@ -105,6 +107,8 @@ export const FUND_AUM: Record<string, number> = {
     GLAM: 0.05, NYNY: 0.05, STYL: 0.05, WNDR: 0.05, FDRS: 0.05, FDRX: 0.05,
     // Sprott
     GBUG: 0.16,
+    // VanEck / Tuttle Capital (approximate, non-authoritative)
+    WARP: 0.04, FOTO: 0.09,
     // Amplify (approximate, non-authoritative)
     BLOK: 1.0, AIEQ: 0.1, ETHO: 0.15, IBUY: 0.25, HACK: 0.4, SILJ: 1.2,
     BATT: 0.1, IPAY: 0.5, ITEQ: 0.15, COWS: 0.6, DRVR: 0.15, AWAY: 0.2,

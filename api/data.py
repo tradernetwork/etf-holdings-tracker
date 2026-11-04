@@ -418,6 +418,9 @@ FUND_PROVIDERS = {
     'FDRX': 'Corgi Funds',
     # Sprott — actively managed precious metals miners
     'GBUG': 'Sprott',
+    # VanEck WARP (space economy, index-tracking) and Tuttle Capital FOTO (photonics, active,
+    # swap-heavy) — both added 2026-11-04 for TraderMatrix #1408
+    'WARP': 'VanEck', 'FOTO': 'Tuttle Capital',
     # Amplify ETFs — thematic + dividend/income (Firestore feed)
     'BLOK': 'Amplify', 'AIEQ': 'Amplify', 'ETHO': 'Amplify', 'IBUY': 'Amplify',
     'HACK': 'Amplify', 'SILJ': 'Amplify', 'BATT': 'Amplify', 'IPAY': 'Amplify',
@@ -456,6 +459,8 @@ FUND_AUM = {
     'FDRX': 0.05,
     # Sprott
     'GBUG': 0.16,
+    # VanEck / Tuttle Capital (approximate, non-authoritative)
+    'WARP': 0.04, 'FOTO': 0.09,
     # Amplify ETFs (approximate, non-authoritative)
     'BLOK': 1.0, 'AIEQ': 0.1, 'ETHO': 0.15, 'IBUY': 0.25, 'HACK': 0.4,
     'SILJ': 1.2, 'BATT': 0.1, 'IPAY': 0.5, 'ITEQ': 0.15, 'COWS': 0.6,
