@@ -1,0 +1,4 @@
+Ticker,Name,FIGI,Share Quantity,Market Value,Weight,Date,ETF Ticker,Underlying_Ticker,Option_Strike,Option_Expiry,Option_Type,Underlying_Price,DTE,Moneyness
+RKLB,Rocket Lab Corp,BBG01V7JN3F3,89379,4864898.97,66.76852543698546,2026-11-03,WARP,,,,,,,
+SESG,Ses Sa,BBG000GXK7D7,237238,1097891.28,15.068058413497646,2026-11-03,WARP,,,,,,,
+9412,Sky Perfect Jsat,BBG000HQJM04,117900,1323425.73,18.163416149516884,2026-11-03,WARP,,,,,,,
