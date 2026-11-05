@@ -2,7 +2,7 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-11-04",
+  "asOf": "2026-11-05",
   "holdings": 29,
   "dates": [
     "2026-08-21",
@@ -16,15 +16,15 @@
     "2026-10-16",
     "2026-10-23",
     "2026-10-30",
-    "2026-11-04"
+    "2026-11-05"
   ],
   "themes": [
     "Technology",
     "Uncategorized",
     "Materials",
     "Consumer",
-    "Industrials",
     "Communications",
+    "Industrials",
     "Financials",
     "Healthcare",
     "Crypto"
@@ -185,30 +185,30 @@
       }
     },
     {
-      "date": "2026-11-04",
+      "date": "2026-11-05",
       "weights": {
-        "Technology": 37.42640853850891,
-        "Industrials": 7.145269619806113,
-        "Uncategorized": 20.939084302556694,
-        "Consumer": 7.198020818090954,
-        "Healthcare": 3.4087439830984563,
-        "Materials": 8.89963401462974,
-        "Communications": 7.03246690390167,
-        "Financials": 3.654600181757644,
-        "Crypto": 3.2650161059540936
+        "Healthcare": 3.745180379629494,
+        "Uncategorized": 20.748575340864555,
+        "Communications": 7.084135229295368,
+        "Materials": 9.653942928599012,
+        "Technology": 36.925074478647254,
+        "Financials": 3.791492105572998,
+        "Industrials": 6.291314866269941,
+        "Consumer": 7.702261481737689,
+        "Crypto": 3.489433633811234
       }
     }
   ],
   "currentThemes": {
-    "Technology": 37.4,
-    "Uncategorized": 20.9,
-    "Materials": 8.9,
-    "Consumer": 7.2,
-    "Industrials": 7.1,
-    "Communications": 7.0,
-    "Financials": 3.7,
-    "Healthcare": 3.4,
-    "Crypto": 3.3
+    "Technology": 36.9,
+    "Uncategorized": 20.7,
+    "Materials": 9.7,
+    "Consumer": 7.7,
+    "Communications": 7.1,
+    "Industrials": 6.3,
+    "Financials": 3.8,
+    "Healthcare": 3.7,
+    "Crypto": 3.5
   },
   "churnSincePrior": {
     "added": [],
