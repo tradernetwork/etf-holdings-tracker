@@ -31,6 +31,7 @@ MCP tools exposed:
     - get_global_stats: Funds tracked, unique underlyings, options counts
     - get_option_structures: One underlying's option legs across funds, grouped
       into synthetics / spreads / collars / rolls
+    - get_trades: Executed intraday trades (YieldMax blotter) + FIFO realized P&L
 
 This server runs in-process next to api/data.py and calls its functions
 directly rather than round-tripping over HTTP to the public REST API.
@@ -41,6 +42,7 @@ from mcp.types import ToolAnnotations
 from . import data, usage
 from . import income
 from . import structures
+from . import trades
 
 mcp = FastMCP("TickerTrace")
 
@@ -446,6 +448,32 @@ def get_option_structures(underlying: str) -> dict:
     """
     result = structures.get_option_structures(underlying.upper())
     return result or {"error": f"No tracked fund holds options on {underlying.upper()}"}
+
+
+@mcp.tool(annotations=_read_only("Executed Trades"))
+def get_trades(fund: str = "", ticker: str = "", days: int = 5, limit: int = 100) -> dict:
+    """
+    Get what funds actually EXECUTED, from the provider's intraday trade file —
+    side (B buy, S sell, SS sell short / sell-to-open, BC buy-to-cover /
+    buy-to-close), quantity and execution price. Unlike get_changes, which
+    infers moves from end-of-day snapshot diffs, this sees intraday round trips
+    and 0DTE option writes that never appear in a holdings file.
+
+    Args:
+        fund: Fund ticker (e.g. 'ULTY'). Empty = every fund on file.
+        ticker: Stock, option underlying (matches all its legs) or exact OCC contract.
+        days: Trade-date window ending at the latest date on file (1-90).
+        limit: Max trades returned (1-1000); `total` is the uncapped count.
+
+    Returns:
+        `trades` (newest first; options carry strike/expiry and a x100
+        notional), per-fund `summary` of bought/sold/net, and FIFO `realized`
+        P&L. Realized P&L only spans collected history (`historyStart`);
+        `unmatchedClosingQty` lists closes whose opening trade predates it.
+        Currently YieldMax funds only.
+    """
+    return trades.get_trades(fund=fund or None, ticker=ticker or None,
+                             days=max(1, min(90, days)), limit=max(1, min(1000, limit)))
 
 if __name__ == "__main__":
     mcp.run()

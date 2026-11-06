@@ -413,6 +413,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="November 6, 2026"
+            tag="feature"
+            title="We can finally see what YieldMax actually traded"
+            desc="Everything here used to be a diff of end-of-day holdings, which means anything a fund opened and closed inside one session was invisible. Our own docs admitted 0DTE call writing never shows up in a daily file. Then someone shared another open-source tracker that pulls YieldMax's intraday trade blotter, and we went and borrowed the idea (re-wrote it from scratch, theirs has no license). New /api/v1/trades endpoint and get_trades MCP tool: side, quantity, and execution price per fill, plus FIFO realized P&L with the x100 option multiplier and worthless expiries closed out. YieldMax only for now, and the P&L only goes back as far as we've been collecting, which it tells you rather than pretending."
+          />
+          <ChangelogEntry
             date="October 27, 2026"
             tag="bugfix"
             title="Strategy Effectiveness stops timing out on your phone"

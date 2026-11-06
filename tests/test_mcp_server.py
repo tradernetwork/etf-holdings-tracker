@@ -49,7 +49,7 @@ EXPECTED_TOOLS = {
     "get_briefing", "get_institutional_flow", "get_institutional_trend",
     "get_holdings_changes", "get_stock_activity", "list_all_funds",
     "list_all_tickers", "get_income_overview", "get_income_fund_detail",
-    "get_options_listings", "get_signal_performance", "get_global_stats",
+    "get_trades", "get_options_listings", "get_signal_performance", "get_global_stats",
     # Added 2026-09-27
     "get_option_structures",
 }
@@ -212,7 +212,7 @@ def test_remote_mcp_endpoint_mounted_without_shadowing_rest():
 # ─── Tool annotations ────────────────────────────────────────────
 
 def _check_annotations(tools):
-    assert len(tools) == 21
+    assert len(tools) == 22
     for t in tools:
         assert t.annotations is not None, f"{t.name} has no annotations"
         # Wire-format (camelCase) dump: the SDK is renaming the Python attributes
@@ -249,7 +249,7 @@ def test_remote_http_path_exposes_annotations():
         import json
         body = next(l[5:] for l in body.splitlines() if l.startswith("data:"))
     tools = __import__("json").loads(body)["result"]["tools"]
-    assert len(tools) == 21
+    assert len(tools) == 22
     for t in tools:
         a = t["annotations"]
         assert a["readOnlyHint"] is True and a["destructiveHint"] is False, t["name"]

@@ -44,6 +44,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from . import data, usage
 from . import income
 from . import structures
+from . import trades
 from . import auth
 from . import visits
 from . import retail_feed
@@ -255,6 +256,7 @@ class _GZipSkipMCP(GZipMiddleware):
 _CACHEABLE_EXACT = frozenset({
     "/api/v1/signals", "/api/v1/changes", "/api/v1/funds", "/api/v1/sectors",
     "/api/v1/divergences", "/api/v1/stats", "/api/v1/fund-effectiveness",
+    "/api/v1/trades",
 })
 _CACHEABLE_PREFIXES = (
     "/api/v1/fund/", "/api/v1/ticker/", "/api/v1/options/",
@@ -684,6 +686,33 @@ def get_all_holdings(
         out.update({"page": pg, "size": n, "pages": pages})
     out.update({"count": len(rows), "holdings": [dict(r) for r in rows]})
     return out
+
+
+@app.get("/api/v1/trades", tags=["public"])
+@limiter.limit("60/minute")
+def get_executed_trades(
+    request: Request,
+    fund: Optional[str] = Query(None, description="Restrict to one fund (case-insensitive, 422 on a malformed ticker)."),
+    ticker: Optional[str] = Query(None, description="A stock ticker, an option underlying (matches every leg on it), or one exact OCC contract."),
+    days: int = Query(5, ge=1, le=90, description="Window of trade dates ending at the latest date on file."),
+    limit: int = Query(200, ge=1, le=1000, description="Max trades returned; `total` is the uncapped window count."),
+):
+    """
+    What the funds actually executed — the intraday trade blotter YieldMax
+    publishes (side, quantity, execution price), not an inference from
+    end-of-day snapshot diffs. Sees 0DTE option writes and same-day round
+    trips that holdings files never contain. Includes a per-fund summary and
+    FIFO realized P&L (option P&L carries the x100 multiplier; options that
+    expired worthless are closed at 0). Realized figures only cover history we
+    have collected: see `historyStart`, and `unmatchedClosingQty` for closes
+    whose opening trade predates it. Currently YieldMax funds only.
+    """
+    for v in (fund, ticker):
+        if v is not None and not re.match(r"^[A-Za-z0-9.\- ]{1,24}$", v):
+            raise HTTPException(status_code=422, detail="Invalid ticker format")
+    if fund is not None and not _TICKER_PATTERN.match(fund):
+        raise HTTPException(status_code=422, detail="Invalid fund ticker format")
+    return trades.get_trades(fund=fund, ticker=ticker, days=days, limit=limit)
 
 
 @app.get("/api/v1/fund/{fund}/rotation", tags=["public"])

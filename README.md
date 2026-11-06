@@ -106,6 +106,7 @@ Base URL: `https://api.tickertrace.pro` — **no key, no auth, no rate caps beyo
 | `GET /api/v1/activity` | Most-active tickers by net change |
 | `GET /api/v1/holdings` | Full holdings dump — option rows carry underlying, CALL/PUT, strike, expiry, signed contracts, FLEX flag; every row carries its file date and staleness |
 | `GET /api/v1/funds` | All tracked funds + AUM, with each fund's `lastHoldingsDate` and `stale` |
+| `GET /api/v1/trades` | Executed intraday trades (YieldMax blotter) with per-fund summary and FIFO realized P&L |
 | `GET /api/v1/options/{underlying}` | One underlying's option legs across funds, grouped into synthetics / spreads / collars / rolls |
 | `GET /api/v1/stats` | Global stats |
 | `GET /api/v1/fund-effectiveness` | Per-fund signal-vs-price scorecard |
