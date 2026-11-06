@@ -2,7 +2,7 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-11-05",
+  "asOf": "2026-11-06",
   "holdings": 29,
   "dates": [
     "2026-08-21",
@@ -16,7 +16,7 @@
     "2026-10-16",
     "2026-10-23",
     "2026-10-30",
-    "2026-11-05"
+    "2026-11-06"
   ],
   "themes": [
     "Technology",
@@ -26,8 +26,8 @@
     "Communications",
     "Industrials",
     "Financials",
-    "Healthcare",
-    "Crypto"
+    "Crypto",
+    "Healthcare"
   ],
   "timeline": [
     {
@@ -185,30 +185,30 @@
       }
     },
     {
-      "date": "2026-11-05",
+      "date": "2026-11-06",
       "weights": {
-        "Healthcare": 3.745180379629494,
-        "Uncategorized": 20.748575340864555,
-        "Communications": 7.084135229295368,
-        "Materials": 9.653942928599012,
-        "Technology": 36.925074478647254,
-        "Financials": 3.791492105572998,
-        "Industrials": 6.291314866269941,
-        "Consumer": 7.702261481737689,
-        "Crypto": 3.489433633811234
+        "Uncategorized": 21.157610751655362,
+        "Technology": 33.75055217519487,
+        "Materials": 10.009680717385471,
+        "Healthcare": 2.0192593130606538,
+        "Communications": 7.18555726703935,
+        "Consumer": 7.454449161581676,
+        "Financials": 3.587435772762828,
+        "Industrials": 5.84544113359385,
+        "Crypto": 3.3395745859812553
       }
     }
   ],
   "currentThemes": {
-    "Technology": 36.9,
-    "Uncategorized": 20.7,
-    "Materials": 9.7,
-    "Consumer": 7.7,
-    "Communications": 7.1,
-    "Industrials": 6.3,
-    "Financials": 3.8,
-    "Healthcare": 3.7,
-    "Crypto": 3.5
+    "Technology": 33.8,
+    "Uncategorized": 21.2,
+    "Materials": 10.0,
+    "Consumer": 7.5,
+    "Communications": 7.2,
+    "Industrials": 5.8,
+    "Financials": 3.6,
+    "Crypto": 3.3,
+    "Healthcare": 2.0
   },
   "churnSincePrior": {
     "added": [],
