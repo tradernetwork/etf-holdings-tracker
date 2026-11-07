@@ -73,6 +73,14 @@ jobs:
         continue-on-error: true
         run: python cboe_scanner.py
 
+      # YieldMax's executed-trade blotter (side/qty/exec price). Non-fatal, same
+      # contract as the CBOE step: the script logs and exits 0 on any provider
+      # failure, continue-on-error covers an unexpected crash. Writes
+      # etf-dashboard/public/data/trades/, which the commit step picks up.
+      - name: Fetch intraday trades
+        continue-on-error: true
+        run: python scripts/scrape_intraday_trades.py
+
       - name: Sync CSV to Dashboard & Archive History
         run: |
           mkdir -p etf-dashboard/public/data/history

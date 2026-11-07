@@ -37,6 +37,7 @@ All endpoints are open — no API key or authentication required.
 | `GET /api/v1/ticker/TSLA` | Cross-fund view — who's buying/selling this ticker |
 | `GET /api/v1/sectors` | Sector-level weight flows |
 | `GET /api/v1/divergences` | Cross-fund conflicts (same ticker, opposite directions) |
+| `GET /api/v1/trades?fund=ULTY&days=5` | What YieldMax funds actually *executed* (intraday blotter: side, qty, exec price) + per-fund summary + FIFO realized P&L. Sees 0DTE writes the EOD holdings files cannot |
 | `GET /api/v1/options/AMD` | One underlying's option legs across funds, grouped into synthetics / spreads / collars / rolls |
 | `GET /api/v1/funds` | All tracked funds |
 | `GET /api/v1/stats` | Global stats |
@@ -52,17 +53,17 @@ The FastMCP server (`api/mcp_server.py`) exposes the same data as MCP tools:
 python -m api.mcp_server
 ```
 
-Tools (21 — an AI agent should not see less than a human does on the dashboard/REST API):
+Tools (22 — an AI agent should not see less than a human does on the dashboard/REST API):
 `get_signals`, `get_changes`, `get_fund_detail`, `get_ticker_detail`, `get_sector_flow`,
 `get_divergences`, `get_layering_patterns`, `get_market_summary`, `get_briefing`,
 `get_institutional_flow`, `get_institutional_trend`, `get_holdings_changes`,
 `get_stock_activity`, `list_all_funds`, `list_all_tickers`, `get_income_overview`,
 `get_income_fund_detail`, `get_options_listings`, `get_signal_performance`, `get_global_stats`,
-`get_option_structures`
+`get_option_structures`, `get_trades`
 
 ### Remote MCP (connect from anywhere)
 
-The same 21 tools are served over streamable HTTP at **`https://api.tickertrace.pro/mcp`**
+The same 22 tools are served over streamable HTTP at **`https://api.tickertrace.pro/mcp`**
 — open, no key, read-only. It is `mcp.http_app(path="/mcp", stateless_http=True)` mounted
 last on the FastAPI app in `api/server.py` (REST routes win; only `/mcp` falls through).
 `stateless_http=True` is required: uvicorn runs 2 workers and in-memory MCP sessions
