@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-09T15:54:29.291640+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5415,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "KCAPL": "Apple, Inc.",
+        "MRTBX": "Mini Russell 2000 Binary Options"
+      },
+      "removed": {
+        "ARI": "APOLLO COML REAL ESTATE FIN COM",
+        "BWMN": "BOWMAN CONSULTING GROUP LTD COM",
+        "ROKU": "ROKU INC COM CL A",
+        "TCBI": "TEXAS CAP BANCSHARES INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {
+        "FOXA": "FOX CORP CL A COM"
+      },
+      "removed": {
+        "ROKU": "ROKU INC COM CL A"
+      }
+    }
+  },
+  "hasChanges": true
+}
