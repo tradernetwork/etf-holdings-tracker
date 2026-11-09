@@ -186,7 +186,7 @@ option-income fund work.
 
 ## Covered Funds
 
-148 funds across 15 providers (October 2026). The authoritative list is `FUNDS` in
+150 funds across 17 providers (October 2026). The authoritative list is `FUNDS` in
 `scrape_avantis.py`; the live count is `fundsTracked` on `/api/v1/stats`. Update
 the README table whenever `FUNDS` changes. `fundsTracked` and the length of
 `/api/v1/funds` are the same number by construction (`data.tracked_funds`: funds
@@ -234,6 +234,17 @@ with rows in the latest file, minus `EXCLUDED_FUNDS`).
 - **NicholasX**: BLOX (blockchain/crypto equity)
 - **NestYield**: EGGQ, EGGY, EGGS (active equity + options overlay)
 - **Sprott**: GBUG
+- **VanEck**: WARP (space economy, MarketVector Space Index; added 2026-11-04 for
+  TraderMatrix #1408). Daily XLSX at `vaneck.com/us/en/investments/space-etf-warp/downloads/holdings/`,
+  but a cookieless request 302s to the homepage, so `get_holdings_vaneck` uses a `requests.Session`
+  (plain curl will not reproduce it). Foreign lines come as `9412 JP`/`SESG FP`; digit-leading ones (`9412`,
+  `186A`) are hidden by the API's ticker-shape filter, same known gap as DRAM.
+- **Tuttle Capital**: FOTO (photonics, active; added 2026-11-04 for #1408). No file download: the
+  holdings come from the Navstar `fund-public-api` Supabase function that fotoetf.com itself calls
+  (`?ticker=FOTO&view=all`). The book is ~94% cash plus total-return swaps, so
+  `get_holdings_tuttle` folds each `RECV FOTO TRS <TKR> EQ` leg into the direct row, and drops the
+  `PAYB` financing legs and cash. Do not remove that fold: the signed payables would corrupt
+  `clean_data`'s weight recompute.
 
 ## HTTP behaviour
 
