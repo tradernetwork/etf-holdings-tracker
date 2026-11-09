@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catchUpFunds, isoDate, rowRefreshed } from './catch-up.ts';
+import { catchUpFunds, isoDate, oneSidedFunds, rowRefreshed } from './catch-up.ts';
 
 const row = (fund: string, refreshed: unknown, src?: string, date?: string) =>
     ({ 'ETF Ticker': fund, Refreshed: refreshed, Source_Date: src, Date: date });
@@ -59,4 +59,15 @@ test('catchUpLabel names the since-date', async () => {
     assert.equal(catchUpLabel('2026-09-25'), 'catch-up since Sep 25');
     assert.equal(catchUpLabel(''), 'catch-up');
     assert.equal(catchUpLabel(null), 'catch-up');
+});
+
+test('oneSidedFunds finds a new fund and a missing one, but not a shared one', () => {
+    const curr = [row('ARKK', 'True'), row('WARP', 'True')];
+    const prev = [row('ARKK', 'True'), row('GONE', 'True')];
+    assert.deepEqual([...oneSidedFunds(curr, prev)].sort(), ['GONE', 'WARP']);
+});
+
+test('oneSidedFunds is empty when a whole side has no data', () => {
+    assert.equal(oneSidedFunds([row('ARKK', 'True')], []).size, 0);
+    assert.equal(oneSidedFunds([], [row('ARKK', 'True')]).size, 0);
 });

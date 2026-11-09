@@ -24,7 +24,7 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), 'analyses')
 import sys
 sys.path.append(os.path.dirname(__file__))
 
-from api.data import _is_junk_ticker, _is_trading_day, _catch_up_funds, drop_funds_from_rows
+from api.data import _is_junk_ticker, _is_trading_day, _catch_up_funds, catch_up_funds_between, drop_funds_from_rows
 
 EXCLUDED = {'IBIT', 'IVV', 'IWM'}
 
@@ -332,7 +332,9 @@ def main():
     # scrape) would report its whole gap as one day's trades. Drop it from both
     # sides and say so (same guard as the API: api.data._catch_up_funds).
     catch_up = _catch_up_funds(curr, prev)
-    curr, prev = drop_funds_from_rows(curr, catch_up), drop_funds_from_rows(prev, catch_up)
+    # A fund on only one side (newly tracked, or missing today) is dropped too, without the note.
+    dropped = catch_up_funds_between(curr, prev)
+    curr, prev = drop_funds_from_rows(curr, dropped), drop_funds_from_rows(prev, dropped)
 
     curr_map = build_map(curr)
     prev_map = build_map(prev)
