@@ -413,6 +413,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="November 9, 2026"
+            tag="bugfix"
+            title="The website was quietly stuck on October 28 builds"
+            desc="Our daily history files grew past the size limit Vercel allows for one server function, so every site deploy since October 29 failed while the API kept serving fresh data. We noticed the red check on the WARP and FOTO PR, followed the log, and found the site had been shipping nothing for almost two weeks. The fix: functions now bundle only the newest week of snapshots they actually read, and the full history stays put. Nothing was trimmed. This also lands the holdings page price-glitch fix and the trade blotter guard that were sitting undeployed."
+          />
+          <ChangelogEntry
             date="November 6, 2026"
             tag="feature"
             title="We can finally see what YieldMax actually traded"
