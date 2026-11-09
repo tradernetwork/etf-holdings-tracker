@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-05T23:45:50.267149+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5312,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "AGLT": "AGILITY ROBOTICS INC COM"
+      },
+      "removed": {
+        "CCXI": "CHURCHILL CAP CORP XI CL A ORD SHS",
+        "PEN": "PENUMBRA INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

@@ -15,6 +15,7 @@ TickerTrace scrapes fund-provider websites every day, normalizes the holdings, d
 - [/api/v1/ticker/{ticker}](https://api.tickertrace.pro/api/v1/ticker/TSLA): cross-fund view of who is buying or selling a ticker
 - [/api/v1/sectors](https://api.tickertrace.pro/api/v1/sectors): sector-level weight flows
 - [/api/v1/divergences](https://api.tickertrace.pro/api/v1/divergences): same ticker, opposite directions across funds
+- [/api/v1/trades](https://api.tickertrace.pro/api/v1/trades?fund=ULTY): executed intraday trades (side, qty, exec price) with FIFO realized P&L; YieldMax funds only
 - [/api/v1/options/{underlying}](https://api.tickertrace.pro/api/v1/options/AMD): one underlying's option legs across funds, grouped into synthetics, spreads, collars and rolls
 - [/api/v1/holdings](https://api.tickertrace.pro/api/v1/holdings?fund=ARKK&sort=absdelta&page=1&size=50): every holding row (equities, options, cash, treasuries, swaps) with raw and drift-adjusted `activeWeightDelta` (null while a fund is catching up) and snapshot `dte`; filters `fund`, `asset`, `q`, `sort`, `dir`, paging `page`/`size`, and `format=csv` for an uncapped export
 - [/api/v1/fund/{fund}/rotation](https://api.tickertrace.pro/api/v1/fund/ULTI/rotation): theme/sector allocation rotation report for ULTI and ULTY (other funds return 404)
@@ -47,7 +48,7 @@ Remote MCP server (streamable HTTP, open, read-only): https://api.tickertrace.pr
 
 Claude Code: `claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp`
 
-Also works as a custom connector in Claude Desktop/claude.ai and in Cursor. 21 tools:
+Also works as a custom connector in Claude Desktop/claude.ai and in Cursor. 22 tools:
 
 - get_signals, get_changes, get_holdings_changes: buying/selling signals and position changes
 - get_fund_detail, get_ticker_detail, get_stock_activity: per-fund, per-ticker and per-stock views
@@ -57,6 +58,7 @@ Also works as a custom connector in Claude Desktop/claude.ai and in Cursor. 21 t
 - list_all_funds, list_all_tickers: directories
 - get_income_overview, get_income_fund_detail: option-income funds
 - get_options_listings, get_option_structures: options data
+- get_trades: trades YieldMax funds actually executed (intraday blotter) with FIFO realized P&L
 - get_signal_performance: how past signals played out
 
 ## Optional

@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-04T23:49:22.216452+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5313,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "LNAI": "LUNAI BIOWORKS INC COM SHS"
+      },
+      "removed": {
+        "AFRU": "T-REX 2X Long AFRM Daily Target ETF",
+        "SBTU": "T-REX 2X Long SBET Daily Target ETF",
+        "TEUP": "T-REX 2X Long TE Daily Target ETF"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
