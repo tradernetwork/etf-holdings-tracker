@@ -187,3 +187,28 @@ def test_rest_and_mcp(populated):
     from api import mcp_server
     out = mcp_server.get_trades.fn(fund='ULTY', days=30) if hasattr(mcp_server.get_trades, 'fn') else mcp_server.get_trades(fund='ULTY', days=30)
     assert out['total'] == 3
+
+
+# ── non-finite guards ──
+
+@pytest.mark.parametrize('bad', ['nan', 'NaN', 'inf', '-inf', 'Infinity'])
+def test_to_number_rejects_non_finite(bad):
+    assert T.to_number(bad) is None
+
+
+def test_parse_trades_rejects_non_finite_rows():
+    rows = [row(qty='nan'), row(px='inf'), row(qty='inf'), row(px='nan'), row()]
+    trades, rejected = T.parse_trades(rows)
+    assert len(trades) == 1
+    assert rejected == {'bad_qty': 2, 'bad_price': 2}
+
+
+def test_read_day_skips_non_finite_rows_on_disk(tmp_path):
+    p = tmp_path / 'trades_2025-08-29.csv'
+    p.write_text(
+        'date,fund,ticker,side,qty,price\n'
+        '2025-08-29,ULTY,AFRM,B,nan,50\n'
+        '2025-08-29,ULTY,AFRM,B,100,inf\n'
+        '2025-08-29,ULTY,AFRM,B,100,50\n')
+    rows = T.read_day(str(p))
+    assert len(rows) == 1 and rows[0]['qty'] == 100
