@@ -39,6 +39,7 @@ from __future__ import annotations
 import csv
 import datetime as dt
 import glob
+import math
 import os
 import re
 from collections import Counter, defaultdict, deque
@@ -69,7 +70,8 @@ _FUND = re.compile(r'^[A-Z]{1,6}$')
 
 def to_number(raw) -> float | None:
     """'1,234,567.5', '$12.30', '(500)' -> float. Every comma is stripped (the
-    first-comma-only bug turns '1,234,567' into garbage). None if not numeric."""
+    first-comma-only bug turns '1,234,567' into garbage). None if not numeric
+    or not finite (nan/inf would poison every sum and 500 the API)."""
     if raw is None:
         return None
     s = str(raw).strip().replace('$', '').replace(',', '').replace(' ', '')
@@ -80,6 +82,8 @@ def to_number(raw) -> float | None:
     try:
         v = float(s)
     except ValueError:
+        return None
+    if not math.isfinite(v):  # float() happily parses 'nan'/'inf'/'Infinity'
         return None
     return -v if neg else v
 
