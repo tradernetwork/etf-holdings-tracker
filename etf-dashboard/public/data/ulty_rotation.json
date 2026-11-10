@@ -2,7 +2,7 @@
   "fund": "ULTY",
   "groupBy": "sector",
   "blurb": "ULTY actively rotates a high-IV large-cap basket by IV/momentum \u2014 this tracks its sector tilt and which names rotate in and out over time.",
-  "asOf": "2026-11-09",
+  "asOf": "2026-11-10",
   "holdings": 29,
   "dates": [
     "2026-08-28",
@@ -16,7 +16,7 @@
     "2026-10-23",
     "2026-10-30",
     "2026-11-06",
-    "2026-11-09"
+    "2026-11-10"
   ],
   "themes": [
     "Technology",
@@ -185,30 +185,30 @@
       }
     },
     {
-      "date": "2026-11-09",
+      "date": "2026-11-10",
       "weights": {
-        "Technology": 35.53152000571258,
-        "Healthcare": 2.5790421800318026,
-        "Materials": 10.202073782466591,
-        "Uncategorized": 21.87726512845077,
-        "Financials": 3.6970022277278947,
-        "Communications": 7.242298435880706,
-        "Crypto": 3.324839200226352,
-        "Industrials": 6.17751624211566,
-        "Consumer": 7.37389625227241
+        "Technology": 37.72128365049497,
+        "Uncategorized": 21.884925163866782,
+        "Consumer": 7.383983036769974,
+        "Materials": 10.49888182071988,
+        "Industrials": 6.6274169091617745,
+        "Financials": 3.7341290048127473,
+        "Healthcare": 2.688698016315886,
+        "Communications": 7.282510500742983,
+        "Crypto": 3.1766127108788345
       }
     }
   ],
   "currentThemes": {
-    "Technology": 35.5,
+    "Technology": 37.7,
     "Uncategorized": 21.9,
-    "Materials": 10.2,
+    "Materials": 10.5,
     "Consumer": 7.4,
-    "Communications": 7.2,
-    "Industrials": 6.2,
+    "Communications": 7.3,
+    "Industrials": 6.6,
     "Financials": 3.7,
-    "Crypto": 3.3,
-    "Healthcare": 2.6
+    "Crypto": 3.2,
+    "Healthcare": 2.7
   },
   "churnSincePrior": {
     "added": [],

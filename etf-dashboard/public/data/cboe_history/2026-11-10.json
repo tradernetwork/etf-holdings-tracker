@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-10T23:32:19.361318+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5415,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "QUIT": "ACHIEVE LIFE SCIENCE INC COM",
+        "TXCP": "TEXAS CAP BANCSHARES INC COM"
+      },
+      "removed": {
+        "ACHV": "ACHIEVE LIFE SCIENCE INC COM",
+        "HAUS": "Tidal Trust I"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

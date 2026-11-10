@@ -23,16 +23,16 @@
     "Semis/photonics",
     "Crypto financials",
     "Healthcare/biotech",
-    "Cloud/AI",
+    "Other",
+    "Clean energy",
     "Fintech",
+    "Cloud/AI",
+    "Quantum",
+    "Rare earth/materials",
+    "Precious metals",
     "Nuclear/uranium",
     "Bitcoin miners",
-    "Precious metals",
-    "Rare earth/materials",
-    "Quantum",
-    "Clean energy",
-    "Space",
-    "Other"
+    "Space"
   ],
   "timeline": [
     {
@@ -169,16 +169,16 @@
     "Semis/photonics": 9.5,
     "Crypto financials": 9.4,
     "Healthcare/biotech": 4.9,
-    "Cloud/AI": 0.0,
+    "Other": 0.0,
+    "Clean energy": 0.0,
     "Fintech": 0.0,
+    "Cloud/AI": 0.0,
+    "Quantum": 0.0,
+    "Rare earth/materials": 0.0,
+    "Precious metals": 0.0,
     "Nuclear/uranium": 0.0,
     "Bitcoin miners": 0.0,
-    "Precious metals": 0.0,
-    "Rare earth/materials": 0.0,
-    "Quantum": 0.0,
-    "Clean energy": 0.0,
-    "Space": 0.0,
-    "Other": 0.0
+    "Space": 0.0
   },
   "churnSincePrior": {
     "added": [
