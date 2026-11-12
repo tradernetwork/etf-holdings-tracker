@@ -1,17 +1,18 @@
 {
-  "date": "2026-11-12T00:53:19.793048+00:00",
+  "date": "2026-11-12T23:46:03.091901+00:00",
   "isInitial": false,
   "totals": {
-    "allOptionable": 5414,
+    "allOptionable": 5416,
     "weeklyEtfs": 111,
     "weeklyEquities": 580
   },
   "diff": {
     "optionable": {
-      "new": {},
-      "removed": {
-        "KPTI": "KARYOPHARM THERAPEUTICS INC COM NEW"
-      }
+      "new": {
+        "PICS": "PICS NV COM CL A",
+        "WCMI": "FIRST TR EXCHANGE-TRADED FD WCM INTL EQUITY"
+      },
+      "removed": {}
     },
     "weeklyEtfs": {
       "new": {},
