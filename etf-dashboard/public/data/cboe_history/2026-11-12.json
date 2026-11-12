@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-12T00:53:19.793048+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5414,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "KPTI": "KARYOPHARM THERAPEUTICS INC COM NEW"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
