@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-13T23:44:49.635772+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5413,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "OPHI": "COLLPLANT BIOTECHNOLOGIES LTD SHS NEW"
+      },
+      "removed": {
+        "CLGN": "COLLPLANT BIOTECHNOLOGIES LTD SHS NEW",
+        "FMET": "FIDELITY COVINGTON TRUST METAVERSE ETF",
+        "FPRO": "Fidelity Real Estate Investment ETF",
+        "USG": "USCF ETF TR GOLD STRATEGY"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
