@@ -74,6 +74,22 @@ export function catchUpFunds(current: ProvenanceRow[], previous: ProvenanceRow[]
     return out;
 }
 
+/**
+ * Funds with rows on only one side of a pair, when both sides have data. A newly
+ * tracked fund would otherwise read as buying its whole book on day one, and a
+ * fund missing from the latest file as selling it. Mirrors api/data.py's
+ * `_one_sided_funds`; dropped from the diff but not reported as a catch-up.
+ */
+export function oneSidedFunds(current: ProvenanceRow[], previous: ProvenanceRow[]): Set<string> {
+    const curr = new Set(current.map(r => r['ETF Ticker']));
+    const prev = new Set(previous.map(r => r['ETF Ticker']));
+    const out = new Set<string>();
+    if (!curr.size || !prev.size) return out;
+    curr.forEach(f => { if (!prev.has(f)) out.add(f); });
+    prev.forEach(f => { if (!curr.has(f)) out.add(f); });
+    return out;
+}
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** '2026-09-25' -> 'Sep 25' (parsed by hand: no timezone surprises). */

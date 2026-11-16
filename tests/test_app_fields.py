@@ -75,7 +75,7 @@ def test_briefing_filters_before_scoring_and_streaks(monkeypatch):
 
 def test_layering_dollar_totals(tmp_path, monkeypatch):
     monkeypatch.setattr(data, 'HISTORY_DIR', str(tmp_path))
-    for date, rows in [('2026-10-07',[row('ARKK','BASE')]),
+    for date, rows in [('2026-10-07',[row('ARKK','BASE'),row('AVUV','BASE')]),
                        ('2026-10-08',[row('ARKK',weight='1'),row('AVUV',weight='2')])]:
         with (tmp_path/f'holdings_{date}.csv').open('w') as f:
             w=csv.DictWriter(f,fieldnames=rows[0].keys());w.writeheader();w.writerows(rows)

@@ -240,3 +240,43 @@ def test_option_contract_records_reach_options_activity_and_the_briefing():
     assert act['accumulating'] == [] and act['reducing'] == []       # the CASH row is still dropped
     brief = data._briefing_from(data._signals_from([]), act, {})
     assert [n['record']['ticker'] for n in brief['notableOptions']] == ['MSTR  261016C00095000']
+
+
+def _fund_rows(day, fund, weights):
+    return [{'ETF Ticker': fund, 'Ticker': t, 'Name': t, 'Weight': w,
+             'Share Quantity': w * 1000, 'Market Value': w * 1e6, 'Sector': 'X',
+             'Refreshed': 'True', 'Source_Date': day, 'Date': day} for t, w in weights.items()]
+
+
+def _diff_funds(curr, prev):
+    return {c['fund'] for c in data._changes_between(curr, prev)}
+
+
+def test_new_funds_first_day_is_not_a_day_of_buying():
+    prev = _fund_rows('2026-11-06', 'AVUV', {'AAA': 2.0})
+    curr = _fund_rows('2026-11-09', 'AVUV', {'AAA': 3.0}) + _fund_rows('2026-11-09', 'WARP', {'RKLB': 13.0})
+    assert _diff_funds(curr, prev) == {'AVUV'}
+
+
+def test_fund_missing_today_is_not_a_day_of_selling():
+    prev = _fund_rows('2026-11-06', 'AVUV', {'AAA': 2.0}) + _fund_rows('2026-11-06', 'WARP', {'RKLB': 13.0})
+    curr = _fund_rows('2026-11-09', 'AVUV', {'AAA': 3.0})
+    assert _diff_funds(curr, prev) == {'AVUV'}
+
+
+def test_real_new_position_in_a_tracked_fund_still_counts():
+    prev = _fund_rows('2026-11-06', 'AVUV', {'AAA': 2.0})
+    curr = _fund_rows('2026-11-09', 'AVUV', {'AAA': 2.0, 'BBB': 1.0})
+    changes = data._changes_between(curr, prev)
+    assert [(c['ticker'], c['type']) for c in changes] == [('BBB', 'NEW')]
+
+
+def test_one_sided_fund_is_dropped_but_not_reported_as_catch_up():
+    prev = _fund_rows('2026-11-06', 'AVUV', {'AAA': 2.0})
+    curr = prev + _fund_rows('2026-11-09', 'WARP', {'RKLB': 13.0})
+    assert data._catch_up_funds(curr, prev) == {}
+    assert data.catch_up_funds_between(curr, prev) == {'WARP': None}
+
+
+def test_no_previous_snapshot_at_all_is_left_alone():
+    assert data._one_sided_funds(_fund_rows('2026-11-09', 'WARP', {'RKLB': 13.0}), []) == set()

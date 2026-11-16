@@ -40,7 +40,7 @@ import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { isTradingDay } from './marketHours';
-import { catchUpFunds } from './catch-up';
+import { catchUpFunds, oneSidedFunds } from './catch-up';
 
 export interface Holding {
     Date: string;
@@ -191,8 +191,10 @@ function computeDiff(currentAll: Holding[], previousAll: Holding[]): HoldingsDif
     // (including the per-fund renormalization in activeWeightDeltas), exactly as
     // api/data.py does, and report it separately so the UI can say why.
     const catchUp = catchUpFunds(currentAll, previousAll);
-    const current = catchUp.size ? currentAll.filter(h => !catchUp.has(h['ETF Ticker'])) : currentAll;
-    const previous = catchUp.size ? previousAll.filter(h => !catchUp.has(h['ETF Ticker'])) : previousAll;
+    const oneSided = oneSidedFunds(currentAll, previousAll);
+    const dropped = (h: Holding) => catchUp.has(h['ETF Ticker']) || oneSided.has(h['ETF Ticker']);
+    const current = currentAll.filter(h => !dropped(h));
+    const previous = previousAll.filter(h => !dropped(h));
 
     const currentMap = new Map<string, Holding>();
     const previousMap = new Map<string, Holding>();

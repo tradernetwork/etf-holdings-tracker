@@ -1095,8 +1095,23 @@ def _without_funds(m: dict, funds) -> dict:
     return {k: v for k, v in m.items() if v['fund'] not in funds} if funds else m
 
 
+def _one_sided_funds(curr_rows, prev_rows) -> set[str]:
+    """Funds with rows on only one side of a pair, when both sides have data.
+
+    A diff needs both sides. A newly tracked fund has no previous rows, so its
+    whole book would read as buying on its first day (and for as long as a
+    weekly or monthly window starts before it existed); a fund missing from the
+    latest file would read as selling everything. Not a catch-up: nothing is
+    carried, so these are dropped from the pair but not reported as `catchUp`.
+    """
+    cm, pm = _meta_of(curr_rows), _meta_of(prev_rows)
+    return set(cm) ^ set(pm) if cm and pm else set()
+
+
 def catch_up_funds_between(curr_rows, prev_rows) -> dict[str, str | None]:
-    return _catch_up_funds(curr_rows, prev_rows)
+    """Every fund to drop from a pair: catch-ups plus one-sided funds (since None)."""
+    return {**{f: None for f in _one_sided_funds(curr_rows, prev_rows)},
+            **_catch_up_funds(curr_rows, prev_rows)}
 
 
 def drop_funds_from_rows(rows: list[dict], funds) -> list[dict]:
@@ -1313,7 +1328,7 @@ def _changes_between(curr_rows: list[dict], prev_rows: list[dict], *, include_op
     # as one window's trades — in daily, weekly and monthly alike, since all
     # three come through here. Drop it from both sides (before the per-fund
     # renormalization in _active_weight_deltas, which is zero-sum per fund).
-    catch_up = _catch_up_funds(curr_rows, prev_rows)
+    catch_up = catch_up_funds_between(curr_rows, prev_rows)
     curr, prev = _without_funds(curr, catch_up), _without_funds(prev, catch_up)
     # Computed over the FULL maps (options + cash included) before any junk or
     # option filtering, so the per-fund renormalization sees the whole book.
@@ -2443,7 +2458,7 @@ def compute_layering_patterns(window_days: int = 5, min_funds: int = 3,
     events: dict[str, dict[str, dict]] = defaultdict(dict)
     for i in range(start, len(ordered)):
         curr, prev = maps[i], maps[i - 1]
-        catch_up = _catch_up_funds(metas[i], metas[i - 1])
+        catch_up = catch_up_funds_between(metas[i], metas[i - 1])
         for (fund, ticker), row in curr.items():
             if row.get('option_type') or row.get('weight', 0) <= 0:
                 continue
