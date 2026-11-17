@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-17T02:01:32.766723+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5403,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "HZN": "BRIGHT HORIZON ENERGY CORP COM",
+        "PLCEQ": "CHILDRENS PL INC NEW COM"
+      },
+      "removed": {
+        "ACH": "ACCENDRA HEALTH INC COM",
+        "BKH": "BLACK HILLS CORP COM",
+        "ITGR": "INTEGER HLDGS CORP COM",
+        "KADIS": "The Walt Disney Company",
+        "KBDIS": "The Walt Disney Company",
+        "KCDIS": "The Walt Disney Company",
+        "KDDIS": "The Walt Disney Company",
+        "KEDIS": "The Walt Disney Company",
+        "NWE": "NORTHWESTERN ENERGY GROUP INC COM NEW",
+        "PLCE": "CHILDRENS PL INC NEW COM",
+        "SLQT": "SELECTQUOTE INC COM",
+        "VBNK": "VERSABANK NEW COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
