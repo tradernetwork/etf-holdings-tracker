@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-18T01:06:38.725778+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5405,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ITGR": "INTEGER HLDGS CORP COM",
+        "KADIS": "The Walt Disney Company",
+        "KBDIS": "The Walt Disney Company",
+        "KCDIS": "The Walt Disney Company",
+        "KDDIS": "The Walt Disney Company",
+        "KEDIS": "The Walt Disney Company",
+        "SLQT": "SELECTQUOTE INC COM SHS",
+        "VRSA": "VERSA BANCORP"
+      },
+      "removed": {
+        "KATGT": "Target Corporation",
+        "KBTGT": "Target Corporation",
+        "KCTGT": "Target Corporation",
+        "KDTGT": "Target Corporation",
+        "KETGT": "Target Corporation",
+        "RKLZ": "TIDAL TRUST II DEFIANCE DAILY T"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
