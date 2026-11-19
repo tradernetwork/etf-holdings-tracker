@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-19T00:33:59.460277+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5412,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "FTXL": "FIRST TR EXCHANGE TRADED FD VI NASDQ SEMCNDTR",
+        "KATGT": "Target Corporation",
+        "KBTGT": "Target Corporation",
+        "KCTGT": "Target Corporation",
+        "KDTGT": "Target Corporation",
+        "KETGT": "Target Corporation",
+        "LIME": "NEUTRON HOLDINGS INC COM",
+        "MAGP": "Roundhill Magnificent Seven Plus ETF",
+        "XMAX": "XMAX INC COM"
+      },
+      "removed": {
+        "ITGR": "INTEGER HLDGS CORP COM",
+        "PCRX": "PACIRA BIOSCIENCES INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
