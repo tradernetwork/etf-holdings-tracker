@@ -44,13 +44,20 @@ MAX_COMMITS_BEHIND = 5     # alert when the deployed CODE is >5 commits behind m
 MAX_FUND_LAG = 3           # alert when a fund's own holdings are >3 business days behind
 REPO = "tradernetwork/etf-holdings-tracker"
 
+# The scrape starts at or after 19:50 New York (scripts/scrape_schedule.py), so a
+# session's snapshot is due by 04:00 UTC the next day: 23:00 EST, midnight EDT.
+# Shifting the clock back by DEADLINE_SHIFT puts that deadline at 21:00 on the
+# session's own date, which the logic below reads.
+DEADLINE_SHIFT = datetime.timedelta(hours=7)
+
+
 def required_snapshot_date(now: datetime.datetime, *, require_due: bool = False) -> datetime.date | None:
-    """The latest session whose 21:00 UTC delivery deadline has elapsed.
+    """The latest session whose 04:00 UTC (next day) delivery deadline has elapsed.
 
     Strict late-canary runs still enforce yesterday if GitHub delays them past
     midnight. Morning checks retain the existing relaxed business-day rule.
     """
-    now = now.astimezone(datetime.timezone.utc)
+    now = now.astimezone(datetime.timezone.utc) - DEADLINE_SHIFT
     day = now.date()
     after_deadline = now.hour >= 21
     if not require_due:
@@ -121,7 +128,7 @@ def main() -> int:
     failed = False
     due = required_snapshot_date(now, require_due=os.environ.get('REQUIRE_DAILY_SNAPSHOT') == '1')
     if due is not None and asof < due:
-        print(f"::error::MISSED DAILY SNAPSHOT — expected at least {due} by 21:00 UTC; "
+        print(f"::error::MISSED DAILY SNAPSHOT — expected at least {due} by 04:00 UTC the next day; "
               f"live API still serves {asof}. Check scheduled scrape delivery, failed runs "
               "and sync_data.sh. Dispatch scrape.yml manually if today's run is missing.")
         failed = True
