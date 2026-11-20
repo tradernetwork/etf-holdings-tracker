@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-20T00:47:40.599117+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5411,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {},
+      "removed": {
+        "SSTI": "SOUNDTHINKING INC COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}
