@@ -81,7 +81,7 @@ this change; the workflow is not dispatched from this PR.
 
 GitHub now starts the scheduled scrape 5 to 7.5 hours after the requested time.
 The 18:17 UTC primary started at 23:26 UTC on November 10 and at 01:52 UTC on
-November 17. The backup arrived after it every day and skipped.
+November 17. From November 10 on the backup arrived after it every day and skipped.
 
 That delay moved the scrape across the time issuers swap their files. Per-fund
 file dates for each snapshot, by the New York time the scrape started:
@@ -116,8 +116,9 @@ and expects the previous New York evening's snapshot by 04:00 UTC.
 
 The October note kept an afternoon collection on purpose. This drops it. The
 snapshot dated D now arrives in the evening of D and holds D's close, about 17
-hours fresher than an afternoon scrape of the same label. Nothing has published
-before 17:30 New York since October 16, so no consumer loses a time it had.
+hours fresher than an afternoon scrape of the same label. No scheduled run has
+published before 17:30 New York since October 16, so no consumer loses a time
+it had.
 
 Still true: every trigger depends on GitHub's scheduler. A run that starts after
 New York midnight skips, because it belongs to no session. If no run starts
