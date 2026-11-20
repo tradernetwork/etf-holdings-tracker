@@ -74,3 +74,53 @@ Tests cover backup/manual behavior, empty files, Monday's deadline, delayed
 canary execution, weekends/holidays, UTC-midnight dating, and live-canary exit
 status for stale/current data. YAML parsing and the full Python suite validate
 this change; the workflow is not dispatched from this PR.
+
+# Evening window: November 19, 2026
+
+## What changed since October
+
+GitHub now starts the scheduled scrape 5 to 7.5 hours after the requested time.
+The 18:17 UTC primary started at 23:26 UTC on November 10 and at 01:52 UTC on
+November 17. From November 10 on the backup arrived after it every day and skipped.
+
+That delay moved the scrape across the time issuers swap their files. Per-fund
+file dates for each snapshot, by the New York time the scrape started:
+
+| Snapshot | Scrape start (New York) | Funds with the next session's file |
+|---|---|---|
+| Nov 6 | 18:12 | 0 of 148 |
+| Nov 10 | 18:26 | 16 of 150 |
+| Nov 12 | 18:40 | 0 of 150 |
+| Nov 18 | 19:26 | 88 of 150 |
+| Nov 11 | 19:47 | 94 of 150 |
+| Nov 17 | 19:58 | 94 of 150 |
+| Nov 16 | 20:52 | 94 of 150 |
+
+A snapshot taken before the swap holds the previous close under today's date.
+One taken after holds today's close. The November 12 snapshot repeated what
+November 11 already had for 94 funds, so that day's diff was flat and the next
+late scrape carried two days of trades.
+
+## The fix
+
+`scrape.yml` requests a start every 30 minutes from 14:17 UTC to 04:47 UTC.
+`scripts/scrape_schedule.py` lets a scheduled run scrape only at or after 19:50
+New York, and only when the session has no snapshot yet. Whichever run GitHub
+starts first inside that window does the work. The rest exit in the preflight.
+Manual dispatch still bypasses both checks.
+
+The deadline canary moves with it: the strict check is requested at 04:17 UTC
+and expects the previous New York evening's snapshot by 04:00 UTC.
+
+## What this gives up
+
+The October note kept an afternoon collection on purpose. This drops it. The
+snapshot dated D now arrives in the evening of D and holds D's close, about 17
+hours fresher than an afternoon scrape of the same label. No scheduled run has
+published before 17:30 New York since October 16, so no consumer loses a time
+it had.
+
+Still true: every trigger depends on GitHub's scheduler. A run that starts after
+New York midnight skips, because it belongs to no session. If no run starts
+between 19:50 and midnight the day is missed and the 04:17 UTC canary fails.
+Dispatch `scrape.yml` by hand in that case.

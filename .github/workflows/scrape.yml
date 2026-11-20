@@ -2,10 +2,15 @@ name: Daily ETF Holdings Scrape
 
 on:
   schedule:
-    # Off-hour minutes reduce GitHub's documented scheduler peak/drop risk.
-    - cron: '17 18 * * 1-5'
-    # Recovery attempt; both schedules can still be delayed or dropped.
-    - cron: '37 20 * * 1-5'
+    # GitHub starts these 5 to 7.5 hours late (November 2026) and the delay moves,
+    # so no single cron lands at a known time. Request a start every 30 minutes
+    # and let the preflight pick: the first run GitHub actually starts at or after
+    # 19:50 New York scrapes, every other one exits in seconds. The window covers
+    # both a long delay and on-time delivery, in EST and EDT.
+    # See docs/SCRAPE_SCHEDULE_RECOVERY.md.
+    - cron: '17,47 14-23 * * 1-5'
+    # 00:17-04:47 UTC is the same New York evening, so Tuesday-Saturday UTC.
+    - cron: '17,47 0-4 * * 2-6'
   workflow_dispatch: # Allow manual trigger
 
 permissions:

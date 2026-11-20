@@ -2,7 +2,7 @@ import datetime as dt
 import pytest
 
 from scripts import check_freshness as freshness
-from scripts.scrape_schedule import should_scrape, snapshot_day
+from scripts.scrape_schedule import after_rollover, should_scrape, snapshot_day
 
 
 def test_scheduled_backup_skips_committed_snapshot_but_manual_can_force(tmp_path):
@@ -13,6 +13,27 @@ def test_scheduled_backup_skips_committed_snapshot_but_manual_can_force(tmp_path
     assert should_scrape('workflow_dispatch', tmp_path, today)
 
 
+def test_scheduled_run_waits_for_the_issuer_rollover(tmp_path):
+    today = dt.date(2026, 11, 16)
+    assert not should_scrape('schedule', tmp_path, today, rolled=False)
+    assert should_scrape('schedule', tmp_path, today, rolled=True)
+    assert should_scrape('workflow_dispatch', tmp_path, today, rolled=False)
+
+
+def test_rollover_is_new_york_evening_in_both_offsets():
+    utc = dt.timezone.utc
+    # EST: 19:50 New York is 00:50 UTC the next day.
+    assert not after_rollover(dt.datetime(2026, 11, 17, 0, 49, tzinfo=utc))
+    assert after_rollover(dt.datetime(2026, 11, 17, 0, 50, tzinfo=utc))
+    # EDT: 19:50 New York is 23:50 UTC.
+    assert not after_rollover(dt.datetime(2026, 10, 12, 23, 49, tzinfo=utc))
+    assert after_rollover(dt.datetime(2026, 10, 12, 23, 50, tzinfo=utc))
+    # A run delayed past New York midnight belongs to no session: it waits.
+    assert not after_rollover(dt.datetime(2026, 11, 17, 5, 30, tzinfo=utc))
+    # A midday start, the window the old crons asked for, no longer scrapes.
+    assert not after_rollover(dt.datetime(2026, 11, 16, 18, 17, tzinfo=utc))
+
+
 def test_empty_snapshot_does_not_suppress_recovery(tmp_path):
     (tmp_path / 'holdings_2026-10-12.csv').touch()
     assert should_scrape('schedule', tmp_path, dt.date(2026, 10, 12))
@@ -20,15 +41,18 @@ def test_empty_snapshot_does_not_suppress_recovery(tmp_path):
 
 def test_deadline_catches_missing_monday_without_morning_false_alarm():
     friday = dt.date(2026, 10, 9)
-    assert freshness.required_snapshot_date(dt.datetime(2026, 10, 12, 20, 59, tzinfo=dt.timezone.utc)) is None
-    deadline = dt.datetime(2026, 10, 12, 21, tzinfo=dt.timezone.utc)
+    assert freshness.required_snapshot_date(dt.datetime(2026, 10, 13, 3, 59, tzinfo=dt.timezone.utc)) is None
+    deadline = dt.datetime(2026, 10, 13, 4, tzinfo=dt.timezone.utc)
     assert freshness.required_snapshot_date(deadline) == dt.date(2026, 10, 12)
     assert friday < freshness.required_snapshot_date(deadline)
 
 
 def test_late_canary_still_checks_previous_days_deadline():
-    delayed = dt.datetime(2026, 10, 13, 3, tzinfo=dt.timezone.utc)
+    delayed = dt.datetime(2026, 10, 13, 10, tzinfo=dt.timezone.utc)
     assert freshness.required_snapshot_date(delayed, require_due=True) == dt.date(2026, 10, 12)
+    # Before Monday's deadline the last due session is still Friday.
+    early = dt.datetime(2026, 10, 13, 3, tzinfo=dt.timezone.utc)
+    assert freshness.required_snapshot_date(early, require_due=True) == dt.date(2026, 10, 9)
 
 
 def test_weekends_and_market_holidays_use_last_due_session():
@@ -48,7 +72,7 @@ def test_deadline_check_fails_live_canary_for_missing_day(monkeypatch, asof, exp
     class DeadlineClock(clock):
         @classmethod
         def now(cls, tz=None):
-            return clock(2026, 10, 12, 21, 17, tzinfo=dt.timezone.utc)
+            return clock(2026, 10, 13, 4, 17, tzinfo=dt.timezone.utc)
 
     monkeypatch.setattr(freshness.datetime, 'datetime', DeadlineClock)
     monkeypatch.setattr(freshness, 'API_BASE', 'https://example.test')
