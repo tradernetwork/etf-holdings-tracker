@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-21T03:22:48.111527+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5408,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 580
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ANT": "ANTHROPIC PBC COM SHS CL A",
+        "LLMA": "Global X LLM ETF",
+        "MLCC": "Global X MLCC & Electronic Components ETF",
+        "SIX": "Global X Magnificent Six ETF",
+        "SMRZ": "Global X Small Modular Reactor ETF"
+      },
+      "removed": {
+        "ABVEF": "ABOVE FOOD INGREDIENTS INC COM",
+        "ADV": "ADVANTAGE SOLUTIONS INC COM NEW CL A",
+        "BARK": "BARK INC COM NEW",
+        "BIPC": "BROOKFIELD INFRASTRUCTURE CORP COM SUB VTG A",
+        "ITP": "IT TECH PACKAGING INC COM NEW",
+        "LXFR": "LUXFER HLDGS PLC SHS",
+        "MERC": "MERCER INTL INC COM",
+        "UTZ": "UTZ BRANDS INC COM CL A"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {}
+    }
+  },
+  "hasChanges": true
+}

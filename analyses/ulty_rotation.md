@@ -1,26 +1,26 @@
 # ULTY — Sector Rotation & Roster Churn
 
-_Auto-generated from daily holdings. As of **2026-11-19** · 29 holdings · last 12 weekly samples._
+_Auto-generated from daily holdings. As of **2026-11-20** · 30 holdings · last 12 weekly samples._
 
-> ⚠️ **Uncategorized tickers** (add to the map in the tracker): BABA, FIGR, META, MPC, SPCX, TTWO
+> ⚠️ **Uncategorized tickers** (add to the map in the tracker): ANT, BABA, FIGR, META, MPC, SPCX, TTWO
 
 ## Current sector allocation
 
 | Sector | Weight |
 |------|-------:|
-| Technology | 37.4% |
-| Uncategorized | 22.0% |
-| Materials | 8.9% |
-| Consumer | 7.4% |
-| Communications | 7.3% |
+| Technology | 36.9% |
+| Uncategorized | 22.3% |
+| Materials | 8.7% |
+| Consumer | 7.2% |
+| Communications | 7.2% |
 | Industrials | 7.0% |
-| Financials | 3.2% |
+| Financials | 3.3% |
 | Healthcare | 2.9% |
-| Crypto | 2.4% |
+| Crypto | 2.3% |
 
 ## Sector-weight drift (weekly)
 
-| Sector | 09-04 | 09-11 | 09-18 | 09-25 | 10-02 | 10-10 | 10-16 | 10-23 | 10-30 | 11-06 | 11-13 | 11-19 |
+| Sector | 09-04 | 09-11 | 09-18 | 09-25 | 10-02 | 10-10 | 10-16 | 10-23 | 10-30 | 11-06 | 11-13 | 11-20 |
 |------|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
 | Technology | 39 | 41 | 41 | 44 | 44 | 45 | 42 | 38 | 40 | 34 | 38 | 37 |
 | Uncategorized | 14 | 14 | 14 | 14 | 14 | 14 | 15 | 18 | 20 | 21 | 21 | 22 |
@@ -34,5 +34,6 @@ _Auto-generated from daily holdings. As of **2026-11-19** · 29 holdings · last
 
 ## Roster churn (latest week vs prior sample)
 
-- **0% of the book turned over** this step.
+- **3% of the book turned over** this step.
+- 🟢 **Added:** ANT
 - ⚪ **Held:** ADI, ALAB, AMD, AMZN, BABA, CIEN, COHR, DELL, FIGR, FIX, GDX, GOOGL, HOOD, LITE, LRCX, MELI, META, MPC, MSTR, NVDA, PLTR, PWR, RDDT, SCCO, SHOP, SILJ, SPCX, TMDX, TTWO
