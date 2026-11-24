@@ -105,7 +105,11 @@ fi
 # needs a rebuild — otherwise code changes silently never deploy
 # (the same "green but not live" trap that froze the data). A failed build
 # leaves the existing container running untouched, so this is safe to automate.
-if git diff --name-only "$LOCAL" "$REMOTE" | grep -qE '^(api/|Dockerfile|docker-compose\.yml|etf-dashboard/public/llms\.txt)'; then
+# Every repo path the Dockerfile COPYs must match REBUILD_RE, or changes to it
+# merge green and never reach production (PR #221 sat undeployed for 25 minutes).
+# tests/test_sync_trigger.py fails if this list drifts from the Dockerfile.
+REBUILD_RE='^(api/|Dockerfile|docker-compose\.yml|effectiveness\.py|cboe_scanner\.py|etf-dashboard/public/llms\.txt)'
+if git diff --name-only "$LOCAL" "$REMOTE" | grep -qE "$REBUILD_RE"; then
   echo "$(ts) code changed in api/ — rebuilding image"
   GIT_SHA="$(git rev-parse HEAD)" docker compose up -d --build >/dev/null 2>&1 \
     || { echo "$(ts) BUILD FAILED — existing container left running"; return 1; }

@@ -415,6 +415,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="November 24, 2026"
             tag="bugfix"
+            title="Some API fixes were merging green and never going live"
+            desc="The server that runs the API only rebuilt itself when a change touched the api folder, the Dockerfile or the compose file. Two Python files that live at the project root, the fund scorecard engine and the options scanner, get baked into the same image but were not on the list. So the memory fix for the scorecard merged, passed every check, and then sat undeployed for 25 minutes until I rebuilt by hand. The rebuild trigger now covers every file the Dockerfile copies, and a test fails if the two ever drift apart again."
+          />
+          <ChangelogEntry
+            date="November 24, 2026"
+            tag="bugfix"
             title="Found the real memory hog: the fund scorecard was hoarding every ETF"
             desc="After the first fix we checked what the API was actually holding in RAM and it was 3.3GB, mostly from the option-income scorecard caching every holdings file for every fund, including the stock-picking ones it never looks at. It now keeps only the funds that hold options. Same grades on all 69 funds, checked digest for digest, at about a sixth of the memory and a fifth of the run time."
           />
