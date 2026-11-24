@@ -28,3 +28,14 @@ def data_with_fixtures(fixture_dir, monkeypatch):
     from api import data as _data
     monkeypatch.setattr(_data, "HISTORY_DIR", fixture_dir)
     return _data
+
+
+import pytest as _pytest_stock_index
+
+
+@_pytest_stock_index.fixture(autouse=True)
+def _isolated_stock_index_dir(tmp_path_factory, monkeypatch):
+    """Keep the stock-index disk cache out of the repo's api/data during tests."""
+    from api import data as _data
+    monkeypatch.setattr(_data, '_STOCK_INDEX_DIR', str(tmp_path_factory.mktemp('stock_index')))
+    yield

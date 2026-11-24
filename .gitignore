@@ -29,6 +29,8 @@ data/holdings.db
 data/cusip_cache.json
 data/*.db-journal
 api/data/*.db
+api/data/stock_index_*.pkl
+api/data/.stock_index_*.tmp
 api/data/*.db-journal
 # WAL-mode companion files — created when the API runs (e.g. a local server).
 data/*.db-shm

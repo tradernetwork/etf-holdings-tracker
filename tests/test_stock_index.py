@@ -156,3 +156,28 @@ def test_absent_days_serialize_as_float_zero_like_before(tmp_path, monkeypatch):
     assert json.dumps(h[0]).count('0.0') >= 1 and '"blendedWeight": 0,' not in json.dumps(h[0])
     inst = data.get_stock_detail('FRESH')['institutional']
     assert all(isinstance(inst[k], float) for k in ('blendedWeight', 'daily', 'weekly', 'monthly'))
+
+
+def test_stock_index_survives_a_cold_worker(monday_history, monkeypatch):
+    """A respawned worker (empty memo) must load the persisted index, not re-parse 30 CSVs."""
+    first = data.get_stock_detail('TER')
+    assert list(Path(data._STOCK_INDEX_DIR).glob('stock_index_*.pkl'))
+    data.clear_result_memo()
+    data._read_csv_cached.cache_clear()
+    def boom(*a, **k):
+        raise AssertionError('recomputed the index despite a persisted copy')
+    monkeypatch.setattr(data, '_trend_signal', boom)      # only the cold compute path calls this for a known ticker
+    monkeypatch.setattr(data, '_fund_meta', boom)
+    assert data.get_stock_detail('TER')['institutional'] == first['institutional']
+
+
+def test_stock_index_cache_invalidates_on_new_snapshot(monday_history):
+    data.get_stock_detail('TER')
+    before = {p.name for p in Path(data._STOCK_INDEX_DIR).glob('stock_index_*.pkl')}
+    write_day(monday_history / 'holdings_2026-10-13.csv', [('ARKK', 'TER', 9, 'True', '2026-10-13'), ('AVUV', 'OTHER', 2, 'True', '2026-10-13')])
+    data.clear_result_memo()
+    data._available_dates.cache_clear()
+    after_detail = data.get_stock_detail('TER')
+    after = {p.name for p in Path(data._STOCK_INDEX_DIR).glob('stock_index_*.pkl')}
+    assert after and after != before and len(after) == 1   # new key, old one pruned
+    assert after_detail['institutional']['blendedWeight'] == 9.0 or after_detail['institutional']['blendedWeight'] > 3
