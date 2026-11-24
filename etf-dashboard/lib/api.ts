@@ -765,6 +765,8 @@ export interface ApiIncomeOverview {
     archetypes: { key: IncomeArchetype; label: string; summary: string; funds: string[] }[];
 }
 
+const FETCH_TIMEOUT_MS = 8000;
+
 async function rawFetch<T>(path: string, revalidate: number, retries: number): Promise<T> {
     const url = `${API_BASE}${path}`;
     // Vercel's Data Cache silently refuses to store any entry over 2MB — it
@@ -779,7 +781,10 @@ async function rawFetch<T>(path: string, revalidate: number, retries: number): P
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
-            const res = await fetch(url, { ...fetchInit, headers: { ...fetchInit.headers, "X-TickerTrace-Client": "web" } });
+            // Hard per-attempt ceiling. When the API box is thrashing, a request can
+            // sit for 60s+ (measured), and 4 attempts of that is a page that never
+            // paints. Fail fast so the retry / error boundary / stale cache can act.
+            const res = await fetch(url, { ...fetchInit, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { ...fetchInit.headers, "X-TickerTrace-Client": "web" } });
             if (res.ok) return (await res.json()) as T;
             const body = await res.text().catch(() => res.statusText);
             const err = new ApiError(res.status, path, `API ${res.status} on ${path}: ${body}`);
@@ -930,6 +935,9 @@ export const api = {
     stock: (ticker: string, opts?: ApiOptions) =>
         apiFetchResource<ApiStockDetail>(`/api/v1/stock/${encodeURIComponent(ticker)}`, {
             revalidate: 600,
+            // Long-tail tickers are crawled constantly; one retry, not three, so a
+            // struggling API is not hit 4x per visit (8s timeout x 2 = ~17s worst case).
+            retries: 1,
             ...opts,
         }),
 

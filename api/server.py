@@ -143,7 +143,7 @@ def _effectiveness_refresher(interval_s: float = 60.0) -> None:
 
 
 # ─── Lifespan: one-time startup work ─────────────────────────────
-# Remote MCP endpoint (streamable HTTP) at /mcp. Stateless because uvicorn runs
+# 2 workers and MCP sessions would otherwise live in one worker's memory (now 1 worker; keep stateless anyway).
 # 2 workers and MCP sessions would otherwise live in one worker's memory.
 mcp_app = mcp.http_app(path="/mcp", stateless_http=True)
 

@@ -413,6 +413,12 @@ export default async function LandingPage() {
 
         <div className="max-w-2xl mx-auto space-y-4">
           <ChangelogEntry
+            date="November 24, 2026"
+            tag="bugfix"
+            title="Stock pages were timing out because the API box was eating itself"
+            desc="Individual stock pages and a few list pages were failing for a lot of you. The server behind the API runs on about 4GB of RAM, and every time it rebuilt the per-stock history it parsed a month of holdings files, ran out of memory, got killed, restarted with an empty cache and did the whole thing again. We counted over 200 of those restarts in two hours. Now the finished result is saved to disk so a restart loads it in milliseconds, the rebuild uses about 40 percent less memory, the container has a memory cap, and the website gives up on a stuck request in 8 seconds instead of hanging. We also found out the real fix is a bigger box. That one is on the list."
+          />
+          <ChangelogEntry
             date="November 9, 2026"
             tag="bugfix"
             title="The website was quietly stuck on October 28 builds"

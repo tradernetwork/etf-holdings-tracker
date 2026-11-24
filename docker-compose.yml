@@ -10,6 +10,10 @@ services:
         GIT_SHA: ${GIT_SHA:-unknown}
     container_name: tickertrace-api
     restart: unless-stopped
+    # The 3.9GB Vultr host shares RAM with Apache + other sites. Without a cap the
+    # kernel OOM-killed workers in a loop (218 deaths in 2h) and swap-thrashed.
+    # A cap makes the API restart cleanly instead of dragging the whole box down.
+    mem_limit: 2200m
     ports:
       # Loopback only: Apache (TLS) is the sole client, and it reaches the
       # container from the Docker bridge gateway, which is the only peer the

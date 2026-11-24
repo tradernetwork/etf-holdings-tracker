@@ -13,6 +13,8 @@ import functools
 import hashlib
 import math
 import os
+import pickle
+import tempfile
 import re
 import threading
 from collections import OrderedDict, defaultdict
@@ -3201,6 +3203,77 @@ def _blended_weight_for(rows: list[dict], ticker: str, total_aum: float) -> tupl
     return w, funds
 
 
+# --- stock-index disk cache -------------------------------------------------
+# _stock_history_index parses ~30 holdings CSVs (1+ GB of transient Python
+# objects). It is memoized per process, but a worker that gets OOM-killed
+# respawns with a cold memo and every /api/v1/stock/<ticker> then pays the full
+# parse again (60-76s measured, which is what the box was dying of). The result
+# is a few MB, so persist it next to the SQLite db (api/data is the writable
+# mount; the history dir is read-only) and let any worker, old or new, load it
+# in milliseconds. The key covers the snapshot signature AND the deployed code,
+# so a new CSV or a new release can never read a stale file.
+_STOCK_INDEX_DIR = os.environ.get('STOCK_INDEX_CACHE_DIR') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+
+
+def _stock_index_disk_path(history_days: int, depth: int) -> str | None:
+    try:
+        code = f"{os.environ.get('GIT_SHA', 'dev')}:{os.stat(os.path.abspath(__file__)).st_mtime_ns}"
+        key = hashlib.sha1(repr((snapshot_signature(depth), history_days, code)).encode()).hexdigest()[:20]
+        return os.path.join(_STOCK_INDEX_DIR, f'stock_index_{key}.pkl')
+    except OSError:
+        return None
+
+
+def _load_stock_index(path: str | None) -> dict | None:
+    if not path:
+        return None
+    try:
+        with open(path, 'rb') as fh:
+            value = pickle.load(fh)
+        return value if isinstance(value, dict) else None
+    except Exception:           # missing, truncated, or from an incompatible build: recompute
+        return None
+
+
+def _save_stock_index(path: str | None, value: dict) -> None:
+    """Atomic write (tmp + rename) so a concurrent worker never reads a partial file."""
+    if not path:
+        return
+    try:
+        directory = os.path.dirname(path)
+        fd, tmp = tempfile.mkstemp(dir=directory, prefix='.stock_index_', suffix='.tmp')
+        try:
+            with os.fdopen(fd, 'wb') as fh:
+                pickle.dump(value, fh, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(tmp, path)
+        except BaseException:
+            try: os.unlink(tmp)
+            except OSError: pass
+            raise
+        for name in os.listdir(directory):          # drop superseded snapshots
+            if name.startswith('stock_index_') and name.endswith('.pkl') and os.path.join(directory, name) != path:
+                try: os.unlink(os.path.join(directory, name))
+                except OSError: pass
+    except Exception:           # read-only mount etc.: the in-process memo still works
+        pass
+
+
+def _release_memory() -> None:
+    """Hand freed heap back to the OS after a big transient build.
+
+    CPython frees the parsed rows, but glibc keeps the fragmented arenas, so RSS
+    stays at the peak and the container creeps toward its memory cap. gc +
+    malloc_trim(0) returns it. No-op where libc/malloc_trim is unavailable.
+    """
+    import gc
+    gc.collect()
+    try:
+        import ctypes
+        ctypes.CDLL('libc.so.6').malloc_trim(0)
+    except Exception:
+        pass
+
+
 def _stock_signature_depth(history_days: int = 30) -> int:
     # Sparse histories may put the calendar-month baseline outside 30 sessions.
     return max(2, history_days, _changes_signature_depth('monthly'))
@@ -3219,6 +3292,10 @@ def _stock_history_index(history_days: int = 30) -> dict:
     if not dates:
         return {}
     depth = min(len(dates), _stock_signature_depth(history_days))
+    disk_path = _stock_index_disk_path(history_days, depth)
+    on_disk = _load_stock_index(disk_path)
+    if on_disk is not None:
+        return on_disk
     latest = get_latest_holdings()
     inst_funds = {r.get('ETF Ticker', '') for r in latest
                   if is_institutional_fund(r.get('ETF Ticker', ''))}
@@ -3228,7 +3305,11 @@ def _stock_history_index(history_days: int = 30) -> dict:
     snapshots = {}
     universe = set()
     for date in dates[:depth]:
-        rows = latest if date == dates[0] else _read_csv(os.path.join(HISTORY_DIR, f'holdings_{date}.csv'))
+        # Uncached on purpose: one file is live at a time and dropped as soon as it is
+        # reduced to weights. Going through _read_csv pushed 30 files through its
+        # 5-slot LRU, which held ~5 parsed books resident forever and evicted the
+        # entries every other endpoint relies on.
+        rows = latest if date == dates[0] else _read_csv_uncached(os.path.join(HISTORY_DIR, f'holdings_{date}.csv'))
         weights, counts, per_fund = defaultdict(float), defaultdict(int), defaultdict(lambda: defaultdict(float))
         for r in rows:
             if r.get('Option_Type'):
@@ -3313,6 +3394,9 @@ def _stock_history_index(history_days: int = 30) -> dict:
         }}
         if adjusted:
             out[ticker]['historyAdjustedForCatchUp'] = True
+    _save_stock_index(disk_path, out)
+    snapshots.clear()
+    _release_memory()
     return out
 
 

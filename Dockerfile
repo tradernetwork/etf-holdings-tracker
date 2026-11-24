@@ -27,6 +27,9 @@ RUN mkdir -p etf-dashboard/public/data/history
 # is observable. sync_data.sh passes it; defaults to 'unknown' for local builds.
 ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
+# Cap glibc malloc arenas: the sync endpoints run in a threadpool and each thread
+# otherwise grows its own arena, which fragments and never shrinks.
+ENV MALLOC_ARENA_MAX=2
 
 EXPOSE 8100
 
@@ -44,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
 # appended; anything a client prepends to the header is ignored. Do NOT widen
 # this to "*" (a client could then spoof its rate-limit key) and do not
 # publish 8100 beyond 127.0.0.1 in docker-compose.yml.
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12"]
+CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8100", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12"]
