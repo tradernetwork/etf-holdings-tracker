@@ -66,8 +66,8 @@ Tools (22 — an AI agent should not see less than a human does on the dashboard
 The same 22 tools are served over streamable HTTP at **`https://api.tickertrace.pro/mcp`**
 — open, no key, read-only. It is `mcp.http_app(path="/mcp", stateless_http=True)` mounted
 last on the FastAPI app in `api/server.py` (REST routes win; only `/mcp` falls through).
-`stateless_http=True` is required: uvicorn runs 2 workers and in-memory MCP sessions
-would break across them. Clients: Claude Desktop/claude.ai custom connector, Claude Code
+`stateless_http=True` is required: in-memory MCP sessions would break across workers
+(uvicorn now runs 1 worker, but keep it stateless). Clients: Claude Desktop/claude.ai custom connector, Claude Code
 (`claude mcp add --transport http tickertrace https://api.tickertrace.pro/mcp`), Cursor.
 
 All tools carry MCP annotations (`title`, `readOnlyHint=True`, `destructiveHint=False`, `idempotentHint=True`, `openWorldHint=False`) via the shared `_read_only()` helper in `api/mcp_server.py`; `tests/test_mcp_server.py` fails if a new tool ships unannotated, locally or over `/mcp`.
@@ -366,6 +366,26 @@ Three layers keep breakage from shipping silently:
    while `asOfDate` stayed perfectly current — every check green, the fix not live.
    Fresh data proves nothing about whether the code serving it is current.
    Run it anytime:
+
+### Memory: the box is 3.9GB and was OOM-looping (fixed 2026-11-24)
+
+The Vultr host has 3.9GB RAM shared with Apache and other sites. The API container is capped at
+`mem_limit: 2200m`, runs **one** uvicorn worker, and idles around 1.1GB. Root causes, so they do
+not come back:
+
+- `/api/v1/stock/*` rebuilt `_stock_history_index` (30 CSVs) on every cold worker. It is now
+  persisted to `api/data/stock_index_*.pkl` (keyed by snapshot signature + `GIT_SHA` + code mtime)
+  and built from uncached per-file reads. Do not route it back through `_read_csv`'s 5-slot LRU.
+- `effectiveness._holdings_cache` held every date's full CSV (3.3GB). It now keeps only funds that
+  have option legs in that snapshot. Output verified identical across all 69 funds.
+- A cold index rebuild still takes ~45s on this host; every request after is ~0.5s.
+- `sync_data.sh` rebuilds on any file the Dockerfile COPYs (root `effectiveness.py`,
+  `cboe_scanner.py` included); `tests/test_sync_trigger.py` guards it. Add new root-level COPYs
+  and the guard keeps you honest.
+- Vultr disk was 93% from dead build images; `docker image prune -f` and
+  `docker builder prune -f --filter until=48h` are safe (run under `flock /var/lock/tickertrace-sync.lock`).
+
+Moving the API to Railway is planned but parked: see `docs/RAILWAY_CUTOVER.md`.
 
 ### SSH timeouts
 
