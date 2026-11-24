@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-24T01:50:12.470666+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5408,
+    "weeklyEtfs": 111,
+    "weeklyEquities": 579
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ITP": "IT TECH PACKAGING INC COM SHS"
+      },
+      "removed": {
+        "COST": "COSTCO WHOLESALE CORPORATION COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {},
+      "removed": {}
+    },
+    "weeklyEquities": {
+      "new": {},
+      "removed": {
+        "COST": "COSTCO WHOLESALE CORPORATION COM"
+      }
+    }
+  },
+  "hasChanges": true
+}
