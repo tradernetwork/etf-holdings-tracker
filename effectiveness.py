@@ -292,6 +292,15 @@ def get_holdings_for_date(date_str: str) -> list[dict]:
         _holdings_cache[date_str] = []
         return []
     rows = _read_csv(path)
+    # Every consumer asks for ONE fund's option legs (get_fund_options) or the
+    # equities of a fund that already has live options in this same file
+    # (get_fund_equities, after analyze_fund found written options). A fund with
+    # zero option rows in a snapshot contributes nothing to either, so drop its
+    # rows before caching. Results are identical; the cache stops holding the
+    # ARK/Avantis/Capital Group equity books for ~190 dates (that was 3.3GB of
+    # resident dicts on a 3.9GB host).
+    with_options = {r.get('ETF Ticker') for r in rows if r.get('Option_Type')}
+    rows = [r for r in rows if r.get('ETF Ticker') in with_options]
     _holdings_cache[date_str] = rows
     return rows
 

@@ -415,6 +415,12 @@ export default async function LandingPage() {
           <ChangelogEntry
             date="November 24, 2026"
             tag="bugfix"
+            title="Found the real memory hog: the fund scorecard was hoarding every ETF"
+            desc="After the first fix we checked what the API was actually holding in RAM and it was 3.3GB, mostly from the option-income scorecard caching every holdings file for every fund, including the stock-picking ones it never looks at. It now keeps only the funds that hold options. Same grades on all 69 funds, checked digest for digest, at about a sixth of the memory and a fifth of the run time."
+          />
+          <ChangelogEntry
+            date="November 24, 2026"
+            tag="bugfix"
             title="Stock pages were timing out because the API box was eating itself"
             desc="Individual stock pages and a few list pages were failing for a lot of you. The server behind the API runs on about 4GB of RAM, and every time it rebuilt the per-stock history it parsed a month of holdings files, ran out of memory, got killed, restarted with an empty cache and did the whole thing again. We counted over 200 of those restarts in two hours. Now the finished result is saved to disk so a restart loads it in milliseconds, the rebuild uses about 40 percent less memory, the container has a memory cap, and the website gives up on a stuck request in 8 seconds instead of hanging. We also found out the real fix is a bigger box. That one is on the list."
           />
