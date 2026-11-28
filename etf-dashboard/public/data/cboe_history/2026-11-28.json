@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-28T01:23:05.996775+00:00",
+  "isInitial": false,
+  "totals": {
+    "allOptionable": 5421,
+    "weeklyEtfs": 110,
+    "weeklyEquities": 579
+  },
+  "diff": {
+    "optionable": {
+      "new": {
+        "ANDD": "Leverage Shares 2X Short Anthropic Daily ETF",
+        "ANSS": "Leverage Shares 1X Short Anthropic Daily ETF",
+        "ANTC": "TIDAL TRUST II DEFIANCE 2X ANT",
+        "ANTD": "DIREXION SHARES ETF TRUST DAILY ANTHROPIC",
+        "ANTO": "DIREXION SHARES ETF TRUST DAILY ANTHROPIC",
+        "ANTQ": "TIDAL TRUST II DEFIANCE 2X ANT",
+        "ANTT": "Tradr 2X Long Anthropic Daily ETF",
+        "ANTU": "PROSHARES TR ULTRA ANTHROPIC",
+        "ANTY": "PROSHARES TR ULTRASHORT ANTH",
+        "ANTZ": "Tradr 2X Short Anthropic Daily ETF",
+        "ANUU": "Leverage Shares 2X Long Anthropic Daily ETF",
+        "ATHX": "2x Anthropic ETF",
+        "BFLR": "BLUEFLARE INC COM",
+        "CLAU": "T-REX 2X Long Anthropic Daily Target ETF",
+        "COST": "COSTCO WHOLESALE CORPORATION COM",
+        "MERCQ": "MERCER INTL INC COM"
+      },
+      "removed": {
+        "FNGR": "FINGERMOTION INC COM",
+        "LAB": "STANDARD BIOTOOLS INC COM",
+        "RLI": "RLI CORP COM"
+      }
+    },
+    "weeklyEtfs": {
+      "new": {
+        "NVD": "GRANITESHARES ETF TR 2X SHOR NVDA NEW"
+      },
+      "removed": {
+        "ETH": "GRAYSCALE ETHEREUM STAKING SHS NEW",
+        "ETHE": "GRAYSCALE ETHEREUM STAKING ETF SHS"
+      }
+    },
+    "weeklyEquities": {
+      "new": {
+        "ANT": "ANTHROPIC PBC COM SHS CL A",
+        "COST": "COSTCO WHOLESALE CORPORATION COM",
+        "INSM": "INSMED INC COM PAR $.01",
+        "SA": "SEABRIDGE GOLD INC COM"
+      },
+      "removed": {
+        "ABTC": "AMERICAN BITCOIN CORP. COM CL A",
+        "NB": "NIOCORP DEVS LTD COM NEW",
+        "PPG": "PPG INDS INC COM",
+        "SIG": "SIGNET JEWELERS LTD SHS"
+      }
+    }
+  },
+  "hasChanges": true
+}
