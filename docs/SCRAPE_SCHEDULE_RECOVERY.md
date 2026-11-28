@@ -124,3 +124,29 @@ Still true: every trigger depends on GitHub's scheduler. A run that starts after
 New York midnight skips, because it belongs to no session. If no run starts
 between 19:50 and midnight the day is missed and the 04:17 UTC canary fails.
 Dispatch `scrape.yml` by hand in that case.
+
+# After-midnight starts: November 27, 2026
+
+## What broke
+
+From November 24 GitHub started every scheduled scrape either before 19:50
+New York (17:59, 18:06, 18:29) or after New York midnight (00:04, 00:41,
+03:29, 03:43). The November 19 guard accepted only 19:50 to midnight, so every
+run exited in the preflight with `before 19:50 New York; skip` and reported
+success. No snapshot was committed for November 24, 25 or 26 (26 was
+Thanksgiving). TraderMatrix's `etf_holdings_history` stopped at November 23,
+and its nightly sync reported success too, because there was nothing new to load.
+
+## The fix
+
+The issuers' files hold session D's close from D 19:50 until the next trading
+day's swap starts, around 18:10. So `scripts/scrape_schedule.py` now dates a
+run with the last trading session whose 19:50 rollover has passed (NYSE
+calendar from `api/data.py`, the same one the canary uses) and scrapes it if
+that snapshot is missing. A run at 00:04 New York writes the session that just
+closed instead of skipping. Only the swap itself, 18:00 to 19:50 on a trading
+day, skips. A holiday evening scrapes nothing new, because the last session has
+not changed.
+
+Sessions that were missed cannot be recovered: by the time a run starts, the
+issuers have published a newer file.

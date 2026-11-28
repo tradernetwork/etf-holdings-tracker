@@ -44,7 +44,8 @@ MAX_COMMITS_BEHIND = 5     # alert when the deployed CODE is >5 commits behind m
 MAX_FUND_LAG = 3           # alert when a fund's own holdings are >3 business days behind
 REPO = "tradernetwork/etf-holdings-tracker"
 
-# The scrape starts at or after 19:50 New York (scripts/scrape_schedule.py), so a
+# The scrape starts at or after 19:50 New York, or overnight for the session that
+# just closed (scripts/scrape_schedule.py), so a
 # session's snapshot is due by 04:00 UTC the next day: 23:00 EST, midnight EDT.
 # Shifting the clock back by DEADLINE_SHIFT puts that deadline at 21:00 on the
 # session's own date, which the logic below reads.
